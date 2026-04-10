@@ -1,0 +1,33 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "85fd84d4739d571aed168d582561fa09"
+name = "letme-portal"
+application_url = "https://leanora-trifoliate-cherise.ngrok-free.dev"
+embedded = true
+handle = "letme-portal"
+
+[build]
+automatically_update_urls_on_dev = true
+
+[webhooks]
+api_version = "2026-07"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/webhooks/app/uninstalled"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/scopes_update" ]
+  uri = "/webhooks/app/scopes_update"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_customers,write_app_proxy"
+
+[auth]
+redirect_urls = [ "https://leanora-trifoliate-cherise.ngrok-free.dev/api/auth" ]
+
+[app_proxy]
+url = "https://leanora-trifoliate-cherise.ngrok-free.dev/account-proxy"
+subpath = "account"
+prefix = "apps"
