@@ -1,8 +1,8 @@
-import { authenticate } from "../../shopify.server";
+Dann DAS hier komplett einfügen:
+import { json } from "@remix-run/node";
 
-export const loader = async ({ request }) => {
-  await authenticate.public.appProxy(request);
-  return null;
+export const loader = async () => {
+  return json({ status: "OK" });
 };
 
 export default function AccountProxyPage() {
@@ -27,114 +27,8 @@ export default function AccountProxyPage() {
           border: "1px solid #e7dcc7",
         }}
       >
-        <div
-          style={{
-            fontSize: "14px",
-            letterSpacing: "2px",
-            textTransform: "uppercase",
-            color: "#b08b4f",
-            marginBottom: "14px",
-            fontWeight: "bold",
-          }}
-        >
-          Let Me Bowl Catering
-        </div>
-
-        <h1
-          style={{
-            fontSize: "40px",
-            lineHeight: "1.2",
-            margin: "0 0 18px 0",
-          }}
-        >
-          Willkommen bei deinem Kundenkonto
-        </h1>
-
-        <p
-          style={{
-            fontSize: "18px",
-            lineHeight: "1.7",
-            color: "#4a4a4a",
-            marginBottom: "30px",
-          }}
-        >
-          Hier soll künftig dein eigenes Let Me Bowl Kundenkonto laufen.
-          Kunden können hier später ihre Daten verwalten, frühere Bestellungen
-          ansehen und bequem erneut bestellen.
-        </p>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: "18px",
-            marginTop: "30px",
-          }}
-        >
-          <div
-            style={{
-              background: "#faf7f1",
-              border: "1px solid #eadfcd",
-              borderRadius: "18px",
-              padding: "22px",
-            }}
-          >
-            <h3 style={{ marginTop: 0, marginBottom: "10px", fontSize: "20px" }}>
-              Kundendaten
-            </h3>
-            <p style={{ margin: 0, color: "#555", lineHeight: "1.6" }}>
-              Name, Firma, E-Mail, Telefonnummer und Rechnungsdaten.
-            </p>
-          </div>
-
-          <div
-            style={{
-              background: "#faf7f1",
-              border: "1px solid #eadfcd",
-              borderRadius: "18px",
-              padding: "22px",
-            }}
-          >
-            <h3 style={{ marginTop: 0, marginBottom: "10px", fontSize: "20px" }}>
-              Bestellungen
-            </h3>
-            <p style={{ margin: 0, color: "#555", lineHeight: "1.6" }}>
-              Übersicht über vergangene Bestellungen und Bestellstatus.
-            </p>
-          </div>
-
-          <div
-            style={{
-              background: "#faf7f1",
-              border: "1px solid #eadfcd",
-              borderRadius: "18px",
-              padding: "22px",
-            }}
-          >
-            <h3 style={{ marginTop: 0, marginBottom: "10px", fontSize: "20px" }}>
-              Schnell nachbestellen
-            </h3>
-            <p style={{ margin: 0, color: "#555", lineHeight: "1.6" }}>
-              Favoriten und frühere Bestellungen später mit einem Klick erneut bestellen.
-            </p>
-          </div>
-        </div>
-
-        <div
-          style={{
-            marginTop: "34px",
-            padding: "18px 20px",
-            borderRadius: "16px",
-            background: "#fff8eb",
-            border: "1px solid #efdcae",
-            color: "#6b5a2b",
-            fontSize: "15px",
-            lineHeight: "1.6",
-          }}
-        >
-          Dies ist aktuell die vorbereitete Vorschau deines eigenen Kundenkontos.
-          Im nächsten Schritt binden wir echte Kundendaten und Bestellungen an.
-        </div>
+        <h1>Let Me Bowl Kundenkonto funktioniert 🎉</h1>
+        <p>Wenn du das siehst, ist dein App Proxy korrekt verbunden.</p>
       </div>
     </div>
   );

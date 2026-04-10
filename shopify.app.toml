@@ -2,7 +2,7 @@
 
 client_id = "85fd84d4739d571aed168d582561fa09"
 name = "letme-portal"
-application_url = "https://leanora-trifoliate-cherise.ngrok-free.dev"
+application_url = "https://letme-portal-production.up.railway.app"
 embedded = true
 handle = "letme-portal"
 
@@ -25,9 +25,9 @@ api_version = "2026-07"
 scopes = "read_customers,write_app_proxy"
 
 [auth]
-redirect_urls = [ "https://leanora-trifoliate-cherise.ngrok-free.dev/api/auth" ]
+redirect_urls = [ "https://letme-portal-production.up.railway.app/api/auth" ]
 
 [app_proxy]
-url = "https://leanora-trifoliate-cherise.ngrok-free.dev/account-proxy"
+url = "https://letme-portal-production.up.railway.app/account-proxy"
 subpath = "account"
 prefix = "apps"
