@@ -1,6 +1,10 @@
 {
   "name": "letme-portal",
   "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.19 <22 || >=22.12"
+  },
   "scripts": {
     "build": "prisma generate && react-router build",
     "dev": "shopify app dev",
@@ -16,12 +20,7 @@
     "prisma": "prisma",
     "graphql-codegen": "graphql-codegen",
     "vite": "vite",
-    "typecheck": "react-router typegen && tsc --noEmit",
-    "postinstall": "prisma generate"
-  },
-  "type": "module",
-  "engines": {
-    "node": ">=20.19 <22 || >=22.12"
+    "typecheck": "react-router typegen && tsc --noEmit"
   },
   "dependencies": {
     "@prisma/client": "^6.16.3",
