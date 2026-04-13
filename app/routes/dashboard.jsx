@@ -39,6 +39,7 @@ export default function DashboardPage() {
             }}
           >
             <OverviewCard title={t.company} value={user.companyName || "—"} />
+            <OverviewCard title={t.username} value={user.username || "—"} />
             <OverviewCard title={t.email} value={user.email || "—"} />
             <OverviewCard title={t.phone} value={user.phone || "—"} />
           </div>
@@ -67,10 +68,24 @@ export default function DashboardPage() {
           />
 
           <MainCard
+            title={t.shippingAddressesNav}
+            text={t.shippingAddressesText}
+            href={withLang("/lieferadressen", locale)}
+            cta={t.shippingAddressesNav}
+          />
+
+          <MainCard
             title={t.costCentersNav}
             text={t.costCentersText}
             href={withLang("/kostenstellen", locale)}
             cta={t.costCentersNav}
+          />
+
+          <MainCard
+            title={t.invoices}
+            text={t.invoicesText}
+            href={withLang("/rechnungen", locale)}
+            cta={t.invoices}
           />
         </section>
       </div>

@@ -101,20 +101,25 @@ export default function RechnungsadressePage() {
       subtitle={t.billingAddressText}
     >
       {actionData?.message ? (
-        <FeedbackBox success={actionData?.ok}>
-          {actionData.message}
-        </FeedbackBox>
+        <FeedbackBox success={actionData?.ok}>{actionData.message}</FeedbackBox>
       ) : null}
 
-      <section style={{ ...card.base, padding: "30px", maxWidth: "980px" }}>
+      <section
+        style={{
+          ...card.base,
+          padding: "28px",
+          maxWidth: "980px",
+        }}
+      >
         <Form method="post" style={{ display: "grid", gap: "22px" }}>
-          
           <FormSection title={locale === "de" ? "Firma" : "Company"}>
-            <Field
-              label={t.company}
-              name="companyName"
-              defaultValue={billing?.companyName || user.companyName || ""}
-            />
+            <div style={styles.full}>
+              <Field
+                label={t.company}
+                name="companyName"
+                defaultValue={billing?.companyName || user.companyName || ""}
+              />
+            </div>
           </FormSection>
 
           <FormSection title={locale === "de" ? "Ansprechpartner" : "Contact"}>
@@ -125,6 +130,7 @@ export default function RechnungsadressePage() {
                 billing?.contactName ||
                 `${user.firstName || ""} ${user.lastName || ""}`.trim()
               }
+              placeholder={t.contactPersonPlaceholder}
             />
 
             <Field
@@ -132,12 +138,14 @@ export default function RechnungsadressePage() {
               name="email"
               type="email"
               defaultValue={billing?.email || user.email || ""}
+              placeholder={t.emailPlaceholder}
             />
 
             <Field
               label={t.phone}
               name="phone"
               defaultValue={billing?.phone || user.phone || ""}
+              placeholder={t.phonePlaceholder}
             />
           </FormSection>
 
@@ -195,16 +203,10 @@ export default function RechnungsadressePage() {
             />
           </FormSection>
 
-          <div style={{ marginTop: "10px" }}>
+          <div>
             <button
               type="submit"
-              style={{
-                ...button.primary,
-                minWidth: "220px",
-                background:
-                  "linear-gradient(135deg, #c8a96a, #b8934f)",
-                boxShadow: "0 10px 25px rgba(200,169,106,0.2)",
-              }}
+              style={styles.primaryButton}
               disabled={isSaving}
             >
               {isSaving ? t.saving : t.save}
@@ -215,8 +217,6 @@ export default function RechnungsadressePage() {
     </PortalLayout>
   );
 }
-
-/* COMPONENTS */
 
 function FormSection({ title, children }) {
   return (
@@ -286,13 +286,15 @@ function FeedbackBox({ children, success = true }) {
   );
 }
 
-/* STYLES */
-
 const styles = {
   formGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
     gap: "14px",
+  },
+
+  full: {
+    gridColumn: "1 / -1",
   },
 
   label: {
@@ -311,5 +313,13 @@ const styles = {
     border: "1px solid #e4dccb",
     borderRadius: "14px",
     padding: "14px 15px",
+    width: "100%",
+    boxSizing: "border-box",
+  },
+
+  primaryButton: {
+    ...button.primary,
+    background: "linear-gradient(135deg, #c8a96a, #b8934f)",
+    minWidth: "220px",
   },
 };

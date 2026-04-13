@@ -8,7 +8,10 @@ import {
 import { prisma } from "../lib/prisma.server.js";
 import { getUserFromRequest } from "../lib/auth.server.js";
 import { getLocaleFromRequest, dict, withLang } from "../lib/i18n.js";
-import { createPasswordResetToken, sendPasswordResetEmail, invalidateAllUserResetTokens } from "../lib/password-reset.server.js";
+import {
+  createPasswordResetToken,
+  invalidateAllUserResetTokens,
+} from "../lib/password-reset.server.js";
 import { card, button, input, colors, layout } from "../lib/ui.js";
 import LanguageSwitch from "../components/LanguageSwitch.jsx";
 
@@ -44,12 +47,10 @@ export async function action({ request }) {
   if (user) {
     await invalidateAllUserResetTokens(user.id);
     const { rawToken } = await createPasswordResetToken(user.id);
-    await sendPasswordResetEmail({
-      user,
-      locale,
-      rawToken,
-      request,
-    });
+
+    // TEMPORÄR: Mailversand deaktiviert, damit wir prüfen können, ob SMTP das Problem ist
+    console.log("PASSWORD_RESET_TEST_TOKEN:", rawToken);
+    console.log("PASSWORD_RESET_TEST_EMAIL:", user.email);
   }
 
   return {

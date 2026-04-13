@@ -27,12 +27,9 @@ export async function loader({ request }) {
     orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
   });
 
-  let editAddress = null;
-
-  if (editId) {
-    editAddress =
-      addresses.find((item) => item.id === editId) || null;
-  }
+  const editAddress = editId
+    ? addresses.find((item) => item.id === editId) || null
+    : null;
 
   return { user, locale, addresses, editAddress };
 }
@@ -120,7 +117,10 @@ export async function action({ request }) {
     }
 
     const existing = await prisma.deliveryAddress.findFirst({
-      where: { id: addressId, userId: user.id },
+      where: {
+        id: addressId,
+        userId: user.id,
+      },
     });
 
     if (!existing) {
@@ -359,8 +359,15 @@ export default function LieferadressenPage() {
               {t.setAsDefault}
             </label>
 
-            <div style={{ marginTop: "18px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
-              <button type="submit" style={button.primary} disabled={isSaving}>
+            <div
+              style={{
+                marginTop: "18px",
+                display: "flex",
+                gap: "10px",
+                flexWrap: "wrap",
+              }}
+            >
+              <button type="submit" style={styles.primaryButton} disabled={isSaving}>
                 {isSaving
                   ? t.saving
                   : isEditMode
@@ -553,7 +560,7 @@ const secondaryLinkStyle = {
 const styles = {
   formGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
     gap: "14px",
   },
 
@@ -577,6 +584,8 @@ const styles = {
     border: "1px solid #e4dccb",
     borderRadius: "14px",
     padding: "14px 15px",
+    width: "100%",
+    boxSizing: "border-box",
   },
 
   textarea: {
@@ -639,5 +648,10 @@ const styles = {
     color: "#8b2222",
     borderColor: "#efcaca",
     background: "#fff8f8",
+  },
+
+  primaryButton: {
+    ...button.primary,
+    background: "linear-gradient(135deg, #c8a96a, #b8934f)",
   },
 };
