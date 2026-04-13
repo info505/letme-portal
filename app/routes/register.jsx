@@ -163,7 +163,7 @@ export default function RegisterPage() {
         .auth-layout {
           min-height: 100vh;
           display: grid;
-          grid-template-columns: minmax(0, 1.05fr) minmax(460px, 560px);
+          grid-template-columns: minmax(0, 1.08fr) minmax(460px, 560px);
         }
 
         .auth-left {
@@ -171,7 +171,9 @@ export default function RegisterPage() {
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          background: linear-gradient(180deg, #f8f6f2 0%, #f3eee4 100%);
+          background:
+            radial-gradient(circle at top left, rgba(200,169,106,0.10), transparent 35%),
+            linear-gradient(180deg, #f8f6f2 0%, #f2ede3 100%);
           border-right: 1px solid ${colors.border};
         }
 
@@ -180,7 +182,9 @@ export default function RegisterPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: ${colors.bg};
+          background:
+            radial-gradient(circle at top right, rgba(200,169,106,0.08), transparent 28%),
+            ${colors.bg};
         }
 
         .auth-features {
@@ -194,6 +198,19 @@ export default function RegisterPage() {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 16px;
+        }
+
+        .register-card {
+          position: relative;
+          overflow: hidden;
+        }
+
+        .register-card::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          background: linear-gradient(180deg, rgba(200,169,106,0.05), transparent 20%);
         }
 
         @media (max-width: 980px) {
@@ -249,15 +266,21 @@ export default function RegisterPage() {
               <LanguageSwitch />
             </div>
 
-            <div style={{ maxWidth: "680px" }}>
+            <div style={{ maxWidth: "700px" }}>
               <div
                 style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "8px 12px",
+                  borderRadius: "999px",
+                  background: "rgba(255,255,255,0.8)",
+                  border: "1px solid #eadfc8",
                   fontSize: "12px",
-                  letterSpacing: "0.18em",
+                  letterSpacing: "0.16em",
                   textTransform: "uppercase",
                   color: colors.gold,
-                  fontWeight: 700,
-                  marginBottom: "14px",
+                  fontWeight: 800,
+                  marginBottom: "16px",
                 }}
               >
                 {t.brand}
@@ -267,9 +290,10 @@ export default function RegisterPage() {
                 style={{
                   margin: 0,
                   fontSize: "clamp(42px, 5vw, 72px)",
-                  lineHeight: 0.98,
+                  lineHeight: 0.96,
                   color: colors.text,
-                  letterSpacing: "-0.03em",
+                  letterSpacing: "-0.04em",
+                  maxWidth: "620px",
                 }}
               >
                 {t.registerTitle}
@@ -277,9 +301,9 @@ export default function RegisterPage() {
 
               <p
                 style={{
-                  margin: "20px 0 0",
+                  margin: "22px 0 0",
                   fontSize: "18px",
-                  lineHeight: 1.7,
+                  lineHeight: 1.75,
                   color: colors.muted,
                   maxWidth: "620px",
                 }}
@@ -294,24 +318,24 @@ export default function RegisterPage() {
               title={t.account}
               text={
                 locale === "en"
-                  ? "Create a central business account for your team and orders."
-                  : "Erstelle einen zentralen Firmenzugang für Team und Bestellungen."
+                  ? "Create a central company access point for your team, orders and internal structure."
+                  : "Erstelle einen zentralen Firmenzugang für Team, Bestellungen und interne Struktur."
               }
             />
             <FeatureCard
               title={t.addresses}
               text={
                 locale === "en"
-                  ? "Store billing and delivery details in one structured place."
-                  : "Speichere Rechnungs- und Lieferdaten an einem strukturierten Ort."
+                  ? "Store billing and delivery information in one clean, structured place."
+                  : "Speichere Rechnungs- und Lieferdaten an einem sauberen, strukturierten Ort."
               }
             />
             <FeatureCard
               title={t.invoices}
               text={
                 locale === "en"
-                  ? "Keep invoice information and order history clearly accessible."
-                  : "Halte Rechnungsinformationen und Bestellhistorie übersichtlich bereit."
+                  ? "Keep invoices, order history and future account functions clearly accessible."
+                  : "Halte Rechnungen, Bestellhistorie und spätere Kontofunktionen übersichtlich bereit."
               }
             />
           </div>
@@ -319,20 +343,24 @@ export default function RegisterPage() {
 
         <section className="auth-right">
           <div
+            className="register-card"
             style={{
               ...card.base,
               width: "100%",
-              maxWidth: "500px",
+              maxWidth: "520px",
               padding: "34px",
+              borderRadius: "26px",
+              boxShadow: "0 22px 60px rgba(24, 24, 24, 0.06)",
             }}
           >
-            <div style={{ marginBottom: "24px" }}>
+            <div style={{ marginBottom: "24px", position: "relative", zIndex: 1 }}>
               <h2
                 style={{
                   margin: "0 0 10px",
-                  fontSize: "28px",
+                  fontSize: "30px",
                   color: colors.text,
-                  lineHeight: 1.1,
+                  lineHeight: 1.08,
+                  letterSpacing: "-0.02em",
                 }}
               >
                 {t.registerNow}
@@ -343,12 +371,13 @@ export default function RegisterPage() {
                   margin: 0,
                   color: colors.muted,
                   fontSize: "15px",
-                  lineHeight: 1.6,
+                  lineHeight: 1.7,
+                  maxWidth: "440px",
                 }}
               >
                 {locale === "en"
-                  ? "Set up your company access for addresses, invoices and future orders."
-                  : "Richte deinen Firmenzugang für Adressen, Rechnungen und künftige Bestellungen ein."}
+                  ? "Set up your company access for addresses, invoices and future business orders."
+                  : "Richte deinen Firmenzugang für Adressen, Rechnungen und künftige Firmenbestellungen ein."}
               </p>
             </div>
 
@@ -357,18 +386,21 @@ export default function RegisterPage() {
                 style={{
                   marginBottom: "18px",
                   padding: "14px 16px",
-                  borderRadius: "14px",
+                  borderRadius: "16px",
                   background: "#fff4f4",
                   color: "#8b2222",
                   border: "1px solid #efcaca",
                   fontWeight: 600,
+                  lineHeight: 1.5,
+                  position: "relative",
+                  zIndex: 1,
                 }}
               >
                 {actionData.message}
               </div>
             ) : null}
 
-            <Form method="post">
+            <Form method="post" style={{ position: "relative", zIndex: 1 }}>
               <div className="register-grid">
                 <div style={{ gridColumn: "1 / -1" }}>
                   <Field
@@ -376,6 +408,7 @@ export default function RegisterPage() {
                     name="companyName"
                     defaultValue={values.companyName}
                     placeholder={t.companyPlaceholder}
+                    required
                   />
                 </div>
 
@@ -384,6 +417,7 @@ export default function RegisterPage() {
                   name="firstName"
                   defaultValue={values.firstName}
                   placeholder={t.firstNamePlaceholder}
+                  required
                 />
 
                 <Field
@@ -391,6 +425,7 @@ export default function RegisterPage() {
                   name="lastName"
                   defaultValue={values.lastName}
                   placeholder={t.lastNamePlaceholder}
+                  required
                 />
 
                 <Field
@@ -398,6 +433,7 @@ export default function RegisterPage() {
                   name="username"
                   defaultValue={values.username}
                   placeholder={t.usernamePlaceholder}
+                  required
                 />
 
                 <Field
@@ -414,6 +450,7 @@ export default function RegisterPage() {
                     type="email"
                     defaultValue={values.email}
                     placeholder={t.emailPlaceholder}
+                    required
                   />
                 </div>
 
@@ -422,6 +459,7 @@ export default function RegisterPage() {
                   name="password"
                   type="password"
                   placeholder={t.passwordRegisterPlaceholder}
+                  required
                 />
 
                 <Field
@@ -429,6 +467,7 @@ export default function RegisterPage() {
                   name="confirmPassword"
                   type="password"
                   placeholder={t.confirmPasswordPlaceholder}
+                  required
                 />
               </div>
 
@@ -438,7 +477,10 @@ export default function RegisterPage() {
                   ...button.primary,
                   width: "100%",
                   fontSize: "15px",
-                  marginTop: "18px",
+                  marginTop: "20px",
+                  minHeight: "52px",
+                  background: "linear-gradient(135deg, #c8a96a, #b8934f)",
+                  boxShadow: "0 12px 30px rgba(200,169,106,0.22)",
                 }}
                 disabled={isSubmitting}
               >
@@ -451,6 +493,9 @@ export default function RegisterPage() {
                 marginTop: "16px",
                 color: colors.muted,
                 fontSize: "14px",
+                lineHeight: 1.6,
+                position: "relative",
+                zIndex: 1,
               }}
             >
               {t.alreadyRegistered}{" "}
@@ -478,12 +523,15 @@ function Field({
   type = "text",
   placeholder = "",
   defaultValue = "",
+  required = false,
 }) {
   return (
     <label style={{ display: "block" }}>
       <span
         style={{
-          display: "block",
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
           marginBottom: "8px",
           fontWeight: 700,
           color: colors.text,
@@ -491,6 +539,16 @@ function Field({
         }}
       >
         {label}
+        {required ? (
+          <span
+            style={{
+              color: "#b27b26",
+              fontWeight: 800,
+            }}
+          >
+            *
+          </span>
+        ) : null}
       </span>
 
       <input
@@ -498,7 +556,13 @@ function Field({
         type={type}
         placeholder={placeholder}
         defaultValue={defaultValue}
-        style={input.base}
+        style={{
+          ...input.base,
+          minHeight: "50px",
+          borderRadius: "16px",
+          background: "#fff",
+          boxShadow: "inset 0 1px 2px rgba(0,0,0,0.02)",
+        }}
       />
     </label>
   );
@@ -510,16 +574,19 @@ function FeatureCard({ title, text }) {
       style={{
         ...card.base,
         padding: "18px",
-        borderRadius: "20px",
-        background: "rgba(255,255,255,0.72)",
+        borderRadius: "22px",
+        background: "rgba(255,255,255,0.74)",
+        border: "1px solid rgba(234,223,200,0.9)",
+        boxShadow: "0 10px 30px rgba(24,24,24,0.03)",
       }}
     >
       <div
         style={{
           fontSize: "14px",
-          fontWeight: 700,
+          fontWeight: 800,
           color: colors.text,
           marginBottom: "8px",
+          letterSpacing: "-0.01em",
         }}
       >
         {title}
@@ -528,7 +595,7 @@ function FeatureCard({ title, text }) {
       <div
         style={{
           fontSize: "14px",
-          lineHeight: 1.6,
+          lineHeight: 1.7,
           color: colors.muted,
         }}
       >

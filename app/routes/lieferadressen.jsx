@@ -19,12 +19,22 @@ export async function loader({ request }) {
     throw redirect(`/login?lang=${locale}`);
   }
 
+  const url = new URL(request.url);
+  const editId = String(url.searchParams.get("edit") || "");
+
   const addresses = await prisma.deliveryAddress.findMany({
     where: { userId: user.id },
     orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
   });
 
-  return { user, locale, addresses };
+  let editAddress = null;
+
+  if (editId) {
+    editAddress =
+      addresses.find((item) => item.id === editId) || null;
+  }
+
+  return { user, locale, addresses, editAddress };
 }
 
 export async function action({ request }) {
@@ -39,7 +49,7 @@ export async function action({ request }) {
   const formData = await request.formData();
   const intent = String(formData.get("intent") || "");
 
-  if (intent === "addDelivery") {
+  const getAddressData = () => {
     const label = String(formData.get("label") || "").trim();
     const companyName = String(formData.get("companyName") || "").trim();
     const contactName = String(formData.get("contactName") || "").trim();
@@ -52,11 +62,29 @@ export async function action({ request }) {
     const notes = String(formData.get("notes") || "").trim();
     const isDefault = String(formData.get("isDefault") || "") === "on";
 
-    if (!street || !postalCode || !city || !country) {
+    return {
+      label,
+      companyName,
+      contactName,
+      phone,
+      street,
+      houseNumber,
+      postalCode,
+      city,
+      country,
+      notes,
+      isDefault,
+    };
+  };
+
+  if (intent === "addDelivery") {
+    const data = getAddressData();
+
+    if (!data.street || !data.postalCode || !data.city || !data.country) {
       return { ok: false, message: t.addressFormError };
     }
 
-    if (isDefault) {
+    if (data.isDefault) {
       await prisma.deliveryAddress.updateMany({
         where: { userId: user.id, isDefault: true },
         data: { isDefault: false },
@@ -66,21 +94,64 @@ export async function action({ request }) {
     await prisma.deliveryAddress.create({
       data: {
         userId: user.id,
-        label: label || null,
-        companyName: companyName || null,
-        contactName: contactName || null,
-        phone: phone || null,
-        street,
-        houseNumber: houseNumber || null,
-        postalCode,
-        city,
-        country,
-        notes: notes || null,
-        isDefault,
+        label: data.label || null,
+        companyName: data.companyName || null,
+        contactName: data.contactName || null,
+        phone: data.phone || null,
+        street: data.street,
+        houseNumber: data.houseNumber || null,
+        postalCode: data.postalCode,
+        city: data.city,
+        country: data.country,
+        notes: data.notes || null,
+        isDefault: data.isDefault,
       },
     });
 
     return { ok: true, message: t.deliveryCreated };
+  }
+
+  if (intent === "updateDelivery") {
+    const addressId = String(formData.get("addressId") || "");
+    const data = getAddressData();
+
+    if (!addressId || !data.street || !data.postalCode || !data.city || !data.country) {
+      return { ok: false, message: t.addressFormError };
+    }
+
+    const existing = await prisma.deliveryAddress.findFirst({
+      where: { id: addressId, userId: user.id },
+    });
+
+    if (!existing) {
+      return { ok: false, message: t.generalError };
+    }
+
+    if (data.isDefault) {
+      await prisma.deliveryAddress.updateMany({
+        where: { userId: user.id, isDefault: true },
+        data: { isDefault: false },
+      });
+    }
+
+    await prisma.deliveryAddress.update({
+      where: { id: addressId },
+      data: {
+        label: data.label || null,
+        companyName: data.companyName || null,
+        contactName: data.contactName || null,
+        phone: data.phone || null,
+        street: data.street,
+        houseNumber: data.houseNumber || null,
+        postalCode: data.postalCode,
+        city: data.city,
+        country: data.country,
+        notes: data.notes || null,
+        isDefault: data.isDefault,
+      },
+    });
+
+    return { ok: true, message: t.deliveryUpdated };
   }
 
   if (intent === "deleteDelivery") {
@@ -113,37 +184,84 @@ export async function action({ request }) {
     return { ok: true, message: t.deliveryDefaultUpdated };
   }
 
-  return { ok: false, message: "Unknown action" };
+  return { ok: false, message: t.generalError };
 }
 
 export default function LieferadressenPage() {
-  const { user, locale, addresses } = useLoaderData();
+  const { locale, addresses, editAddress } = useLoaderData();
   const actionData = useActionData();
   const navigation = useNavigation();
   const t = dict[locale] || dict.de;
 
   const isSaving = navigation.state === "submitting";
+  const isEditMode = Boolean(editAddress);
 
   return (
-    <PortalLayout title={t.shippingAddressesTitle} subtitle={t.shippingAddressesText}>
+    <PortalLayout
+      title={t.shippingAddressesTitle}
+      subtitle={t.shippingAddressesText}
+    >
       {actionData?.message ? (
         <FeedbackBox success={actionData?.ok}>{actionData.message}</FeedbackBox>
       ) : null}
 
-      <div style={{ display: "grid", gap: "18px", maxWidth: "960px" }}>
-        <section style={{ ...card.base, padding: "28px" }}>
-          <h3
+      <div style={{ display: "grid", gap: "18px", maxWidth: "980px" }}>
+        <section
+          style={{
+            ...card.base,
+            padding: "28px",
+          }}
+        >
+          <div
             style={{
-              margin: "0 0 20px",
-              fontSize: "28px",
-              color: colors.text,
+              display: "flex",
+              justifyContent: "space-between",
+              gap: "16px",
+              flexWrap: "wrap",
+              alignItems: "flex-start",
+              marginBottom: "20px",
             }}
           >
-            {t.addDeliveryTitle}
-          </h3>
+            <div>
+              <h3
+                style={{
+                  margin: "0 0 10px",
+                  fontSize: "28px",
+                  color: colors.text,
+                }}
+              >
+                {isEditMode ? t.editDeliveryTitle : t.addDeliveryTitle}
+              </h3>
+
+              <p
+                style={{
+                  margin: 0,
+                  color: colors.muted,
+                  lineHeight: 1.6,
+                  fontSize: "15px",
+                  maxWidth: "760px",
+                }}
+              >
+                {isEditMode ? t.editDeliveryText : t.shippingAddressesFormText}
+              </p>
+            </div>
+
+            {isEditMode ? (
+              <a href={`?lang=${locale}`} style={cancelLinkStyle}>
+                {t.cancel}
+              </a>
+            ) : null}
+          </div>
 
           <Form method="post">
-            <input type="hidden" name="intent" value="addDelivery" />
+            <input
+              type="hidden"
+              name="intent"
+              value={isEditMode ? "updateDelivery" : "addDelivery"}
+            />
+            {isEditMode ? (
+              <input type="hidden" name="addressId" value={editAddress.id} />
+            ) : null}
 
             <div style={styles.formGrid}>
               <div style={styles.full}>
@@ -151,6 +269,7 @@ export default function LieferadressenPage() {
                   label={t.label}
                   name="label"
                   placeholder={t.labelPlaceholder}
+                  defaultValue={editAddress?.label || ""}
                 />
               </div>
 
@@ -159,23 +278,33 @@ export default function LieferadressenPage() {
                   label={t.company}
                   name="companyName"
                   placeholder={t.companyPlaceholder}
+                  defaultValue={editAddress?.companyName || ""}
                 />
               </div>
 
               <div style={styles.full}>
-                <Field label={t.contactPerson} name="contactName" />
+                <Field
+                  label={t.contactPerson}
+                  name="contactName"
+                  placeholder={t.contactPersonPlaceholder}
+                  defaultValue={editAddress?.contactName || ""}
+                />
               </div>
 
               <Field
                 label={t.phone}
                 name="phone"
                 placeholder={t.phonePlaceholder}
+                defaultValue={editAddress?.phone || ""}
               />
 
               <Field
                 label={t.country}
                 name="country"
-                defaultValue={locale === "en" ? "Germany" : "Deutschland"}
+                defaultValue={
+                  editAddress?.country ||
+                  (locale === "en" ? "Germany" : "Deutschland")
+                }
                 placeholder={t.countryPlaceholder}
               />
 
@@ -183,49 +312,77 @@ export default function LieferadressenPage() {
                 label={t.street}
                 name="street"
                 placeholder={t.streetPlaceholder}
+                defaultValue={editAddress?.street || ""}
               />
 
               <Field
                 label={t.houseNumber}
                 name="houseNumber"
                 placeholder={t.houseNumberPlaceholder}
+                defaultValue={editAddress?.houseNumber || ""}
               />
 
               <Field
                 label={t.postalCode}
                 name="postalCode"
                 placeholder={t.postalCodePlaceholder}
+                defaultValue={editAddress?.postalCode || ""}
               />
 
               <Field
                 label={t.city}
                 name="city"
                 placeholder={t.cityPlaceholder}
+                defaultValue={editAddress?.city || ""}
               />
 
               <div style={styles.full}>
-                <Field
-                  label={t.notes}
-                  name="notes"
-                  placeholder={t.notesPlaceholder}
-                />
+                <label style={{ display: "block" }}>
+                  <span style={styles.label}>{t.notes}</span>
+                  <textarea
+                    name="notes"
+                    placeholder={t.notesPlaceholder}
+                    defaultValue={editAddress?.notes || ""}
+                    rows={4}
+                    style={styles.textarea}
+                  />
+                </label>
               </div>
             </div>
 
             <label style={styles.checkboxRow}>
-              <input type="checkbox" name="isDefault" />
+              <input
+                type="checkbox"
+                name="isDefault"
+                defaultChecked={Boolean(editAddress?.isDefault)}
+              />
               {t.setAsDefault}
             </label>
 
-            <div style={{ marginTop: "18px" }}>
-              <button type="submit" style={button.secondary} disabled={isSaving}>
-                {isSaving ? t.saving : t.addShipping}
+            <div style={{ marginTop: "18px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
+              <button type="submit" style={button.primary} disabled={isSaving}>
+                {isSaving
+                  ? t.saving
+                  : isEditMode
+                  ? t.saveChanges
+                  : t.addShipping}
               </button>
+
+              {isEditMode ? (
+                <a href={`?lang=${locale}`} style={secondaryLinkStyle}>
+                  {t.cancel}
+                </a>
+              ) : null}
             </div>
           </Form>
         </section>
 
-        <section style={{ ...card.base, padding: "28px" }}>
+        <section
+          style={{
+            ...card.base,
+            padding: "28px",
+          }}
+        >
           <h3
             style={{
               margin: "0 0 18px",
@@ -271,6 +428,13 @@ export default function LieferadressenPage() {
                     </div>
 
                     <div style={styles.addressActions}>
+                      <a
+                        href={`?lang=${locale}&edit=${address.id}`}
+                        style={secondaryLinkStyle}
+                      >
+                        {t.edit}
+                      </a>
+
                       {!address.isDefault ? (
                         <Form method="post">
                           <input type="hidden" name="intent" value="setDefaultDelivery" />
@@ -340,7 +504,7 @@ function FeedbackBox({ children, success = true }) {
         color: success ? "#1f6b36" : "#8b2222",
         border: success ? "1px solid #cfe8d4" : "1px solid #efcaca",
         fontWeight: 700,
-        maxWidth: "960px",
+        maxWidth: "980px",
       }}
     >
       {children}
@@ -358,12 +522,33 @@ function AddressLine({ value, muted = false }) {
         fontSize: "15px",
         lineHeight: 1.6,
         marginBottom: "4px",
+        whiteSpace: "pre-wrap",
       }}
     >
       {value}
     </div>
   );
 }
+
+const cancelLinkStyle = {
+  textDecoration: "none",
+  padding: "12px 14px",
+  borderRadius: "14px",
+  background: "#fff",
+  color: colors.text,
+  fontWeight: 700,
+  textAlign: "center",
+  border: `1px solid ${colors.border}`,
+};
+
+const secondaryLinkStyle = {
+  ...button.secondary,
+  textDecoration: "none",
+  color: colors.text,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
 
 const styles = {
   formGrid: {
@@ -392,6 +577,20 @@ const styles = {
     border: "1px solid #e4dccb",
     borderRadius: "14px",
     padding: "14px 15px",
+  },
+
+  textarea: {
+    ...input.base,
+    background: "#fff",
+    border: "1px solid #e4dccb",
+    borderRadius: "14px",
+    padding: "14px 15px",
+    minHeight: "110px",
+    resize: "vertical",
+    width: "100%",
+    boxSizing: "border-box",
+    fontFamily:
+      'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   },
 
   checkboxRow: {

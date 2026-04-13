@@ -7,6 +7,26 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum PortalUserRole {
+  ADMIN
+  ORDERER
+  FINANCE
+}
+
+enum PortalOrderStatus {
+  OPEN
+  CONFIRMED
+  IN_PREPARATION
+  DELIVERED
+  CANCELLED
+}
+
+enum RecurringInterval {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
 model Session {
   id                  String   @id
   shop                String
@@ -37,17 +57,21 @@ model PortalUser {
   phone             String?
   passwordHash      String
   isActive          Boolean              @default(true)
-  isAdmin           Boolean              @default(false)
+  role              PortalUserRole       @default(ADMIN)
   mustResetPassword Boolean              @default(false)
   createdAt         DateTime             @default(now())
   updatedAt         DateTime             @updatedAt
 
-  billing       BillingProfile?
-  addresses     DeliveryAddress[]
-  authSessions  PortalSession[]
-  resetTokens   PasswordResetToken[]
-  costCenters   CostCenter[]
-  orders        PortalOrder[]
+  billing           BillingProfile?
+  addresses         DeliveryAddress[]
+  authSessions      PortalSession[]
+  resetTokens       PasswordResetToken[]
+  costCenters       CostCenter[]
+  contacts          PortalContact[]
+  locations         PortalLocation[]
+  orders            PortalOrder[]
+  orderTemplates    OrderTemplate[]
+  recurringPlans    RecurringOrderPlan[]
 }
 
 model BillingProfile {
@@ -70,24 +94,79 @@ model BillingProfile {
   user PortalUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model DeliveryAddress {
-  id          String   @id @default(cuid())
-  userId      String
-  label       String?
-  companyName String?
-  contactName String?
-  phone       String?
-  street      String
-  houseNumber String?
-  postalCode  String
-  city        String
-  country     String
-  notes       String?
-  isDefault   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model PortalLocation {
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  companyName  String?
+  contactName  String?
+  phone        String?
+  street       String?
+  houseNumber  String?
+  postalCode   String?
+  city         String?
+  country      String?
+  notes        String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  user PortalUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      PortalUser        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  addresses DeliveryAddress[]
+  contacts  PortalContact[]
+  orders    PortalOrder[]
+
+  @@index([userId])
+}
+
+model DeliveryAddress {
+  id           String   @id @default(cuid())
+  userId       String
+  locationId   String?
+  label        String?
+  companyName  String?
+  contactName  String?
+  phone        String?
+  street       String
+  houseNumber  String?
+  postalCode   String
+  city         String
+  country      String
+  notes        String?
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user      PortalUser      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  location  PortalLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  orders    PortalOrder[]
+
+  @@index([userId])
+  @@index([locationId])
+}
+
+model PortalContact {
+  id           String   @id @default(cuid())
+  userId       String
+  locationId   String?
+  firstName    String
+  lastName     String?
+  email        String
+  phone        String?
+  roleLabel    String?
+  department   String?
+  isPrimary    Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user      PortalUser      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  location  PortalLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  orders    PortalOrder[]
+
+  @@index([userId])
+  @@index([locationId])
+  @@index([email])
 }
 
 model CostCenter {
@@ -100,7 +179,12 @@ model CostCenter {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  user PortalUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           PortalUser         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders         PortalOrder[]
+  orderTemplates OrderTemplate[]
+  recurringPlans RecurringOrderPlan[]
+
+  @@index([userId])
 }
 
 model PortalSession {
@@ -111,6 +195,8 @@ model PortalSession {
   createdAt    DateTime @default(now())
 
   user PortalUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model PasswordResetToken {
@@ -122,38 +208,124 @@ model PasswordResetToken {
   createdAt  DateTime @default(now())
 
   user PortalUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model PortalOrder {
-  id             String            @id @default(cuid())
-  userId         String
-  orderNumber    String            @unique
-  orderType      String?
-  status         String
-  currency       String            @default("EUR")
-  subtotalAmount Decimal?          @db.Decimal(10, 2)
-  taxAmount      Decimal?          @db.Decimal(10, 2)
-  totalAmount    Decimal           @db.Decimal(10, 2)
-  notes          String?
-  deliveryDate   DateTime?
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+  id                 String            @id @default(cuid())
+  userId             String
+  orderNumber        String            @unique
+  orderType          String?
+  status             PortalOrderStatus @default(OPEN)
+  currency           String            @default("EUR")
 
-  user  PortalUser        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items PortalOrderItem[]
+  billingContactName String?
+  billingEmail       String?
+  billingPhone       String?
+  billingCompanyName String?
+
+  deliveryAddressId  String?
+  locationId         String?
+  contactId          String?
+  costCenterId       String?
+  referenceNumber    String?
+
+  subtotalAmount     Decimal?          @db.Decimal(10, 2)
+  taxAmount          Decimal?          @db.Decimal(10, 2)
+  totalAmount        Decimal           @db.Decimal(10, 2)
+
+  notes              String?
+  deliveryDate       DateTime?
+  orderedAt          DateTime          @default(now())
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  user             PortalUser       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveryAddress  DeliveryAddress? @relation(fields: [deliveryAddressId], references: [id], onDelete: SetNull)
+  location         PortalLocation?  @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  contact          PortalContact?   @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  costCenter       CostCenter?      @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
+  items            PortalOrderItem[]
+
+  @@index([userId])
+  @@index([deliveryAddressId])
+  @@index([locationId])
+  @@index([contactId])
+  @@index([costCenterId])
 }
 
 model PortalOrderItem {
-  id         String      @id @default(cuid())
+  id         String   @id @default(cuid())
   orderId    String
   title      String
-  quantity   Int         @default(1)
+  quantity   Int      @default(1)
   unit       String?
-  unitPrice  Decimal?    @db.Decimal(10, 2)
-  totalPrice Decimal?    @db.Decimal(10, 2)
+  unitPrice  Decimal? @db.Decimal(10, 2)
+  totalPrice Decimal? @db.Decimal(10, 2)
   notes      String?
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   order PortalOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+model OrderTemplate {
+  id             String              @id @default(cuid())
+  userId         String
+  costCenterId   String?
+  name           String
+  description    String?
+  orderType      String?
+  isActive       Boolean             @default(true)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  user           PortalUser          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  costCenter     CostCenter?         @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
+  items          OrderTemplateItem[]
+  recurringPlans RecurringOrderPlan[]
+
+  @@index([userId])
+  @@index([costCenterId])
+}
+
+model OrderTemplateItem {
+  id         String   @id @default(cuid())
+  templateId String
+  title      String
+  quantity   Int      @default(1)
+  unit       String?
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  template OrderTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId])
+}
+
+model RecurringOrderPlan {
+  id           String            @id @default(cuid())
+  userId       String
+  templateId   String
+  costCenterId String?
+  name         String
+  interval     RecurringInterval
+  weekday      Int?
+  dayOfMonth   Int?
+  nextRunAt    DateTime?
+  isActive     Boolean           @default(true)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  user       PortalUser    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template   OrderTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  costCenter CostCenter?   @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([templateId])
+  @@index([costCenterId])
 }

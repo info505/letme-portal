@@ -12,10 +12,7 @@ export async function loader({ request }) {
     throw redirect(`/login?lang=${locale}`);
   }
 
-  return {
-    user,
-    locale,
-  };
+  return { user, locale };
 }
 
 export default function DashboardPage() {
@@ -24,7 +21,7 @@ export default function DashboardPage() {
 
   return (
     <PortalLayout
-      title={`${t.welcome}, ${user.firstName || user.username || "User"}`}
+      title={`${t.welcome}, ${user.firstName || user.companyName || "User"}`}
       subtitle={t.accountText}
     >
       <div style={{ display: "grid", gap: "18px" }}>
@@ -42,7 +39,6 @@ export default function DashboardPage() {
             }}
           >
             <OverviewCard title={t.company} value={user.companyName || "—"} />
-            <OverviewCard title={t.username} value={user.username || "—"} />
             <OverviewCard title={t.email} value={user.email || "—"} />
             <OverviewCard title={t.phone} value={user.phone || "—"} />
           </div>
@@ -71,10 +67,10 @@ export default function DashboardPage() {
           />
 
           <MainCard
-            title={t.invoices}
-            text={t.invoicesText}
-            href={withLang("/rechnungen", locale)}
-            cta={t.openInvoices}
+            title={t.costCentersNav}
+            text={t.costCentersText}
+            href={withLang("/kostenstellen", locale)}
+            cta={t.costCentersNav}
           />
         </section>
       </div>

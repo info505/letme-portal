@@ -1,7 +1,7 @@
 import { redirect, useLoaderData } from "react-router";
 import { prisma } from "../lib/prisma.server.js";
 import { getUserFromRequest } from "../lib/auth.server.js";
-import { getLocaleFromRequest, dict } from "../lib/i18n.js";
+import { getLocaleFromRequest, dict, withLang } from "../lib/i18n.js";
 import { card, button, colors } from "../lib/ui.js";
 import PortalLayout from "../components/PortalLayout.jsx";
 
@@ -15,58 +15,123 @@ export async function loader({ request }) {
 
   const orders = await prisma.portalOrder.findMany({
     where: { userId: user.id },
-    include: { items: true },
+    include: {
+      items: true,
+      costCenter: true,
+      deliveryAddress: true,
+    },
     orderBy: { createdAt: "desc" },
   });
 
-  return { locale, orders };
+  return { user, locale, orders };
 }
 
 export default function BestellungenPage() {
   const { locale, orders } = useLoaderData();
   const t = dict[locale] || dict.de;
 
+  const deliveredCount = orders.filter((order) => order.status === "DELIVERED").length;
+  const openCount = orders.filter((order) =>
+    ["OPEN", "CONFIRMED", "IN_PREPARATION"].includes(order.status)
+  ).length;
+
   return (
     <PortalLayout title={t.ordersTitle} subtitle={t.ordersText}>
-      <section
-        style={{
-          ...card.base,
-          padding: "22px",
-          overflowX: "auto",
-        }}
-      >
+      <div style={{ display: "grid", gap: "18px" }}>
+        <section
+          style={{
+            ...card.base,
+            padding: "28px",
+            background:
+              "linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(248,244,236,1) 100%)",
+            border: "1px solid #ece2d0",
+          }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: "16px",
+            }}
+          >
+            <SummaryCard
+              eyebrow={locale === "de" ? "Bestellungen" : "Orders"}
+              value={String(orders.length)}
+              text={
+                locale === "de"
+                  ? "Alle bisherigen und aktuellen Bestellungen deines Firmenkontos."
+                  : "All past and current orders linked to your business account."
+              }
+            />
+
+            <SummaryCard
+              eyebrow={locale === "de" ? "Aktiv" : "Active"}
+              value={String(openCount)}
+              text={
+                locale === "de"
+                  ? "Offene, bestätigte oder aktuell in Bearbeitung befindliche Bestellungen."
+                  : "Orders that are open, confirmed or currently in preparation."
+              }
+            />
+
+            <SummaryCard
+              eyebrow={locale === "de" ? "Geliefert" : "Delivered"}
+              value={String(deliveredCount)}
+              text={
+                locale === "de"
+                  ? "Bereits erfolgreich ausgelieferte Bestellungen."
+                  : "Orders that have already been delivered successfully."
+              }
+            />
+          </div>
+        </section>
+
         {orders.length === 0 ? (
           <EmptyOrders locale={locale} />
         ) : (
-          <div style={{ minWidth: "860px" }}>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1.2fr 1fr 1fr 1fr 1fr 1fr",
-                gap: "16px",
-                padding: "14px 16px",
-                borderBottom: `1px solid ${colors.border}`,
-                color: colors.muted,
-                fontWeight: 800,
-                fontSize: "13px",
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-              }}
-            >
-              <div>{t.orderNumber}</div>
-              <div>{t.date}</div>
-              <div>{t.orderType}</div>
-              <div>{t.status}</div>
-              <div>{t.amount}</div>
-              <div>{t.positions}</div>
+          <section
+            style={{
+              ...card.base,
+              padding: "28px",
+            }}
+          >
+            <div style={{ marginBottom: "18px" }}>
+              <h2
+                style={{
+                  margin: "0 0 8px",
+                  fontSize: "24px",
+                  color: colors.text,
+                }}
+              >
+                {t.ordersTitle}
+              </h2>
+
+              <p
+                style={{
+                  margin: 0,
+                  color: colors.muted,
+                  fontSize: "14px",
+                  lineHeight: 1.6,
+                }}
+              >
+                {locale === "de"
+                  ? "Hier findest du alle verknüpften Bestellungen inklusive Status, Betrag und Positionen."
+                  : "Here you can find all linked orders including status, amount and items."}
+              </p>
             </div>
 
-            {orders.map((order) => (
-              <OrderRow key={order.id} order={order} locale={locale} />
-            ))}
-          </div>
+            <div style={{ display: "grid", gap: "14px" }}>
+              {orders.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  locale={locale}
+                />
+              ))}
+            </div>
+          </section>
         )}
-      </section>
+      </div>
     </PortalLayout>
   );
 }
@@ -82,8 +147,9 @@ function EmptyOrders({ locale }) {
     locale === "en" ? "Start first order" : "Erste Bestellung starten";
 
   return (
-    <div
+    <section
       style={{
+        ...card.base,
         padding: "54px 24px",
         textAlign: "center",
       }}
@@ -91,7 +157,7 @@ function EmptyOrders({ locale }) {
       <h3
         style={{
           margin: "0 0 10px",
-          fontSize: "42px",
+          fontSize: "40px",
           lineHeight: 1.05,
           color: colors.text,
         }}
@@ -105,7 +171,7 @@ function EmptyOrders({ locale }) {
           maxWidth: "720px",
           color: colors.muted,
           lineHeight: 1.7,
-          fontSize: "18px",
+          fontSize: "17px",
         }}
       >
         {text}
@@ -126,36 +192,65 @@ function EmptyOrders({ locale }) {
       >
         {cta}
       </a>
-    </div>
+    </section>
   );
 }
 
-function OrderRow({ order, locale }) {
+function OrderCard({ order, locale }) {
   const statusLabel = getStatusLabel(order.status, locale);
   const statusStyle = getStatusStyle(order.status);
 
   return (
     <div
       style={{
+        border: `1px solid ${colors.border}`,
+        borderRadius: "20px",
+        background: "#fff",
+        padding: "20px",
         display: "grid",
-        gridTemplateColumns: "1.2fr 1fr 1fr 1fr 1fr 1fr",
         gap: "16px",
-        padding: "16px",
-        borderBottom: `1px solid ${colors.border}`,
-        alignItems: "center",
-        color: colors.text,
-        fontSize: "15px",
       }}
     >
-      <div style={{ fontWeight: 700 }}>{order.orderNumber}</div>
-      <div>{formatDate(order.createdAt, locale)}</div>
-      <div>{order.orderType || "—"}</div>
-      <div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: "16px",
+          alignItems: "flex-start",
+          flexWrap: "wrap",
+        }}
+      >
+        <div>
+          <div
+            style={{
+              fontSize: "12px",
+              fontWeight: 800,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: colors.muted,
+              marginBottom: "8px",
+            }}
+          >
+            {locale === "de" ? "Bestellung" : "Order"}
+          </div>
+
+          <div
+            style={{
+              fontSize: "24px",
+              fontWeight: 800,
+              color: colors.text,
+              lineHeight: 1.1,
+            }}
+          >
+            {order.orderNumber}
+          </div>
+        </div>
+
         <span
           style={{
             display: "inline-flex",
             alignItems: "center",
-            padding: "6px 10px",
+            padding: "8px 12px",
             borderRadius: "999px",
             fontSize: "13px",
             fontWeight: 800,
@@ -165,10 +260,234 @@ function OrderRow({ order, locale }) {
           {statusLabel}
         </span>
       </div>
-      <div style={{ fontWeight: 700 }}>
-        {formatMoney(order.totalAmount, order.currency || "EUR", locale)}
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
+          gap: "12px",
+        }}
+      >
+        <InfoBox
+          label={locale === "de" ? "Datum" : "Date"}
+          value={formatDate(order.createdAt, locale)}
+        />
+        <InfoBox
+          label={locale === "de" ? "Typ" : "Type"}
+          value={order.orderType || "—"}
+        />
+        <InfoBox
+          label={locale === "de" ? "Betrag" : "Amount"}
+          value={formatMoney(order.totalAmount, order.currency || "EUR", locale)}
+        />
+        <InfoBox
+          label={locale === "de" ? "Positionen" : "Items"}
+          value={String(order.items?.length || 0)}
+        />
       </div>
-      <div>{order.items?.length || 0}</div>
+
+      {(order.costCenter?.name || order.deliveryAddress?.label || order.referenceNumber) ? (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: "12px",
+          }}
+        >
+          {order.costCenter?.name ? (
+            <MetaRow
+              label={locale === "de" ? "Kostenstelle" : "Cost center"}
+              value={order.costCenter.name}
+            />
+          ) : null}
+
+          {order.deliveryAddress?.label ? (
+            <MetaRow
+              label={locale === "de" ? "Lieferadresse" : "Delivery address"}
+              value={order.deliveryAddress.label}
+            />
+          ) : null}
+
+          {order.referenceNumber ? (
+            <MetaRow
+              label={locale === "de" ? "Referenz" : "Reference"}
+              value={order.referenceNumber}
+            />
+          ) : null}
+        </div>
+      ) : null}
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: "12px",
+          alignItems: "center",
+          flexWrap: "wrap",
+        }}
+      >
+        <div
+          style={{
+            color: colors.muted,
+            fontSize: "13px",
+            lineHeight: 1.5,
+          }}
+        >
+          {locale === "de"
+            ? "Als Nächstes können wir hier Detailansicht und Reorder anbinden."
+            : "Next, we can connect order detail view and reorder here."}
+        </div>
+
+        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <a
+            href={withLang(`/bestellungen/${order.id}`, locale)}
+            style={{
+              ...button.secondary,
+              textDecoration: "none",
+              color: colors.text,
+            }}
+          >
+            {locale === "de" ? "Details" : "Details"}
+          </a>
+
+          <a
+            href="#"
+            style={{
+              ...button.primary,
+              textDecoration: "none",
+              color: "#fff",
+              background: "linear-gradient(135deg, #c8a96a, #b8934f)",
+              pointerEvents: "none",
+              opacity: 0.75,
+            }}
+          >
+            {locale === "de" ? "Erneut bestellen" : "Reorder"}
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SummaryCard({ eyebrow, value, text }) {
+  return (
+    <div
+      style={{
+        border: `1px solid ${colors.border}`,
+        borderRadius: "18px",
+        padding: "20px",
+        background: "#fff",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "12px",
+          fontWeight: 800,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          color: colors.muted,
+          marginBottom: "10px",
+        }}
+      >
+        {eyebrow}
+      </div>
+
+      <div
+        style={{
+          fontSize: "34px",
+          fontWeight: 800,
+          color: colors.text,
+          lineHeight: 1.1,
+          marginBottom: "8px",
+        }}
+      >
+        {value}
+      </div>
+
+      <div
+        style={{
+          fontSize: "14px",
+          lineHeight: 1.6,
+          color: colors.muted,
+        }}
+      >
+        {text}
+      </div>
+    </div>
+  );
+}
+
+function InfoBox({ label, value }) {
+  return (
+    <div
+      style={{
+        border: `1px solid ${colors.border}`,
+        borderRadius: "16px",
+        padding: "14px 16px",
+        background: "#fcfbf8",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "12px",
+          fontWeight: 800,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          color: colors.muted,
+          marginBottom: "8px",
+        }}
+      >
+        {label}
+      </div>
+
+      <div
+        style={{
+          fontSize: "16px",
+          fontWeight: 700,
+          color: colors.text,
+          lineHeight: 1.4,
+          wordBreak: "break-word",
+        }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function MetaRow({ label, value }) {
+  return (
+    <div
+      style={{
+        padding: "12px 14px",
+        borderRadius: "14px",
+        background: "#f8f4ec",
+        border: "1px solid #ece2d0",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "12px",
+          fontWeight: 800,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          color: colors.muted,
+          marginBottom: "6px",
+        }}
+      >
+        {label}
+      </div>
+
+      <div
+        style={{
+          fontSize: "14px",
+          fontWeight: 700,
+          color: colors.text,
+          lineHeight: 1.5,
+        }}
+      >
+        {value}
+      </div>
     </div>
   );
 }
@@ -196,11 +515,11 @@ function formatMoney(value, currency = "EUR", locale) {
 
 function getStatusLabel(status, locale) {
   const map = {
-    open: locale === "en" ? "Open" : "Offen",
-    confirmed: locale === "en" ? "Confirmed" : "Bestätigt",
-    in_preparation: locale === "en" ? "In preparation" : "In Vorbereitung",
-    delivered: locale === "en" ? "Delivered" : "Geliefert",
-    cancelled: locale === "en" ? "Cancelled" : "Storniert",
+    OPEN: locale === "en" ? "Open" : "Offen",
+    CONFIRMED: locale === "en" ? "Confirmed" : "Bestätigt",
+    IN_PREPARATION: locale === "en" ? "In preparation" : "In Vorbereitung",
+    DELIVERED: locale === "en" ? "Delivered" : "Geliefert",
+    CANCELLED: locale === "en" ? "Cancelled" : "Storniert",
   };
 
   return map[status] || status || "—";
@@ -208,25 +527,25 @@ function getStatusLabel(status, locale) {
 
 function getStatusStyle(status) {
   switch (status) {
-    case "delivered":
+    case "DELIVERED":
       return {
         background: "#edf7ee",
         color: "#1f6b36",
         border: "1px solid #cfe8d4",
       };
-    case "confirmed":
+    case "CONFIRMED":
       return {
         background: "#eef4ff",
         color: "#285ea8",
         border: "1px solid #cfddf6",
       };
-    case "in_preparation":
+    case "IN_PREPARATION":
       return {
         background: "#fff6e9",
         color: "#8a5a00",
         border: "1px solid #f0dfbf",
       };
-    case "cancelled":
+    case "CANCELLED":
       return {
         background: "#fff1f1",
         color: "#8b2222",

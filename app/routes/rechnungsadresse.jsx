@@ -96,38 +96,36 @@ export default function RechnungsadressePage() {
   const isSaving = navigation.state === "submitting";
 
   return (
-    <PortalLayout title={t.billingAddressTitle} subtitle={t.billingAddressText}>
+    <PortalLayout
+      title={t.billingAddressTitle}
+      subtitle={t.billingAddressText}
+    >
       {actionData?.message ? (
-        <FeedbackBox success={actionData?.ok}>{actionData.message}</FeedbackBox>
+        <FeedbackBox success={actionData?.ok}>
+          {actionData.message}
+        </FeedbackBox>
       ) : null}
 
-      <section
-        style={{
-          ...card.base,
-          padding: "28px",
-          maxWidth: "960px",
-        }}
-      >
-        <Form method="post">
-          <div style={styles.formGrid}>
-            <div style={styles.full}>
-              <Field
-                label={t.company}
-                name="companyName"
-                defaultValue={billing?.companyName || user.companyName || ""}
-              />
-            </div>
+      <section style={{ ...card.base, padding: "30px", maxWidth: "980px" }}>
+        <Form method="post" style={{ display: "grid", gap: "22px" }}>
+          
+          <FormSection title={locale === "de" ? "Firma" : "Company"}>
+            <Field
+              label={t.company}
+              name="companyName"
+              defaultValue={billing?.companyName || user.companyName || ""}
+            />
+          </FormSection>
 
-            <div style={styles.full}>
-              <Field
-                label={t.contactPerson}
-                name="contactName"
-                defaultValue={
-                  billing?.contactName ||
-                  `${user.firstName || ""} ${user.lastName || ""}`.trim()
-                }
-              />
-            </div>
+          <FormSection title={locale === "de" ? "Ansprechpartner" : "Contact"}>
+            <Field
+              label={t.contactPerson}
+              name="contactName"
+              defaultValue={
+                billing?.contactName ||
+                `${user.firstName || ""} ${user.lastName || ""}`.trim()
+              }
+            />
 
             <Field
               label={t.email}
@@ -141,7 +139,9 @@ export default function RechnungsadressePage() {
               name="phone"
               defaultValue={billing?.phone || user.phone || ""}
             />
+          </FormSection>
 
+          <FormSection title={locale === "de" ? "Adresse" : "Address"}>
             <Field
               label={t.street}
               name="street"
@@ -178,31 +178,71 @@ export default function RechnungsadressePage() {
               }
               placeholder={t.countryPlaceholder}
             />
+          </FormSection>
 
+          <FormSection title={locale === "de" ? "Abrechnung" : "Billing"}>
             <Field
               label={t.vatId}
               name="vatId"
               defaultValue={billing?.vatId || ""}
             />
 
-            <div style={styles.full}>
-              <Field
-                label={t.invoiceEmail}
-                name="invoiceEmail"
-                type="email"
-                defaultValue={billing?.invoiceEmail || ""}
-              />
-            </div>
-          </div>
+            <Field
+              label={t.invoiceEmail}
+              name="invoiceEmail"
+              type="email"
+              defaultValue={billing?.invoiceEmail || ""}
+            />
+          </FormSection>
 
-          <div style={{ marginTop: "18px" }}>
-            <button type="submit" style={styles.primaryButton} disabled={isSaving}>
+          <div style={{ marginTop: "10px" }}>
+            <button
+              type="submit"
+              style={{
+                ...button.primary,
+                minWidth: "220px",
+                background:
+                  "linear-gradient(135deg, #c8a96a, #b8934f)",
+                boxShadow: "0 10px 25px rgba(200,169,106,0.2)",
+              }}
+              disabled={isSaving}
+            >
               {isSaving ? t.saving : t.save}
             </button>
           </div>
         </Form>
       </section>
     </PortalLayout>
+  );
+}
+
+/* COMPONENTS */
+
+function FormSection({ title, children }) {
+  return (
+    <div
+      style={{
+        border: `1px solid ${colors.border}`,
+        borderRadius: "18px",
+        padding: "20px",
+        background: "#fcfbf8",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "13px",
+          fontWeight: 800,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          color: colors.muted,
+          marginBottom: "14px",
+        }}
+      >
+        {title}
+      </div>
+
+      <div style={styles.formGrid}>{children}</div>
+    </div>
   );
 }
 
@@ -238,7 +278,7 @@ function FeedbackBox({ children, success = true }) {
         color: success ? "#1f6b36" : "#8b2222",
         border: success ? "1px solid #cfe8d4" : "1px solid #efcaca",
         fontWeight: 700,
-        maxWidth: "960px",
+        maxWidth: "980px",
       }}
     >
       {children}
@@ -246,15 +286,13 @@ function FeedbackBox({ children, success = true }) {
   );
 }
 
+/* STYLES */
+
 const styles = {
   formGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
     gap: "14px",
-  },
-
-  full: {
-    gridColumn: "1 / -1",
   },
 
   label: {
@@ -273,10 +311,5 @@ const styles = {
     border: "1px solid #e4dccb",
     borderRadius: "14px",
     padding: "14px 15px",
-  },
-
-  primaryButton: {
-    ...button.primary,
-    background: "linear-gradient(135deg, #c8a96a, #b8934f)",
   },
 };

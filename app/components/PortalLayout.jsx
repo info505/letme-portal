@@ -2,6 +2,44 @@ import { useLoaderData, useLocation } from "react-router";
 import { colors } from "../lib/ui.js";
 import { dict, withLang } from "../lib/i18n.js";
 
+function getInitials(user) {
+  const source =
+    user?.firstName?.[0] ||
+    user?.companyName?.[0] ||
+    user?.email?.[0] ||
+    user?.username?.[0] ||
+    "P";
+
+  return source.toUpperCase();
+}
+
+function getDisplayName(user) {
+  const full = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim();
+  if (full) return full;
+  if (user?.companyName) return user.companyName;
+  if (user?.email) return user.email;
+  return "Portal";
+}
+
+function SidebarLink({ href, label, active = false }) {
+  return (
+    <a
+      href={href}
+      style={{
+        textDecoration: "none",
+        padding: "12px 14px",
+        borderRadius: "14px",
+        background: active ? "#f6f1e8" : "transparent",
+        border: active ? "1px solid #eadfc8" : "1px solid transparent",
+        color: active ? colors.text : colors.muted,
+        fontWeight: active ? 700 : 600,
+      }}
+    >
+      {label}
+    </a>
+  );
+}
+
 export default function PortalLayout({ children, title, subtitle }) {
   const location = useLocation();
   const data = useLoaderData?.() || {};
@@ -128,7 +166,7 @@ export default function PortalLayout({ children, title, subtitle }) {
                 lineHeight: 1.4,
               }}
             >
-              {user ? fullName(user) || user.username || "Account" : "Portal"}
+              {getDisplayName(user)}
             </div>
 
             <div
@@ -140,7 +178,7 @@ export default function PortalLayout({ children, title, subtitle }) {
                 wordBreak: "break-word",
               }}
             >
-              {user?.companyName || user?.email || ""}
+              {user?.companyName || ""}
             </div>
           </div>
 
@@ -164,6 +202,11 @@ export default function PortalLayout({ children, title, subtitle }) {
               href={withLang("/lieferadressen", locale)}
               label={t.shippingAddressesNav}
               active={location.pathname === "/lieferadressen"}
+            />
+            <SidebarLink
+              href={withLang("/kostenstellen", locale)}
+              label={t.costCentersNav}
+              active={location.pathname === "/kostenstellen"}
             />
             <SidebarLink
               href={withLang("/rechnungen", locale)}
@@ -258,36 +301,6 @@ export default function PortalLayout({ children, title, subtitle }) {
       </div>
     </div>
   );
-}
-
-function SidebarLink({ href, label, active = false }) {
-  return (
-    <a
-      href={href}
-      style={{
-        textDecoration: "none",
-        padding: "12px 14px",
-        borderRadius: "14px",
-        background: active ? "#f6f1e8" : "transparent",
-        border: active ? "1px solid #eadfc8" : "1px solid transparent",
-        color: active ? colors.text : colors.muted,
-        fontWeight: active ? 700 : 600,
-      }}
-    >
-      {label}
-    </a>
-  );
-}
-
-function getInitials(user) {
-  const a = user?.firstName?.[0] || "";
-  const b = user?.lastName?.[0] || "";
-  const c = user?.username?.[0] || "";
-  return (a + b || c || "A").toUpperCase();
-}
-
-function fullName(user) {
-  return [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim();
 }
 
 const sidebarPrimaryLink = {

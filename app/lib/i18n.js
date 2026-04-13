@@ -17,6 +17,7 @@ export const dict = {
     addresses: "Adressen",
     billingAddressNav: "Rechnungsadresse",
     shippingAddressesNav: "Lieferadressen",
+    costCentersNav: "Kostenstellen",
     invoices: "Rechnungen",
     orderNow: "Jetzt bestellen",
     logout: "Abmelden",
@@ -79,6 +80,8 @@ export const dict = {
     shippingAddressesTitle: "Lieferadressen",
     shippingAddressesText:
       "Verwalte deine gespeicherten Lieferorte für zukünftige Catering-Bestellungen.",
+    shippingAddressesFormText:
+      "Verwalte hier deine Lieferorte für zukünftige Catering-Bestellungen und interne Firmenstandorte.",
     billingAddress: "Rechnungsadresse",
     shippingAddresses: "Lieferadressen",
     noShippingAddress: "Noch keine Lieferadresse vorhanden.",
@@ -113,13 +116,19 @@ export const dict = {
     save: "Speichern",
     saving: "Wird gespeichert...",
     delete: "Löschen",
+    edit: "Bearbeiten",
+    cancel: "Abbrechen",
+    saveChanges: "Änderungen speichern",
+
     defaultAddress: "Standardadresse",
     setAsDefault: "Als Standard setzen",
     billingUpdated: "Rechnungsadresse wurde gespeichert.",
     deliveryCreated: "Lieferadresse wurde gespeichert.",
+    deliveryUpdated: "Lieferadresse wurde aktualisiert.",
     deliveryDeleted: "Lieferadresse wurde gelöscht.",
     deliveryDefaultUpdated: "Standard-Lieferadresse wurde aktualisiert.",
     addressFormError: "Bitte fülle die Pflichtfelder aus.",
+
     street: "Straße",
     streetPlaceholder: "Straßenname",
     houseNumber: "Hausnummer",
@@ -137,13 +146,21 @@ export const dict = {
     invoiceEmail: "Rechnungs-E-Mail",
     vatId: "USt-IdNr.",
     addDeliveryTitle: "Neue Lieferadresse",
+    editDeliveryTitle: "Lieferadresse bearbeiten",
+    editDeliveryText:
+      "Passe hier eine bestehende Lieferadresse an und speichere die Änderungen direkt im Kundenkonto.",
     existingDeliveryAddresses: "Gespeicherte Lieferadressen",
     noDeliverySaved:
       "Sobald du eine Lieferadresse anlegst, erscheint sie hier.",
+    addShipping: "Lieferadresse speichern",
+    contactPerson: "Ansprechpartner",
+    contactPersonPlaceholder: "z. B. Max Mustermann",
 
     forgotPasswordTitle: "Passwort zurücksetzen",
     forgotPasswordText:
       "Gib die E-Mail-Adresse deines Kontos ein. Den Mailversand bauen wir im nächsten Schritt vollständig an.",
+    forgotPasswordLiveText:
+      "Gib die E-Mail-Adresse deines Kontos ein. Wenn ein Konto existiert, senden wir dir einen Link zum Zurücksetzen deines Passworts.",
     requestResetLink: "Link anfordern",
     resetEmailLabel: "E-Mail-Adresse",
     sendInstructions: "Anleitung senden",
@@ -156,6 +173,41 @@ export const dict = {
       "Bitte gib eine gültige E-Mail-Adresse ein.",
     forgotPasswordNotLive:
       "Die Anfrage wurde erfasst. Der echte E-Mail-Versand ist aktuell noch nicht aktiv.",
+    forgotPasswordMailSent:
+      "Wenn ein Konto mit dieser E-Mail existiert, wurde ein Reset-Link versendet.",
+    resetPasswordFormTitle: "Neues Passwort setzen",
+    resetPasswordFormText:
+      "Vergib hier ein neues Passwort für dein Konto.",
+    resetPasswordButton: "Neues Passwort speichern",
+    resetTokenInvalid:
+      "Der Reset-Link ist ungültig oder abgelaufen.",
+
+    costCentersTitle: "Kostenstellen",
+    costCentersNav: "Kostenstellen",
+    costCentersText:
+      "Verwalte hier Kostenstellen für interne Zuordnung, Referenzen und zukünftige Bestellungen.",
+    addCostCenter: "Kostenstelle hinzufügen",
+    costCentersIntro:
+      "Lege hier interne Kostenstellen für Teams, Abteilungen oder Projekte an. Diese können später für Bestellungen, Referenzen und Auswertungen genutzt werden.",
+    existingCostCenters: "Gespeicherte Kostenstellen",
+    costCentersListText:
+      "Hier siehst du alle bisher angelegten Kostenstellen deines Kontos.",
+    noCostCenters: "Noch keine Kostenstellen vorhanden.",
+    costCenterName: "Name",
+    costCenterNamePlaceholder: "z. B. Marketing, Office Berlin, Eventteam",
+    costCenterCode: "Code",
+    costCenterCodePlaceholder: "z. B. MKT-01",
+    costCenterNameRequired: "Name ist erforderlich",
+    costCenterDescriptionPlaceholder:
+      "Optionale Beschreibung oder interne Hinweise",
+    costCenterCreated: "Kostenstelle wurde gespeichert.",
+    costCenterDeleted: "Kostenstelle wurde gelöscht.",
+    confirmDeleteCostCenter:
+      "Möchtest du diese Kostenstelle wirklich löschen?",
+    createdAtLabel: "Erstellt am",
+    description: "Beschreibung",
+
+    generalError: "Etwas ist schiefgelaufen.",
   },
 
   en: {
@@ -167,6 +219,7 @@ export const dict = {
     addresses: "Addresses",
     billingAddressNav: "Billing address",
     shippingAddressesNav: "Delivery addresses",
+    costCentersNav: "Cost centers",
     invoices: "Invoices",
     orderNow: "Order now",
     logout: "Logout",
@@ -229,6 +282,8 @@ export const dict = {
     shippingAddressesTitle: "Delivery addresses",
     shippingAddressesText:
       "Manage your saved delivery locations for future catering orders.",
+    shippingAddressesFormText:
+      "Manage your delivery locations for future catering orders and internal company sites.",
     billingAddress: "Billing address",
     shippingAddresses: "Delivery addresses",
     noShippingAddress: "No delivery address yet.",
@@ -263,13 +318,19 @@ export const dict = {
     save: "Save",
     saving: "Saving...",
     delete: "Delete",
+    edit: "Edit",
+    cancel: "Cancel",
+    saveChanges: "Save changes",
+
     defaultAddress: "Default address",
     setAsDefault: "Set as default",
     billingUpdated: "Billing address has been saved.",
     deliveryCreated: "Delivery address has been saved.",
+    deliveryUpdated: "Delivery address has been updated.",
     deliveryDeleted: "Delivery address has been deleted.",
     deliveryDefaultUpdated: "Default delivery address has been updated.",
     addressFormError: "Please fill in all required fields.",
+
     street: "Street",
     streetPlaceholder: "Street name",
     houseNumber: "House number",
@@ -287,13 +348,21 @@ export const dict = {
     invoiceEmail: "Invoice email",
     vatId: "VAT ID",
     addDeliveryTitle: "New delivery address",
+    editDeliveryTitle: "Edit delivery address",
+    editDeliveryText:
+      "Update an existing delivery address here and save the changes directly in your account.",
     existingDeliveryAddresses: "Saved delivery addresses",
     noDeliverySaved:
       "As soon as you add a delivery address, it will appear here.",
+    addShipping: "Save delivery address",
+    contactPerson: "Contact person",
+    contactPersonPlaceholder: "e.g. Max Mustermann",
 
     forgotPasswordTitle: "Reset password",
     forgotPasswordText:
       "Enter the email address of your account. The real email delivery will be connected in the next step.",
+    forgotPasswordLiveText:
+      "Enter the email address of your account. If an account exists, we will send you a link to reset your password.",
     requestResetLink: "Request link",
     resetEmailLabel: "Email address",
     sendInstructions: "Send instructions",
@@ -306,5 +375,40 @@ export const dict = {
       "Please enter a valid email address.",
     forgotPasswordNotLive:
       "Your request was recorded. Real email delivery is not active yet.",
+    forgotPasswordMailSent:
+      "If an account with this email exists, a reset link has been sent.",
+    resetPasswordFormTitle: "Set new password",
+    resetPasswordFormText:
+      "Create a new password for your account here.",
+    resetPasswordButton: "Save new password",
+    resetTokenInvalid:
+      "The reset link is invalid or has expired.",
+
+    costCentersTitle: "Cost centers",
+    costCentersNav: "Cost centers",
+    costCentersText:
+      "Manage cost centers for internal allocation, references and future orders.",
+    addCostCenter: "Add cost center",
+    costCentersIntro:
+      "Create internal cost centers for teams, departments or projects. These can later be used for orders, references and reporting.",
+    existingCostCenters: "Saved cost centers",
+    costCentersListText:
+      "Here you can see all cost centers created for your account.",
+    noCostCenters: "No cost centers yet.",
+    costCenterName: "Name",
+    costCenterNamePlaceholder: "e.g. Marketing, Office Berlin, Event Team",
+    costCenterCode: "Code",
+    costCenterCodePlaceholder: "e.g. MKT-01",
+    costCenterNameRequired: "Name is required",
+    costCenterDescriptionPlaceholder:
+      "Optional description or internal notes",
+    costCenterCreated: "Cost center has been saved.",
+    costCenterDeleted: "Cost center has been deleted.",
+    confirmDeleteCostCenter:
+      "Do you really want to delete this cost center?",
+    createdAtLabel: "Created on",
+    description: "Description",
+
+    generalError: "Something went wrong.",
   },
 };
