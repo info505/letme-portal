@@ -57,6 +57,7 @@ model PortalUser {
   phone             String?
   passwordHash      String
   isActive          Boolean              @default(true)
+  isAdmin           Boolean              @default(false)
   role              PortalUserRole       @default(ADMIN)
   mustResetPassword Boolean              @default(false)
   createdAt         DateTime             @default(now())
