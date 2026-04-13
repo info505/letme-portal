@@ -10,6 +10,7 @@ import { getUserFromRequest } from "../lib/auth.server.js";
 import { getLocaleFromRequest, dict, withLang } from "../lib/i18n.js";
 import {
   createPasswordResetToken,
+  sendPasswordResetEmail,
   invalidateAllUserResetTokens,
 } from "../lib/password-reset.server.js";
 import { card, button, input, colors, layout } from "../lib/ui.js";
@@ -45,12 +46,27 @@ export async function action({ request }) {
   });
 
   if (user) {
-    await invalidateAllUserResetTokens(user.id);
-    const { rawToken } = await createPasswordResetToken(user.id);
+    try {
+      await invalidateAllUserResetTokens(user.id);
+      const { rawToken } = await createPasswordResetToken(user.id);
 
-    // TEMPORÄR: Mailversand deaktiviert, damit wir prüfen können, ob SMTP das Problem ist
-    console.log("PASSWORD_RESET_TEST_TOKEN:", rawToken);
-    console.log("PASSWORD_RESET_TEST_EMAIL:", user.email);
+      await sendPasswordResetEmail({
+        user,
+        locale,
+        rawToken,
+        request,
+      });
+    } catch (error) {
+      console.error("PASSWORD_RESET_MAIL_ERROR:", error);
+
+      return {
+        ok: false,
+        message:
+          locale === "en"
+            ? "The reset email could not be sent right now."
+            : "Die Reset-E-Mail konnte gerade nicht versendet werden.",
+      };
+    }
   }
 
   return {
