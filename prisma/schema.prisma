@@ -26,3 +26,85 @@ model Session {
   refreshToken        String?
   refreshTokenExpires DateTime?
 }
+
+model PortalUser {
+  id               String               @id @default(cuid())
+  companyName      String
+  firstName        String
+  lastName         String
+  username         String               @unique
+  email            String               @unique
+  phone            String?
+  passwordHash     String
+  isActive         Boolean              @default(true)
+  isAdmin          Boolean              @default(false)
+  mustResetPassword Boolean             @default(false)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  billing          BillingProfile?
+  addresses        DeliveryAddress[]
+  authSessions     PortalSession[]
+  resetTokens      PasswordResetToken[]
+}
+
+model BillingProfile {
+  id            String     @id @default(cuid())
+  userId        String     @unique
+  companyName   String?
+  contactName   String?
+  email         String?
+  phone         String?
+  street        String?
+  houseNumber   String?
+  postalCode    String?
+  city          String?
+  country       String?
+  vatId         String?
+  invoiceEmail  String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  user PortalUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model DeliveryAddress {
+  id           String   @id @default(cuid())
+  userId       String
+  label        String?
+  companyName  String?
+  contactName  String?
+  phone        String?
+  street       String
+  houseNumber  String?
+  postalCode   String
+  city         String
+  country      String
+  notes        String?
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user PortalUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PortalSession {
+  id           String   @id @default(cuid())
+  userId       String
+  sessionToken String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user PortalUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PasswordResetToken {
+  id         String   @id @default(cuid())
+  userId     String
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  user PortalUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
