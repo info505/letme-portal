@@ -4,7 +4,7 @@ import { createRequestHandler } from "@react-router/express";
 const app = express();
 
 // ❗ WICHTIG: Railway Port verwenden
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 
 const build = await import("./build/server/index.js");
 
