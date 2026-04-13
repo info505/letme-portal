@@ -47,44 +47,45 @@ model PortalUser {
   authSessions  PortalSession[]
   resetTokens   PasswordResetToken[]
   costCenters   CostCenter[]
+  orders        PortalOrder[]
 }
 
 model BillingProfile {
-  id            String   @id @default(cuid())
-  userId        String   @unique
-  companyName   String?
-  contactName   String?
-  email         String?
-  phone         String?
-  street        String?
-  houseNumber   String?
-  postalCode    String?
-  city          String?
-  country       String?
-  vatId         String?
-  invoiceEmail  String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  companyName  String?
+  contactName  String?
+  email        String?
+  phone        String?
+  street       String?
+  houseNumber  String?
+  postalCode   String?
+  city         String?
+  country      String?
+  vatId        String?
+  invoiceEmail String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   user PortalUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model DeliveryAddress {
-  id           String   @id @default(cuid())
-  userId       String
-  label        String?
-  companyName  String?
-  contactName  String?
-  phone        String?
-  street       String
-  houseNumber  String?
-  postalCode   String
-  city         String
-  country      String
-  notes        String?
-  isDefault    Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String   @id @default(cuid())
+  userId      String
+  label       String?
+  companyName String?
+  contactName String?
+  phone       String?
+  street      String
+  houseNumber String?
+  postalCode  String
+  city        String
+  country     String
+  notes       String?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   user PortalUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -121,4 +122,38 @@ model PasswordResetToken {
   createdAt  DateTime @default(now())
 
   user PortalUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PortalOrder {
+  id             String            @id @default(cuid())
+  userId         String
+  orderNumber    String            @unique
+  orderType      String?
+  status         String
+  currency       String            @default("EUR")
+  subtotalAmount Decimal?          @db.Decimal(10, 2)
+  taxAmount      Decimal?          @db.Decimal(10, 2)
+  totalAmount    Decimal           @db.Decimal(10, 2)
+  notes          String?
+  deliveryDate   DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  user  PortalUser        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items PortalOrderItem[]
+}
+
+model PortalOrderItem {
+  id         String      @id @default(cuid())
+  orderId    String
+  title      String
+  quantity   Int         @default(1)
+  unit       String?
+  unitPrice  Decimal?    @db.Decimal(10, 2)
+  totalPrice Decimal?    @db.Decimal(10, 2)
+  notes      String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  order PortalOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }

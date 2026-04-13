@@ -1,210 +1,218 @@
 export function getLocaleFromRequest(request) {
   const url = new URL(request.url);
-  const lang = url.searchParams.get("lang");
-
-  if (lang === "en") return "en";
-  return "de";
+  return url.searchParams.get("lang") || "de";
 }
 
-export function withLang(path, locale) {
-  const separator = path.includes("?") ? "&" : "?";
-  return `${path}${separator}lang=${locale}`;
+export function withLang(path, lang) {
+  return `${path}?lang=${lang}`;
 }
 
 export const dict = {
   de: {
-    brand: "Let Me Bowl Catering",
-    menu: "Menü",
-    account: "Konto",
-    invoices: "Rechnungen",
-    addresses: "Adressen",
-    costCenters: "Kostenstellen",
-    logout: "Abmelden",
-    homepage: "Startseite",
-    orderNow: "Bestellen",
+    brand: "Let Me Bowl",
+
     welcome: "Willkommen",
+    account: "Konto",
+    addresses: "Adressen",
+    invoices: "Rechnungen",
+    orderNow: "Jetzt bestellen",
+    logout: "Abmelden",
+    homepage: "Zur Website",
+    menu: "Menü",
+
+    loginTitle: "Anmelden",
+    loginText: "Zugang zu deinem Firmenkonto",
+    loginField: "E-Mail oder Benutzername",
+    loginPlaceholder: "z. B. firma-berlin",
+    password: "Passwort",
+    passwordPlaceholder: "Dein Passwort",
+    signInNow: "Einloggen",
+    signingIn: "Wird eingeloggt...",
+    forgotPassword: "Passwort vergessen?",
+    noAccountYet: "Noch kein Konto?",
+    registerNow: "Jetzt registrieren",
+
+    registerTitle: "Konto erstellen",
+    registerText:
+      "Erstelle dein Firmenkonto für Bestellungen, Rechnungen und Lieferadressen.",
+    registerSubmitting: "Wird erstellt...",
+    alreadyRegistered: "Bereits registriert?",
+    loginNow: "Jetzt anmelden",
+
+    registerFillRequired: "Bitte fülle alle Pflichtfelder aus.",
+    registerEmailInvalid: "Bitte gib eine gültige E-Mail-Adresse ein.",
+    registerUsernameShort: "Der Benutzername muss mindestens 3 Zeichen haben.",
+    registerPasswordShort: "Das Passwort muss mindestens 8 Zeichen lang sein.",
+    registerPasswordMismatch: "Die Passwörter stimmen nicht überein.",
+    registerUserExists: "E-Mail oder Benutzername ist bereits vergeben.",
 
     company: "Firma",
+    companyPlaceholder: "z. B. Musterfirma GmbH",
+    firstName: "Vorname",
+    firstNamePlaceholder: "Vorname",
+    lastName: "Nachname",
+    lastNamePlaceholder: "Nachname",
     username: "Benutzername",
+    usernamePlaceholder: "z. B. firma-berlin",
     email: "E-Mail",
+    emailPlaceholder: "name@firma.de",
     phone: "Telefon",
-    language: "Sprache",
-    german: "Deutsch",
-    english: "Englisch",
+    phonePlaceholder: "+49 ...",
+    passwordRegisterPlaceholder: "Mindestens 8 Zeichen",
+    confirmPassword: "Passwort wiederholen",
+    confirmPasswordPlaceholder: "Passwort wiederholen",
 
     accountText:
-      "Hier verwaltest du dein Firmenkonto, Kontaktdaten und später auch Rechnungen und Lieferadressen.",
+      "Verwalte deine Kontodaten, Rechnungen, Bestellungen und Lieferadressen zentral an einem Ort.",
+    addressesText: "Verwalte deine Liefer- und Rechnungsadressen.",
+    invoicesText: "Übersicht über alle Rechnungen und Zahlungen.",
+    orderNowText: "Starte direkt eine neue Bestellung.",
+    openAddresses: "Adressen öffnen",
+    openInvoices: "Rechnungen öffnen",
+    startOrder: "Bestellung starten",
 
-    invoiceTitle: "Rechnungen",
+    addressTitle: "Adressen",
+    addressText:
+      "Verwalte deine Rechnungs- und Lieferadressen für deine Bestellungen.",
+    billingAddress: "Rechnungsadresse",
+    shippingAddresses: "Lieferadressen",
+    noShippingAddress: "Noch keine Lieferadresse vorhanden.",
+    shippingInfoText:
+      "Als Nächstes bauen wir die Möglichkeit, Adressen direkt zu speichern und zu bearbeiten.",
+    editBilling: "Bearbeiten",
+    addShipping: "Neue Adresse hinzufügen",
+    contactPerson: "Ansprechpartner",
+    quickLinks: "Schnellzugriff",
+
     invoiceText:
-      "Hier werden später deine Rechnungen, Zahlungsstände und Downloads angezeigt.",
-    statusNow: "Aktueller Status",
-    invoiceNumber: "Rechnungsnr.",
+      "Hier findest du alle Rechnungen und den aktuellen Zahlungsstatus.",
+    statusNow: "Aktueller Stand",
+    invoiceStatusTextStart: "Für",
+    invoiceStatusTextEnd:
+      "ist die Rechnungsübersicht vorbereitet. Als Nächstes binden wir echte Rechnungsdaten an.",
+    invoiceNumber: "Rechnung",
     date: "Datum",
     status: "Status",
     amount: "Betrag",
     paid: "Bezahlt",
     open: "Offen",
 
-    addressTitle: "Adressen",
-    addressText:
-      "Hier kannst du später Rechnungsadresse und Lieferadressen verwalten.",
-    billingAddress: "Rechnungsadresse",
-    shippingAddresses: "Lieferadressen",
-    editBilling: "Rechnungsdaten bearbeiten",
-    addShipping: "Neue Lieferadresse anlegen",
-    noShippingAddress: "Noch keine echte Lieferadresse hinterlegt.",
+    ordersTitle: "Bestellungen",
+    ordersText:
+      "Hier findest du deine bisherigen und aktuellen Bestellungen übersichtlich an einem Ort.",
+    orderNumber: "Bestellung",
+    orderType: "Typ",
+    reorderTitle: "Erneut bestellen",
+    reorderText:
+      "Starte schnell eine neue Bestellung auf Basis deiner bisherigen Catering-Anfragen.",
 
-    loginTitle: "Anmelden",
-    loginText:
-      "Zugriff auf dein Firmenkonto, Bestellungen, Rechnungsdaten und Lieferadressen.",
-    loginField: "Benutzername oder E-Mail",
-    loginPlaceholder: "z. B. firma-berlin oder name@firma.de",
-    password: "Passwort",
-    passwordPlaceholder: "Dein Passwort",
-    forgotPassword: "Passwort vergessen?",
-    noAccountYet: "Noch kein Konto?",
-    registerNow: "Jetzt registrieren",
-    signInNow: "Jetzt anmelden",
-    signingIn: "Anmeldung läuft...",
-
-    registerTitle: "Konto erstellen",
-    registerText:
-      "Firmenzugang für Bestellungen, Rechnungsdaten und Lieferadressen.",
-    firstName: "Vorname",
-    lastName: "Nachname",
-    fullName: "Ansprechpartner",
-    companyName: "Firmenname",
-    registerUsernamePlaceholder: "z. B. firma-berlin",
-    registerPhonePlaceholder: "+49 ...",
-    registerEmailPlaceholder: "name@firma.de",
-    registerPasswordPlaceholder: "Mindestens 8 Zeichen",
-    confirmPassword: "Passwort wiederholen",
-    confirmPasswordPlaceholder: "Passwort wiederholen",
-    createAccount: "Jetzt registrieren",
-    creatingAccount: "Wird erstellt...",
-    alreadyRegistered: "Bereits registriert?",
-    signInHere: "Jetzt anmelden",
-
-    forgotPasswordTitle: "Passwort vergessen",
-    forgotPasswordText: "Diese Funktion bauen wir im nächsten Schritt.",
-    backToLogin: "Zurück zum Login",
-
-    contactPerson: "Ansprechpartner",
-    nextStepHint:
-      "Als Nächstes bauen wir Formular, Speichern und Bearbeiten direkt mit Datenbankanbindung.",
-
+    loginFieldsMissing: "Bitte gib Benutzername und Passwort ein.",
     userNotFound: "Benutzer nicht gefunden.",
-    accessDisabled: "Dein Zugang ist aktuell deaktiviert.",
-    passwordWrong: "Das Passwort ist nicht korrekt.",
-    loginFieldsMissing:
-      "Bitte gib Benutzername oder E-Mail und dein Passwort ein.",
-    registerFieldsMissing: "Bitte fülle alle Pflichtfelder aus.",
-    invalidEmail: "Bitte gib eine gültige E-Mail-Adresse ein.",
-    usernameTooShort:
-      "Der Benutzername muss mindestens 3 Zeichen haben.",
-    passwordTooShort:
-      "Das Passwort muss mindestens 8 Zeichen lang sein.",
-    passwordsNoMatch: "Die Passwörter stimmen nicht überein.",
-    userAlreadyExists:
-      "E-Mail oder Benutzername ist bereits vergeben.",
+    accessDisabled: "Zugang ist deaktiviert.",
+    passwordWrong: "Falsches Passwort.",
   },
 
   en: {
-    brand: "Let Me Bowl Catering",
-    menu: "Menu",
-    account: "Account",
-    invoices: "Invoices",
-    addresses: "Addresses",
-    costCenters: "Cost centers",
-    logout: "Log out",
-    homepage: "Homepage",
-    orderNow: "Order now",
+    brand: "Let Me Bowl",
+
     welcome: "Welcome",
+    account: "Account",
+    addresses: "Addresses",
+    invoices: "Invoices",
+    orderNow: "Order now",
+    logout: "Logout",
+    homepage: "Website",
+    menu: "Menu",
+
+    loginTitle: "Login",
+    loginText: "Access your business account",
+    loginField: "Email or username",
+    loginPlaceholder: "e.g. company-berlin",
+    password: "Password",
+    passwordPlaceholder: "Your password",
+    signInNow: "Sign in",
+    signingIn: "Signing in...",
+    forgotPassword: "Forgot password?",
+    noAccountYet: "No account yet?",
+    registerNow: "Register now",
+
+    registerTitle: "Create account",
+    registerText:
+      "Create your business account for orders, invoices and addresses.",
+    registerSubmitting: "Creating...",
+    alreadyRegistered: "Already registered?",
+    loginNow: "Sign in now",
+
+    registerFillRequired: "Please fill in all required fields.",
+    registerEmailInvalid: "Please enter a valid email address.",
+    registerUsernameShort: "Username must be at least 3 characters.",
+    registerPasswordShort: "Password must be at least 8 characters.",
+    registerPasswordMismatch: "Passwords do not match.",
+    registerUserExists: "Email or username already exists.",
 
     company: "Company",
+    companyPlaceholder: "e.g. Example Ltd.",
+    firstName: "First name",
+    firstNamePlaceholder: "First name",
+    lastName: "Last name",
+    lastNamePlaceholder: "Last name",
     username: "Username",
+    usernamePlaceholder: "e.g. company-berlin",
     email: "Email",
+    emailPlaceholder: "name@company.com",
     phone: "Phone",
-    language: "Language",
-    german: "German",
-    english: "English",
+    phonePlaceholder: "+49 ...",
+    passwordRegisterPlaceholder: "At least 8 characters",
+    confirmPassword: "Confirm password",
+    confirmPasswordPlaceholder: "Repeat password",
 
     accountText:
-      "Manage your company account, contact details and later also invoices and delivery addresses here.",
+      "Manage your account, invoices, orders and delivery addresses in one place.",
+    addressesText: "Manage your delivery and billing addresses.",
+    invoicesText: "Overview of all invoices and payments.",
+    orderNowText: "Start a new order directly.",
+    openAddresses: "Open addresses",
+    openInvoices: "Open invoices",
+    startOrder: "Start order",
 
-    invoiceTitle: "Invoices",
+    addressTitle: "Addresses",
+    addressText:
+      "Manage your billing and delivery addresses for your orders.",
+    billingAddress: "Billing address",
+    shippingAddresses: "Shipping addresses",
+    noShippingAddress: "No shipping address yet.",
+    shippingInfoText:
+      "Next we will add the ability to save and edit addresses directly.",
+    editBilling: "Edit",
+    addShipping: "Add new address",
+    contactPerson: "Contact person",
+    quickLinks: "Quick links",
+
     invoiceText:
-      "Your invoices, payment status and downloads will appear here later.",
+      "Here you will find all invoices and their current payment status.",
     statusNow: "Current status",
-    invoiceNumber: "Invoice no.",
+    invoiceStatusTextStart: "For",
+    invoiceStatusTextEnd:
+      "the invoice overview is prepared. Next we will connect real invoice data.",
+    invoiceNumber: "Invoice",
     date: "Date",
     status: "Status",
     amount: "Amount",
     paid: "Paid",
     open: "Open",
 
-    addressTitle: "Addresses",
-    addressText:
-      "Here you will later manage your billing address and delivery addresses.",
-    billingAddress: "Billing address",
-    shippingAddresses: "Delivery addresses",
-    editBilling: "Edit billing details",
-    addShipping: "Add new delivery address",
-    noShippingAddress: "No real delivery address has been stored yet.",
+    ordersTitle: "Orders",
+    ordersText:
+      "Here you can find your past and current orders in one clear overview.",
+    orderNumber: "Order",
+    orderType: "Type",
+    reorderTitle: "Reorder",
+    reorderText:
+      "Start a new order quickly based on your previous catering requests.",
 
-    loginTitle: "Sign in",
-    loginText:
-      "Access your company account, orders, billing details and delivery addresses.",
-    loginField: "Username or email",
-    loginPlaceholder: "e.g. company-berlin or name@company.com",
-    password: "Password",
-    passwordPlaceholder: "Your password",
-    forgotPassword: "Forgot password?",
-    noAccountYet: "No account yet?",
-    registerNow: "Register now",
-    signInNow: "Sign in now",
-    signingIn: "Signing in...",
-
-    registerTitle: "Create account",
-    registerText:
-      "Company access for orders, billing details and delivery addresses.",
-    firstName: "First name",
-    lastName: "Last name",
-    fullName: "Contact person",
-    companyName: "Company name",
-    registerUsernamePlaceholder: "e.g. company-berlin",
-    registerPhonePlaceholder: "+49 ...",
-    registerEmailPlaceholder: "name@company.com",
-    registerPasswordPlaceholder: "At least 8 characters",
-    confirmPassword: "Repeat password",
-    confirmPasswordPlaceholder: "Repeat password",
-    createAccount: "Register now",
-    creatingAccount: "Creating account...",
-    alreadyRegistered: "Already registered?",
-    signInHere: "Sign in now",
-
-    forgotPasswordTitle: "Forgot password",
-    forgotPasswordText: "We will build this feature in the next step.",
-    backToLogin: "Back to login",
-
-    contactPerson: "Contact person",
-    nextStepHint:
-      "Next we will build form, save and edit directly with database connection.",
-
+    loginFieldsMissing: "Please enter username and password.",
     userNotFound: "User not found.",
-    accessDisabled: "Your account is currently disabled.",
-    passwordWrong: "The password is incorrect.",
-    loginFieldsMissing:
-      "Please enter your username or email and your password.",
-    registerFieldsMissing: "Please fill in all required fields.",
-    invalidEmail: "Please enter a valid email address.",
-    usernameTooShort:
-      "The username must be at least 3 characters long.",
-    passwordTooShort:
-      "The password must be at least 8 characters long.",
-    passwordsNoMatch: "The passwords do not match.",
-    userAlreadyExists:
-      "Email or username is already in use.",
+    accessDisabled: "Access is disabled.",
+    passwordWrong: "Wrong password.",
   },
 };

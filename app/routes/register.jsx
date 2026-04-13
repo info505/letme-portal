@@ -1,12 +1,35 @@
-import { Form, redirect, useActionData, useNavigation } from "react-router";
+import {
+  Form,
+  redirect,
+  useActionData,
+  useLoaderData,
+  useNavigation,
+} from "react-router";
 import { prisma } from "../lib/prisma.server.js";
 import {
   hashPassword,
   createPortalSession,
   createSessionCookie,
+  getUserFromRequest,
 } from "../lib/auth.server.js";
+import { getLocaleFromRequest, dict, withLang } from "../lib/i18n.js";
+import { layout, card, button, input, colors } from "../lib/ui.js";
+import LanguageSwitch from "../components/LanguageSwitch.jsx";
+
+export async function loader({ request }) {
+  const locale = getLocaleFromRequest(request);
+  const user = await getUserFromRequest(request);
+
+  if (user) {
+    throw redirect(`/dashboard?lang=${locale}`);
+  }
+
+  return { locale };
+}
 
 export async function action({ request }) {
+  const locale = getLocaleFromRequest(request);
+  const t = dict[locale] || dict.de;
   const formData = await request.formData();
 
   const companyName = String(formData.get("companyName") || "").trim();
@@ -38,7 +61,8 @@ export async function action({ request }) {
   ) {
     return {
       ok: false,
-      message: "Bitte fülle alle Pflichtfelder aus.",
+      locale,
+      message: t.registerFillRequired,
       values,
     };
   }
@@ -46,7 +70,8 @@ export async function action({ request }) {
   if (!email.includes("@")) {
     return {
       ok: false,
-      message: "Bitte gib eine gültige E-Mail-Adresse ein.",
+      locale,
+      message: t.registerEmailInvalid,
       values,
     };
   }
@@ -54,7 +79,8 @@ export async function action({ request }) {
   if (username.length < 3) {
     return {
       ok: false,
-      message: "Der Benutzername muss mindestens 3 Zeichen haben.",
+      locale,
+      message: t.registerUsernameShort,
       values,
     };
   }
@@ -62,7 +88,8 @@ export async function action({ request }) {
   if (password.length < 8) {
     return {
       ok: false,
-      message: "Das Passwort muss mindestens 8 Zeichen lang sein.",
+      locale,
+      message: t.registerPasswordShort,
       values,
     };
   }
@@ -70,7 +97,8 @@ export async function action({ request }) {
   if (password !== confirmPassword) {
     return {
       ok: false,
-      message: "Die Passwörter stimmen nicht überein.",
+      locale,
+      message: t.registerPasswordMismatch,
       values,
     };
   }
@@ -84,7 +112,8 @@ export async function action({ request }) {
   if (existingUser) {
     return {
       ok: false,
-      message: "E-Mail oder Benutzername ist bereits vergeben.",
+      locale,
+      message: t.registerUserExists,
       values,
     };
   }
@@ -113,7 +142,7 @@ export async function action({ request }) {
 
   const { sessionToken, expiresAt } = await createPortalSession(user.id);
 
-  return redirect("/dashboard", {
+  return redirect(`/dashboard?lang=${locale}`, {
     headers: {
       "Set-Cookie": createSessionCookie(sessionToken, expiresAt),
     },
@@ -121,103 +150,323 @@ export async function action({ request }) {
 }
 
 export default function RegisterPage() {
+  const { locale } = useLoaderData();
   const actionData = useActionData();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
   const values = actionData?.values || {};
+  const t = dict[locale] || dict.de;
 
   return (
-    <div style={pageStyle}>
-      <div style={shellStyle}>
-        <div style={heroStyle}>
-          <div style={eyebrowStyle}>Let Me Bowl Catering</div>
-          <h1 style={headlineStyle}>Konto erstellen</h1>
-          <p style={sublineStyle}>
-            Firmenzugang für Bestellungen, Rechnungsdaten und Lieferadressen.
-          </p>
-        </div>
+    <div style={layout.page}>
+      <style>{`
+        .auth-layout {
+          min-height: 100vh;
+          display: grid;
+          grid-template-columns: minmax(0, 1.05fr) minmax(460px, 560px);
+        }
 
-        <div style={cardStyle}>
-          {actionData?.message ? (
-            <div style={errorStyle}>{actionData.message}</div>
-          ) : null}
+        .auth-left {
+          padding: 34px 36px 40px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          background: linear-gradient(180deg, #f8f6f2 0%, #f3eee4 100%);
+          border-right: 1px solid ${colors.border};
+        }
 
-          <Form method="post">
-            <div style={gridStyle}>
-              <div style={{ gridColumn: "1 / -1" }}>
-                <Field
-                  label="Firmenname"
-                  name="companyName"
-                  defaultValue={values.companyName}
-                  placeholder="z. B. Musterfirma GmbH"
-                />
-              </div>
+        .auth-right {
+          padding: 34px 26px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: ${colors.bg};
+        }
 
-              <Field
-                label="Vorname"
-                name="firstName"
-                defaultValue={values.firstName}
-                placeholder="Vorname"
-              />
+        .auth-features {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 14px;
+          max-width: 760px;
+        }
 
-              <Field
-                label="Nachname"
-                name="lastName"
-                defaultValue={values.lastName}
-                placeholder="Nachname"
-              />
+        .register-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 16px;
+        }
 
-              <Field
-                label="Benutzername"
-                name="username"
-                defaultValue={values.username}
-                placeholder="z. B. firma-berlin"
-              />
+        @media (max-width: 980px) {
+          .auth-layout {
+            grid-template-columns: 1fr;
+          }
 
-              <Field
-                label="Telefon"
-                name="phone"
-                defaultValue={values.phone}
-                placeholder="+49 ..."
-              />
+          .auth-left {
+            padding: 22px 18px 24px;
+            border-right: none;
+            border-bottom: 1px solid ${colors.border};
+            gap: 28px;
+          }
 
-              <div style={{ gridColumn: "1 / -1" }}>
-                <Field
-                  label="E-Mail"
-                  name="email"
-                  type="email"
-                  defaultValue={values.email}
-                  placeholder="name@firma.de"
-                />
-              </div>
+          .auth-right {
+            padding: 20px 16px 28px;
+          }
 
-              <Field
-                label="Passwort"
-                name="password"
-                type="password"
-                placeholder="Mindestens 8 Zeichen"
-              />
+          .auth-features,
+          .register-grid {
+            grid-template-columns: 1fr;
+            max-width: none;
+          }
+        }
+      `}</style>
 
-              <Field
-                label="Passwort wiederholen"
-                name="confirmPassword"
-                type="password"
-                placeholder="Passwort wiederholen"
-              />
+      <div className="auth-layout">
+        <section className="auth-left">
+          <div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "16px",
+                marginBottom: "56px",
+                flexWrap: "wrap",
+              }}
+            >
+              <a
+                href="https://letmebowl-catering.de"
+                style={{
+                  textDecoration: "none",
+                  color: colors.text,
+                  fontWeight: 800,
+                  letterSpacing: "0.08em",
+                  fontSize: "15px",
+                }}
+              >
+                LET ME BOWL
+              </a>
+
+              <LanguageSwitch />
             </div>
 
-            <button type="submit" style={buttonStyle} disabled={isSubmitting}>
-              {isSubmitting ? "Wird erstellt..." : "Jetzt registrieren"}
-            </button>
-          </Form>
+            <div style={{ maxWidth: "680px" }}>
+              <div
+                style={{
+                  fontSize: "12px",
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  color: colors.gold,
+                  fontWeight: 700,
+                  marginBottom: "14px",
+                }}
+              >
+                {t.brand}
+              </div>
 
-          <div style={footerTextStyle}>
-            Bereits registriert?{" "}
-            <a href="/login" style={linkStyle}>
-              Jetzt anmelden
-            </a>
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: "clamp(42px, 5vw, 72px)",
+                  lineHeight: 0.98,
+                  color: colors.text,
+                  letterSpacing: "-0.03em",
+                }}
+              >
+                {t.registerTitle}
+              </h1>
+
+              <p
+                style={{
+                  margin: "20px 0 0",
+                  fontSize: "18px",
+                  lineHeight: 1.7,
+                  color: colors.muted,
+                  maxWidth: "620px",
+                }}
+              >
+                {t.registerText}
+              </p>
+            </div>
           </div>
-        </div>
+
+          <div className="auth-features">
+            <FeatureCard
+              title={t.account}
+              text={
+                locale === "en"
+                  ? "Create a central business account for your team and orders."
+                  : "Erstelle einen zentralen Firmenzugang für Team und Bestellungen."
+              }
+            />
+            <FeatureCard
+              title={t.addresses}
+              text={
+                locale === "en"
+                  ? "Store billing and delivery details in one structured place."
+                  : "Speichere Rechnungs- und Lieferdaten an einem strukturierten Ort."
+              }
+            />
+            <FeatureCard
+              title={t.invoices}
+              text={
+                locale === "en"
+                  ? "Keep invoice information and order history clearly accessible."
+                  : "Halte Rechnungsinformationen und Bestellhistorie übersichtlich bereit."
+              }
+            />
+          </div>
+        </section>
+
+        <section className="auth-right">
+          <div
+            style={{
+              ...card.base,
+              width: "100%",
+              maxWidth: "500px",
+              padding: "34px",
+            }}
+          >
+            <div style={{ marginBottom: "24px" }}>
+              <h2
+                style={{
+                  margin: "0 0 10px",
+                  fontSize: "28px",
+                  color: colors.text,
+                  lineHeight: 1.1,
+                }}
+              >
+                {t.registerNow}
+              </h2>
+
+              <p
+                style={{
+                  margin: 0,
+                  color: colors.muted,
+                  fontSize: "15px",
+                  lineHeight: 1.6,
+                }}
+              >
+                {locale === "en"
+                  ? "Set up your company access for addresses, invoices and future orders."
+                  : "Richte deinen Firmenzugang für Adressen, Rechnungen und künftige Bestellungen ein."}
+              </p>
+            </div>
+
+            {actionData?.message ? (
+              <div
+                style={{
+                  marginBottom: "18px",
+                  padding: "14px 16px",
+                  borderRadius: "14px",
+                  background: "#fff4f4",
+                  color: "#8b2222",
+                  border: "1px solid #efcaca",
+                  fontWeight: 600,
+                }}
+              >
+                {actionData.message}
+              </div>
+            ) : null}
+
+            <Form method="post">
+              <div className="register-grid">
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <Field
+                    label={t.company}
+                    name="companyName"
+                    defaultValue={values.companyName}
+                    placeholder={t.companyPlaceholder}
+                  />
+                </div>
+
+                <Field
+                  label={t.firstName}
+                  name="firstName"
+                  defaultValue={values.firstName}
+                  placeholder={t.firstNamePlaceholder}
+                />
+
+                <Field
+                  label={t.lastName}
+                  name="lastName"
+                  defaultValue={values.lastName}
+                  placeholder={t.lastNamePlaceholder}
+                />
+
+                <Field
+                  label={t.username}
+                  name="username"
+                  defaultValue={values.username}
+                  placeholder={t.usernamePlaceholder}
+                />
+
+                <Field
+                  label={t.phone}
+                  name="phone"
+                  defaultValue={values.phone}
+                  placeholder={t.phonePlaceholder}
+                />
+
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <Field
+                    label={t.email}
+                    name="email"
+                    type="email"
+                    defaultValue={values.email}
+                    placeholder={t.emailPlaceholder}
+                  />
+                </div>
+
+                <Field
+                  label={t.password}
+                  name="password"
+                  type="password"
+                  placeholder={t.passwordRegisterPlaceholder}
+                />
+
+                <Field
+                  label={t.confirmPassword}
+                  name="confirmPassword"
+                  type="password"
+                  placeholder={t.confirmPasswordPlaceholder}
+                />
+              </div>
+
+              <button
+                type="submit"
+                style={{
+                  ...button.primary,
+                  width: "100%",
+                  fontSize: "15px",
+                  marginTop: "18px",
+                }}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? t.registerSubmitting : t.registerNow}
+              </button>
+            </Form>
+
+            <div
+              style={{
+                marginTop: "16px",
+                color: colors.muted,
+                fontSize: "14px",
+              }}
+            >
+              {t.alreadyRegistered}{" "}
+              <a
+                href={withLang("/login", locale)}
+                style={{
+                  color: colors.text,
+                  fontWeight: 700,
+                  textDecoration: "none",
+                }}
+              >
+                {t.loginNow}
+              </a>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );
@@ -231,126 +480,60 @@ function Field({
   defaultValue = "",
 }) {
   return (
-    <label style={fieldWrapStyle}>
-      <span style={labelStyle}>{label}</span>
+    <label style={{ display: "block" }}>
+      <span
+        style={{
+          display: "block",
+          marginBottom: "8px",
+          fontWeight: 700,
+          color: colors.text,
+          fontSize: "14px",
+        }}
+      >
+        {label}
+      </span>
+
       <input
         name={name}
         type={type}
         placeholder={placeholder}
         defaultValue={defaultValue}
-        style={inputStyle}
+        style={input.base}
       />
     </label>
   );
 }
 
-const pageStyle = {
-  minHeight: "100vh",
-  background: "#e9e5dc",
-  padding: "24px 16px",
-  fontFamily: "Inter, Arial, sans-serif",
-};
+function FeatureCard({ title, text }) {
+  return (
+    <div
+      style={{
+        ...card.base,
+        padding: "18px",
+        borderRadius: "20px",
+        background: "rgba(255,255,255,0.72)",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "14px",
+          fontWeight: 700,
+          color: colors.text,
+          marginBottom: "8px",
+        }}
+      >
+        {title}
+      </div>
 
-const shellStyle = {
-  maxWidth: 1100,
-  margin: "0 auto",
-};
-
-const heroStyle = {
-  marginBottom: 24,
-};
-
-const eyebrowStyle = {
-  color: "#c89a46",
-  fontWeight: 800,
-  letterSpacing: "0.16em",
-  textTransform: "uppercase",
-  fontSize: 13,
-  marginBottom: 12,
-};
-
-const headlineStyle = {
-  fontSize: "clamp(34px, 6vw, 60px)",
-  lineHeight: 1.02,
-  margin: 0,
-  color: "#111",
-};
-
-const sublineStyle = {
-  marginTop: 14,
-  fontSize: "clamp(16px, 2.5vw, 20px)",
-  color: "#3f3a33",
-  maxWidth: 760,
-  lineHeight: 1.5,
-};
-
-const cardStyle = {
-  background: "#f7f6f3",
-  borderRadius: 24,
-  padding: "24px",
-  border: "1px solid #e6dfd2",
-  boxShadow: "0 14px 40px rgba(0,0,0,0.05)",
-};
-
-const gridStyle = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-  gap: 16,
-};
-
-const fieldWrapStyle = {
-  display: "grid",
-  gap: 8,
-};
-
-const labelStyle = {
-  fontWeight: 700,
-  fontSize: 15,
-  color: "#1a1a1a",
-};
-
-const inputStyle = {
-  width: "100%",
-  boxSizing: "border-box",
-  border: "1px solid #d8cfbf",
-  background: "#fff",
-  borderRadius: 14,
-  padding: "15px 16px",
-  fontSize: 16,
-  outline: "none",
-};
-
-const buttonStyle = {
-  width: "100%",
-  marginTop: 20,
-  border: "none",
-  borderRadius: 14,
-  background: "#111",
-  color: "#fff",
-  fontSize: 16,
-  fontWeight: 800,
-  padding: "15px 18px",
-  cursor: "pointer",
-};
-
-const errorStyle = {
-  marginBottom: 16,
-  padding: "14px 16px",
-  borderRadius: 14,
-  background: "#fff1f1",
-  color: "#8b2222",
-  border: "1px solid #f1caca",
-  fontWeight: 600,
-};
-
-const footerTextStyle = {
-  marginTop: 18,
-  textAlign: "center",
-  color: "#5a5348",
-};
-
-const linkStyle = {
-  color: "#111",
-  fontWeight: 700,
-  textDecoration: "none",
-};
+      <div
+        style={{
+          fontSize: "14px",
+          lineHeight: 1.6,
+          color: colors.muted,
+        }}
+      >
+        {text}
+      </div>
+    </div>
+  );
+}
