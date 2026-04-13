@@ -1,4 +1,4 @@
-import { redirect } from "react-router";
+import { redirect, useLoaderData } from "react-router";
 import { getUserFromRequest } from "../lib/auth.server.js";
 import { getLocaleFromRequest, dict, withLang } from "../lib/i18n.js";
 import {
@@ -17,12 +17,16 @@ export async function loader({ request }) {
   }
 
   const locale = getLocaleFromRequest(request);
-  return { user, locale };
+
+  return {
+    user,
+    locale,
+  };
 }
 
-export default function DashboardPage({ loaderData }) {
-  const { user, locale } = loaderData;
-  const t = dict[locale];
+export default function DashboardPage() {
+  const { user, locale } = useLoaderData();
+  const t = dict[locale] || dict.de;
 
   return (
     <div style={layout.page}>
@@ -72,9 +76,11 @@ export default function DashboardPage({ loaderData }) {
       <main style={layout.mainWrap}>
         <div style={layout.shellCard}>
           <div style={textStyles.eyebrow}>{t.brand}</div>
+
           <h1 style={textStyles.headline}>
             {t.welcome}, {user.firstName}
           </h1>
+
           <p style={textStyles.subline}>{t.accountText}</p>
 
           <div style={layout.grid}>
@@ -113,7 +119,7 @@ export default function DashboardPage({ loaderData }) {
             </a>
 
             <a
-              href={withLang(`/dashboard`, locale === "de" ? "en" : "de")}
+              href={withLang("/dashboard", locale === "de" ? "en" : "de")}
               style={buttonStyles.secondary}
             >
               {locale === "de" ? t.english : t.german}
