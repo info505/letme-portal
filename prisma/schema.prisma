@@ -28,29 +28,30 @@ model Session {
 }
 
 model PortalUser {
-  id               String               @id @default(cuid())
-  companyName      String
-  firstName        String
-  lastName         String
-  username         String               @unique
-  email            String               @unique
-  phone            String?
-  passwordHash     String
-  isActive         Boolean              @default(true)
-  isAdmin          Boolean              @default(false)
-  mustResetPassword Boolean             @default(false)
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
+  id                String               @id @default(cuid())
+  companyName       String
+  firstName         String
+  lastName          String
+  username          String               @unique
+  email             String               @unique
+  phone             String?
+  passwordHash      String
+  isActive          Boolean              @default(true)
+  isAdmin           Boolean              @default(false)
+  mustResetPassword Boolean              @default(false)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
 
-  billing          BillingProfile?
-  addresses        DeliveryAddress[]
-  authSessions     PortalSession[]
-  resetTokens      PasswordResetToken[]
+  billing       BillingProfile?
+  addresses     DeliveryAddress[]
+  authSessions  PortalSession[]
+  resetTokens   PasswordResetToken[]
+  costCenters   CostCenter[]
 }
 
 model BillingProfile {
-  id            String     @id @default(cuid())
-  userId        String     @unique
+  id            String   @id @default(cuid())
+  userId        String   @unique
   companyName   String?
   contactName   String?
   email         String?
@@ -62,8 +63,8 @@ model BillingProfile {
   country       String?
   vatId         String?
   invoiceEmail  String?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   user PortalUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -84,6 +85,19 @@ model DeliveryAddress {
   isDefault    Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  user PortalUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CostCenter {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  code        String?
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   user PortalUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
