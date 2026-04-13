@@ -1,5 +1,13 @@
 import { redirect } from "react-router";
 import { getUserFromRequest } from "../lib/auth.server.js";
+import { getLocaleFromRequest, dict, withLang } from "../lib/i18n.js";
+import {
+  layout,
+  textStyles,
+  cardStyles,
+  buttonStyles,
+  dropdownStyles,
+} from "../lib/ui.js";
 
 export async function loader({ request }) {
   const user = await getUserFromRequest(request);
@@ -8,42 +16,52 @@ export async function loader({ request }) {
     throw redirect("/login");
   }
 
-  return { user };
+  const locale = getLocaleFromRequest(request);
+  return { user, locale };
 }
 
 export default function DashboardPage({ loaderData }) {
-  const { user } = loaderData;
+  const { user, locale } = loaderData;
+  const t = dict[locale];
 
   return (
-    <div style={pageStyle}>
-      <header style={headerStyle}>
-        <div style={headerInnerStyle}>
-          <a href="https://letmebowl-catering.de" style={logoStyle}>
+    <div style={layout.page}>
+      <header style={layout.header}>
+        <div style={layout.headerInner}>
+          <a href="https://letmebowl-catering.de" style={textStyles.logo}>
             LET ME BOWL
           </a>
 
-          <div style={menuWrapStyle}>
-            <details style={detailsStyle}>
-              <summary style={summaryStyle}>
-                Menü
-                <span style={caretStyle}>▾</span>
+          <div style={dropdownStyles.wrap}>
+            <details style={dropdownStyles.details}>
+              <summary style={buttonStyles.menuTrigger}>
+                {t.menu}
+                <span style={{ fontSize: 12 }}>▾</span>
               </summary>
 
-              <div style={dropdownStyle}>
-                <a href="/dashboard" style={dropdownLinkStyle}>
-                  Konto
+              <div style={dropdownStyles.menu}>
+                <a href={withLang("/dashboard", locale)} style={dropdownStyles.active}>
+                  {t.account}
                 </a>
 
-                <a href="/rechnungen" style={dropdownLinkStyle}>
-                  Rechnungen
+                <a href={withLang("/rechnungen", locale)} style={dropdownStyles.link}>
+                  {t.invoices}
                 </a>
 
-                <a href="/adressen" style={dropdownLinkStyle}>
-                  Adressen
+                <a href={withLang("/adressen", locale)} style={dropdownStyles.link}>
+                  {t.addresses}
                 </a>
 
-                <a href="/logout" style={dropdownLogoutStyle}>
-                  Abmelden
+                <a href="https://letmebowl-catering.de" style={dropdownStyles.link}>
+                  {t.homepage}
+                </a>
+
+                <a href="https://letmebowl-catering.de" style={dropdownStyles.link}>
+                  {t.orderNow}
+                </a>
+
+                <a href={withLang("/logout", locale)} style={buttonStyles.logout}>
+                  {t.logout}
                 </a>
               </div>
             </details>
@@ -51,201 +69,58 @@ export default function DashboardPage({ loaderData }) {
         </div>
       </header>
 
-      <main style={mainWrapStyle}>
-        <div style={cardShellStyle}>
-          <div style={eyebrowStyle}>Let Me Bowl Catering</div>
+      <main style={layout.mainWrap}>
+        <div style={layout.shellCard}>
+          <div style={textStyles.eyebrow}>{t.brand}</div>
+          <h1 style={textStyles.headline}>
+            {t.welcome}, {user.firstName}
+          </h1>
+          <p style={textStyles.subline}>{t.accountText}</p>
 
-          <h1 style={headlineStyle}>Willkommen, {user.firstName}</h1>
-
-          <p style={sublineStyle}>
-            Hier verwaltest du dein Firmenkonto, Kontaktdaten und später auch
-            Rechnungen und Lieferadressen.
-          </p>
-
-          <div style={gridStyle}>
-            <div style={cardStyle}>
-              <h3 style={titleStyle}>Firma</h3>
-              <p style={textStyle}>{user.companyName}</p>
+          <div style={layout.grid}>
+            <div style={cardStyles.info}>
+              <h3 style={textStyles.cardTitle}>{t.company}</h3>
+              <p style={textStyles.body}>{user.companyName}</p>
             </div>
 
-            <div style={cardStyle}>
-              <h3 style={titleStyle}>Benutzername</h3>
-              <p style={textStyle}>{user.username}</p>
+            <div style={cardStyles.info}>
+              <h3 style={textStyles.cardTitle}>{t.username}</h3>
+              <p style={textStyles.body}>{user.username}</p>
             </div>
 
-            <div style={cardStyle}>
-              <h3 style={titleStyle}>E-Mail</h3>
-              <p style={textStyle}>{user.email}</p>
+            <div style={cardStyles.info}>
+              <h3 style={textStyles.cardTitle}>{t.email}</h3>
+              <p style={textStyles.body}>{user.email}</p>
             </div>
 
-            <div style={cardStyle}>
-              <h3 style={titleStyle}>Telefon</h3>
-              <p style={textStyle}>{user.phone || "—"}</p>
+            <div style={cardStyles.info}>
+              <h3 style={textStyles.cardTitle}>{t.phone}</h3>
+              <p style={textStyles.body}>{user.phone || "—"}</p>
             </div>
+          </div>
+
+          <div style={{ marginTop: 24, display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <a href={withLang("/adressen", locale)} style={buttonStyles.secondary}>
+              {t.addresses}
+            </a>
+
+            <a href={withLang("/rechnungen", locale)} style={buttonStyles.secondary}>
+              {t.invoices}
+            </a>
+
+            <a href="https://letmebowl-catering.de" style={buttonStyles.primary}>
+              {t.orderNow}
+            </a>
+
+            <a
+              href={withLang(`/dashboard`, locale === "de" ? "en" : "de")}
+              style={buttonStyles.secondary}
+            >
+              {locale === "de" ? t.english : t.german}
+            </a>
           </div>
         </div>
       </main>
     </div>
   );
 }
-
-const pageStyle = {
-  minHeight: "100vh",
-  background: "#e9e5dc",
-  fontFamily: "Inter, Arial, sans-serif",
-};
-
-const headerStyle = {
-  position: "sticky",
-  top: 0,
-  zIndex: 20,
-  background: "rgba(247, 246, 243, 0.96)",
-  borderBottom: "1px solid #e6dfd2",
-  backdropFilter: "blur(10px)",
-};
-
-const headerInnerStyle = {
-  maxWidth: 1100,
-  margin: "0 auto",
-  padding: "16px",
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  gap: 16,
-};
-
-const logoStyle = {
-  textDecoration: "none",
-  color: "#111",
-  fontWeight: 900,
-  letterSpacing: "0.14em",
-  fontSize: 14,
-};
-
-const menuWrapStyle = {
-  position: "relative",
-};
-
-const detailsStyle = {
-  position: "relative",
-};
-
-const summaryStyle = {
-  listStyle: "none",
-  cursor: "pointer",
-  background: "#111",
-  color: "#fff",
-  padding: "12px 16px",
-  borderRadius: 12,
-  fontWeight: 700,
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  userSelect: "none",
-};
-
-const caretStyle = {
-  fontSize: 12,
-  lineHeight: 1,
-};
-
-const dropdownStyle = {
-  position: "absolute",
-  right: 0,
-  top: "calc(100% + 10px)",
-  minWidth: 210,
-  background: "#f7f6f3",
-  border: "1px solid #e6dfd2",
-  borderRadius: 16,
-  boxShadow: "0 18px 40px rgba(0,0,0,0.10)",
-  padding: 8,
-  display: "grid",
-  gap: 6,
-};
-
-const dropdownLinkStyle = {
-  display: "block",
-  textDecoration: "none",
-  color: "#222",
-  padding: "12px 14px",
-  borderRadius: 10,
-  fontWeight: 600,
-  background: "#fff",
-  border: "1px solid #eee4d3",
-};
-
-const dropdownLogoutStyle = {
-  display: "block",
-  textDecoration: "none",
-  color: "#fff",
-  padding: "12px 14px",
-  borderRadius: 10,
-  fontWeight: 700,
-  background: "#111",
-  border: "1px solid #111",
-};
-
-const mainWrapStyle = {
-  maxWidth: 1100,
-  margin: "0 auto",
-  padding: "24px 16px 40px",
-};
-
-const cardShellStyle = {
-  background: "#f7f6f3",
-  borderRadius: 24,
-  padding: 24,
-  border: "1px solid #e6dfd2",
-};
-
-const eyebrowStyle = {
-  color: "#c89a46",
-  fontWeight: 800,
-  letterSpacing: "0.16em",
-  textTransform: "uppercase",
-  fontSize: 13,
-  marginBottom: 12,
-};
-
-const headlineStyle = {
-  marginTop: 0,
-  marginBottom: 12,
-  fontSize: "clamp(32px, 6vw, 54px)",
-  lineHeight: 1.02,
-  color: "#111",
-};
-
-const sublineStyle = {
-  marginTop: 0,
-  marginBottom: 24,
-  color: "#4f493f",
-  fontSize: 18,
-  lineHeight: 1.5,
-  maxWidth: 760,
-};
-
-const gridStyle = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-  gap: 16,
-  marginTop: 24,
-};
-
-const cardStyle = {
-  background: "#efede7",
-  border: "1px solid #e2d7c3",
-  borderRadius: 18,
-  padding: 18,
-};
-
-const titleStyle = {
-  marginTop: 0,
-  marginBottom: 8,
-  fontSize: 20,
-};
-
-const textStyle = {
-  margin: 0,
-  color: "#3f3a33",
-  lineHeight: 1.5,
-};
