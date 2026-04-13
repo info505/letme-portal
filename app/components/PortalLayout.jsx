@@ -1,310 +1,330 @@
-export function getLocaleFromRequest(request) {
-  const url = new URL(request.url);
-  return url.searchParams.get("lang") || "de";
+import { useLoaderData, useLocation } from "react-router";
+import { colors } from "../lib/ui.js";
+import { dict, withLang } from "../lib/i18n.js";
+
+export default function PortalLayout({ children, title, subtitle }) {
+  const location = useLocation();
+  const data = useLoaderData?.() || {};
+  const locale =
+    data?.locale || new URLSearchParams(location.search).get("lang") || "de";
+  const user = data?.user || null;
+  const t = dict[locale] || dict.de;
+
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        background: colors.bg,
+        fontFamily:
+          'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      }}
+    >
+      <style>{`
+        .portal-layout {
+          display: grid;
+          grid-template-columns: 280px minmax(0, 1fr);
+          min-height: 100vh;
+        }
+
+        .portal-main {
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .portal-sidebar {
+          background: #fff;
+          border-right: 1px solid ${colors.border};
+          padding: 22px 18px;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .portal-header {
+          background: rgba(255,255,255,0.92);
+          border-bottom: 1px solid ${colors.border};
+          padding: 18px 24px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+        }
+
+        .portal-content {
+          padding: 24px;
+        }
+
+        @media (max-width: 980px) {
+          .portal-layout {
+            grid-template-columns: 1fr;
+          }
+
+          .portal-sidebar {
+            border-right: none;
+            border-bottom: 1px solid ${colors.border};
+            padding: 18px 16px;
+          }
+
+          .portal-header {
+            padding: 16px;
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
+          .portal-content {
+            padding: 16px;
+          }
+        }
+      `}</style>
+
+      <div className="portal-layout">
+        <aside className="portal-sidebar">
+          <a
+            href="https://letmebowl-catering.de"
+            style={{
+              textDecoration: "none",
+              color: colors.text,
+              fontWeight: 800,
+              letterSpacing: "0.08em",
+              fontSize: "15px",
+              marginBottom: "24px",
+            }}
+          >
+            LET ME BOWL
+          </a>
+
+          <div
+            style={{
+              padding: "14px",
+              borderRadius: "18px",
+              background: "#f8f4ec",
+              border: "1px solid #ece2d0",
+              marginBottom: "18px",
+            }}
+          >
+            <div
+              style={{
+                width: "42px",
+                height: "42px",
+                borderRadius: "999px",
+                background: "#fff",
+                border: "1px solid #eadfc8",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: 800,
+                color: "#8d6a2f",
+                marginBottom: "10px",
+              }}
+            >
+              {getInitials(user)}
+            </div>
+
+            <div
+              style={{
+                fontWeight: 700,
+                color: colors.text,
+                fontSize: "14px",
+                lineHeight: 1.4,
+              }}
+            >
+              {user ? fullName(user) || user.username || "Account" : "Portal"}
+            </div>
+
+            <div
+              style={{
+                color: colors.muted,
+                fontSize: "13px",
+                marginTop: "4px",
+                lineHeight: 1.4,
+                wordBreak: "break-word",
+              }}
+            >
+              {user?.companyName || user?.email || ""}
+            </div>
+          </div>
+
+          <nav style={{ display: "grid", gap: "8px" }}>
+            <SidebarLink
+              href={withLang("/dashboard", locale)}
+              label={t.account}
+              active={location.pathname === "/dashboard"}
+            />
+            <SidebarLink
+              href={withLang("/bestellungen", locale)}
+              label={t.ordersTitle}
+              active={location.pathname === "/bestellungen"}
+            />
+            <SidebarLink
+              href={withLang("/rechnungsadresse", locale)}
+              label={t.billingAddressNav}
+              active={location.pathname === "/rechnungsadresse"}
+            />
+            <SidebarLink
+              href={withLang("/lieferadressen", locale)}
+              label={t.shippingAddressesNav}
+              active={location.pathname === "/lieferadressen"}
+            />
+            <SidebarLink
+              href={withLang("/rechnungen", locale)}
+              label={t.invoices}
+              active={location.pathname === "/rechnungen"}
+            />
+          </nav>
+
+          <div style={{ flex: 1 }} />
+
+          <div style={{ display: "grid", gap: "10px", marginTop: "24px" }}>
+            <a
+              href="https://letmebowl-catering.de"
+              style={sidebarSecondaryLink}
+            >
+              {t.homepage}
+            </a>
+
+            <a
+              href="https://letmebowl-catering.de"
+              style={sidebarPrimaryLink}
+            >
+              {t.orderNow}
+            </a>
+
+            <a
+              href={withLang("/logout", locale)}
+              style={{ ...sidebarSecondaryLink, color: "#8b2222" }}
+            >
+              {t.logout}
+            </a>
+          </div>
+        </aside>
+
+        <div className="portal-main">
+          <header className="portal-header">
+            <div style={{ minWidth: 0 }}>
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: "28px",
+                  color: colors.text,
+                  lineHeight: 1.1,
+                }}
+              >
+                {title}
+              </h1>
+
+              {subtitle ? (
+                <p
+                  style={{
+                    margin: "8px 0 0",
+                    color: colors.muted,
+                    fontSize: "14px",
+                    lineHeight: 1.5,
+                    maxWidth: "760px",
+                  }}
+                >
+                  {subtitle}
+                </p>
+              ) : null}
+            </div>
+
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                background: "#f6f2ea",
+                border: `1px solid ${colors.border}`,
+                borderRadius: "999px",
+                padding: "4px",
+              }}
+            >
+              <a
+                href={withLang(location.pathname, "de")}
+                style={locale === "de" ? langActive : langLink}
+              >
+                DE
+              </a>
+              <a
+                href={withLang(location.pathname, "en")}
+                style={locale === "en" ? langActive : langLink}
+              >
+                EN
+              </a>
+            </div>
+          </header>
+
+          <main className="portal-content">{children}</main>
+        </div>
+      </div>
+    </div>
+  );
 }
 
-export function withLang(path, lang) {
-  return `${path}?lang=${lang}`;
+function SidebarLink({ href, label, active = false }) {
+  return (
+    <a
+      href={href}
+      style={{
+        textDecoration: "none",
+        padding: "12px 14px",
+        borderRadius: "14px",
+        background: active ? "#f6f1e8" : "transparent",
+        border: active ? "1px solid #eadfc8" : "1px solid transparent",
+        color: active ? colors.text : colors.muted,
+        fontWeight: active ? 700 : 600,
+      }}
+    >
+      {label}
+    </a>
+  );
 }
 
-export const dict = {
-  de: {
-    brand: "Let Me Bowl",
+function getInitials(user) {
+  const a = user?.firstName?.[0] || "";
+  const b = user?.lastName?.[0] || "";
+  const c = user?.username?.[0] || "";
+  return (a + b || c || "A").toUpperCase();
+}
 
-    welcome: "Willkommen",
-    account: "Konto",
-    ordersTitle: "Bestellungen",
-    addresses: "Adressen",
-    billingAddressNav: "Rechnungsadresse",
-    shippingAddressesNav: "Lieferadressen",
-    invoices: "Rechnungen",
-    orderNow: "Jetzt bestellen",
-    logout: "Abmelden",
-    homepage: "Zur Website",
+function fullName(user) {
+  return [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim();
+}
 
-    loginTitle: "Anmelden",
-    loginText: "Zugang zu deinem Firmenkonto",
-    loginField: "E-Mail oder Benutzername",
-    loginPlaceholder: "z. B. firma-berlin",
-    password: "Passwort",
-    passwordPlaceholder: "Dein Passwort",
-    signInNow: "Einloggen",
-    signingIn: "Wird eingeloggt...",
-    forgotPassword: "Passwort vergessen?",
-    noAccountYet: "Noch kein Konto?",
-    registerNow: "Jetzt registrieren",
+const sidebarPrimaryLink = {
+  textDecoration: "none",
+  padding: "13px 14px",
+  borderRadius: "14px",
+  background: "#111",
+  color: "#fff",
+  fontWeight: 700,
+  textAlign: "center",
+};
 
-    registerTitle: "Konto erstellen",
-    registerText:
-      "Erstelle dein Firmenkonto für Bestellungen, Rechnungen und Lieferadressen.",
-    registerSubmitting: "Wird erstellt...",
-    alreadyRegistered: "Bereits registriert?",
-    loginNow: "Jetzt anmelden",
+const sidebarSecondaryLink = {
+  textDecoration: "none",
+  padding: "13px 14px",
+  borderRadius: "14px",
+  background: "#fff",
+  color: "#222",
+  fontWeight: 700,
+  textAlign: "center",
+  border: `1px solid ${colors.border}`,
+};
 
-    registerFillRequired: "Bitte fülle alle Pflichtfelder aus.",
-    registerEmailInvalid: "Bitte gib eine gültige E-Mail-Adresse ein.",
-    registerUsernameShort: "Der Benutzername muss mindestens 3 Zeichen haben.",
-    registerPasswordShort: "Das Passwort muss mindestens 8 Zeichen lang sein.",
-    registerPasswordMismatch: "Die Passwörter stimmen nicht überein.",
-    registerUserExists: "E-Mail oder Benutzername ist bereits vergeben.",
+const langLink = {
+  textDecoration: "none",
+  color: "#6f6a61",
+  fontWeight: 700,
+  padding: "8px 12px",
+  borderRadius: "999px",
+};
 
-    company: "Firma",
-    companyPlaceholder: "z. B. Musterfirma GmbH",
-    firstName: "Vorname",
-    firstNamePlaceholder: "Vorname",
-    lastName: "Nachname",
-    lastNamePlaceholder: "Nachname",
-    username: "Benutzername",
-    usernamePlaceholder: "z. B. firma-berlin",
-    email: "E-Mail",
-    emailPlaceholder: "name@firma.de",
-    phone: "Telefon",
-    phonePlaceholder: "+49 ...",
-    passwordRegisterPlaceholder: "Mindestens 8 Zeichen",
-    confirmPassword: "Passwort wiederholen",
-    confirmPasswordPlaceholder: "Passwort wiederholen",
-
-    accountText:
-      "Verwalte deine Kontodaten, Rechnungen, Bestellungen und Lieferadressen zentral an einem Ort.",
-    addressesText: "Verwalte deine Liefer- und Rechnungsadressen.",
-    invoicesText: "Übersicht über alle Rechnungen und Zahlungen.",
-    orderNowText: "Starte direkt eine neue Bestellung.",
-    openAddresses: "Adressen öffnen",
-    openInvoices: "Rechnungen öffnen",
-    startOrder: "Bestellung starten",
-
-    billingAddressTitle: "Rechnungsadresse",
-    billingAddressText:
-      "Verwalte hier deine Rechnungsdaten für Angebote, Abrechnung und zukünftige Bestellungen.",
-    shippingAddressesTitle: "Lieferadressen",
-    shippingAddressesText:
-      "Verwalte deine gespeicherten Lieferorte für zukünftige Catering-Bestellungen.",
-    billingAddress: "Rechnungsadresse",
-    shippingAddresses: "Lieferadressen",
-    noShippingAddress: "Noch keine Lieferadresse vorhanden.",
-
-    invoiceText:
-      "Hier findest du alle Rechnungen und den aktuellen Zahlungsstatus.",
-    statusNow: "Aktueller Stand",
-    invoiceStatusTextStart: "Für",
-    invoiceStatusTextEnd:
-      "ist die Rechnungsübersicht vorbereitet. Als Nächstes binden wir echte Rechnungsdaten an.",
-    invoiceNumber: "Rechnung",
-    date: "Datum",
-    status: "Status",
-    amount: "Betrag",
-    paid: "Bezahlt",
-    open: "Offen",
-
-    ordersText:
-      "Hier findest du deine bisherigen und aktuellen Bestellungen übersichtlich an einem Ort.",
-    orderNumber: "Bestellung",
-    orderType: "Typ",
-    reorderTitle: "Erneut bestellen",
-    reorderText:
-      "Starte schnell eine neue Bestellung auf Basis deiner bisherigen Catering-Anfragen.",
-    positions: "Positionen",
-
-    loginFieldsMissing: "Bitte gib Benutzername und Passwort ein.",
-    userNotFound: "Benutzer nicht gefunden.",
-    accessDisabled: "Zugang ist deaktiviert.",
-    passwordWrong: "Falsches Passwort.",
-
-    save: "Speichern",
-    saving: "Wird gespeichert...",
-    delete: "Löschen",
-    defaultAddress: "Standardadresse",
-    setAsDefault: "Als Standard setzen",
-    billingUpdated: "Rechnungsadresse wurde gespeichert.",
-    deliveryCreated: "Lieferadresse wurde gespeichert.",
-    deliveryDeleted: "Lieferadresse wurde gelöscht.",
-    deliveryDefaultUpdated: "Standard-Lieferadresse wurde aktualisiert.",
-    addressFormError: "Bitte fülle die Pflichtfelder aus.",
-    street: "Straße",
-    streetPlaceholder: "Straßenname",
-    houseNumber: "Hausnummer",
-    houseNumberPlaceholder: "z. B. 12A",
-    postalCode: "PLZ",
-    postalCodePlaceholder: "z. B. 12345",
-    city: "Stadt",
-    cityPlaceholder: "Berlin",
-    country: "Land",
-    countryPlaceholder: "Deutschland",
-    notes: "Hinweise",
-    notesPlaceholder: "z. B. 3. Etage, Empfang im EG",
-    label: "Bezeichnung",
-    labelPlaceholder: "z. B. Büro, HQ, Lager",
-    invoiceEmail: "Rechnungs-E-Mail",
-    vatId: "USt-IdNr.",
-    addDeliveryTitle: "Neue Lieferadresse",
-    existingDeliveryAddresses: "Gespeicherte Lieferadressen",
-    noDeliverySaved:
-      "Sobald du eine Lieferadresse anlegst, erscheint sie hier.",
-
-    forgotPasswordTitle: "Passwort zurücksetzen",
-    forgotPasswordText:
-      "Gib die E-Mail-Adresse deines Kontos ein. Den Mailversand bauen wir im nächsten Schritt vollständig an.",
-    requestResetLink: "Link anfordern",
-    resetEmailLabel: "E-Mail-Adresse",
-    sendInstructions: "Anleitung senden",
-    sendingInstructions: "Wird gesendet...",
-    backToLogin: "Zurück zum Login",
-    forgotPasswordInfoTitle: "Aktueller Status",
-    forgotPasswordInfoText:
-      "Die Oberfläche ist bereit. Der echte Mailversand wird als Nächstes mit Token und E-Mail-Logik angebunden.",
-    forgotPasswordInvalidEmail:
-      "Bitte gib eine gültige E-Mail-Adresse ein.",
-    forgotPasswordNotLive:
-      "Die Anfrage wurde erfasst. Der echte E-Mail-Versand ist aktuell noch nicht aktiv.",
-  },
-
-  en: {
-    brand: "Let Me Bowl",
-
-    welcome: "Welcome",
-    account: "Account",
-    ordersTitle: "Orders",
-    addresses: "Addresses",
-    billingAddressNav: "Billing address",
-    shippingAddressesNav: "Delivery addresses",
-    invoices: "Invoices",
-    orderNow: "Order now",
-    logout: "Logout",
-    homepage: "Website",
-
-    loginTitle: "Login",
-    loginText: "Access your business account",
-    loginField: "Email or username",
-    loginPlaceholder: "e.g. company-berlin",
-    password: "Password",
-    passwordPlaceholder: "Your password",
-    signInNow: "Sign in",
-    signingIn: "Signing in...",
-    forgotPassword: "Forgot password?",
-    noAccountYet: "No account yet?",
-    registerNow: "Register now",
-
-    registerTitle: "Create account",
-    registerText:
-      "Create your business account for orders, invoices and addresses.",
-    registerSubmitting: "Creating...",
-    alreadyRegistered: "Already registered?",
-    loginNow: "Sign in now",
-
-    registerFillRequired: "Please fill in all required fields.",
-    registerEmailInvalid: "Please enter a valid email address.",
-    registerUsernameShort: "Username must be at least 3 characters.",
-    registerPasswordShort: "Password must be at least 8 characters.",
-    registerPasswordMismatch: "Passwords do not match.",
-    registerUserExists: "Email or username already exists.",
-
-    company: "Company",
-    companyPlaceholder: "e.g. Example Ltd.",
-    firstName: "First name",
-    firstNamePlaceholder: "First name",
-    lastName: "Last name",
-    lastNamePlaceholder: "Last name",
-    username: "Username",
-    usernamePlaceholder: "e.g. company-berlin",
-    email: "Email",
-    emailPlaceholder: "name@company.com",
-    phone: "Phone",
-    phonePlaceholder: "+49 ...",
-    passwordRegisterPlaceholder: "At least 8 characters",
-    confirmPassword: "Confirm password",
-    confirmPasswordPlaceholder: "Repeat password",
-
-    accountText:
-      "Manage your account, invoices, orders and delivery addresses in one place.",
-    addressesText: "Manage your delivery and billing addresses.",
-    invoicesText: "Overview of all invoices and payments.",
-    orderNowText: "Start a new order directly.",
-    openAddresses: "Open addresses",
-    openInvoices: "Open invoices",
-    startOrder: "Start order",
-
-    billingAddressTitle: "Billing address",
-    billingAddressText:
-      "Manage your billing details for quotes, invoicing and future orders.",
-    shippingAddressesTitle: "Delivery addresses",
-    shippingAddressesText:
-      "Manage your saved delivery locations for future catering orders.",
-    billingAddress: "Billing address",
-    shippingAddresses: "Delivery addresses",
-    noShippingAddress: "No delivery address yet.",
-
-    invoiceText:
-      "Here you will find all invoices and their current payment status.",
-    statusNow: "Current status",
-    invoiceStatusTextStart: "For",
-    invoiceStatusTextEnd:
-      "the invoice overview is prepared. Next we will connect real invoice data.",
-    invoiceNumber: "Invoice",
-    date: "Date",
-    status: "Status",
-    amount: "Amount",
-    paid: "Paid",
-    open: "Open",
-
-    ordersText:
-      "Here you can find your past and current orders in one clear overview.",
-    orderNumber: "Order",
-    orderType: "Type",
-    reorderTitle: "Reorder",
-    reorderText:
-      "Start a new order quickly based on your previous catering requests.",
-    positions: "Items",
-
-    loginFieldsMissing: "Please enter username and password.",
-    userNotFound: "User not found.",
-    accessDisabled: "Access is disabled.",
-    passwordWrong: "Wrong password.",
-
-    save: "Save",
-    saving: "Saving...",
-    delete: "Delete",
-    defaultAddress: "Default address",
-    setAsDefault: "Set as default",
-    billingUpdated: "Billing address has been saved.",
-    deliveryCreated: "Delivery address has been saved.",
-    deliveryDeleted: "Delivery address has been deleted.",
-    deliveryDefaultUpdated: "Default delivery address has been updated.",
-    addressFormError: "Please fill in all required fields.",
-    street: "Street",
-    streetPlaceholder: "Street name",
-    houseNumber: "House number",
-    houseNumberPlaceholder: "e.g. 12A",
-    postalCode: "Postal code",
-    postalCodePlaceholder: "e.g. 12345",
-    city: "City",
-    cityPlaceholder: "Berlin",
-    country: "Country",
-    countryPlaceholder: "Germany",
-    notes: "Notes",
-    notesPlaceholder: "e.g. 3rd floor, reception on ground floor",
-    label: "Label",
-    labelPlaceholder: "e.g. Office, HQ, Warehouse",
-    invoiceEmail: "Invoice email",
-    vatId: "VAT ID",
-    addDeliveryTitle: "New delivery address",
-    existingDeliveryAddresses: "Saved delivery addresses",
-    noDeliverySaved:
-      "As soon as you add a delivery address, it will appear here.",
-
-    forgotPasswordTitle: "Reset password",
-    forgotPasswordText:
-      "Enter the email address of your account. The real email delivery will be connected in the next step.",
-    requestResetLink: "Request link",
-    resetEmailLabel: "Email address",
-    sendInstructions: "Send instructions",
-    sendingInstructions: "Sending...",
-    backToLogin: "Back to login",
-    forgotPasswordInfoTitle: "Current status",
-    forgotPasswordInfoText:
-      "The interface is ready. Real email delivery will be connected next with token and mail logic.",
-    forgotPasswordInvalidEmail:
-      "Please enter a valid email address.",
-    forgotPasswordNotLive:
-      "Your request was recorded. Real email delivery is not active yet.",
-  },
+const langActive = {
+  textDecoration: "none",
+  color: "#111",
+  fontWeight: 800,
+  padding: "8px 12px",
+  borderRadius: "999px",
+  background: "#fff",
+  boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
 };
