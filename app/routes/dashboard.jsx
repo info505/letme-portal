@@ -1,5 +1,5 @@
 import { redirect } from "react-router";
-import { getUserFromRequest } from "../lib/auth.server";
+import { getUserFromRequest } from "../lib/auth.server.js";
 
 export async function loader({ request }) {
   const user = await getUserFromRequest(request);

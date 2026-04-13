@@ -1,10 +1,10 @@
 import { Form, redirect, useActionData, useNavigation } from "react-router";
-import { prisma } from "../lib/prisma.server";
+import { prisma } from "../lib/prisma.server.js";
 import {
   hashPassword,
   createPortalSession,
   createSessionCookie,
-} from "../lib/auth.server";
+} from "../lib/auth.server.js";
 
 export async function action({ request }) {
   const formData = await request.formData();
@@ -212,7 +212,10 @@ export default function RegisterPage() {
           </Form>
 
           <div style={footerTextStyle}>
-            Bereits registriert? <a href="/login" style={linkStyle}>Jetzt anmelden</a>
+            Bereits registriert?{" "}
+            <a href="/login" style={linkStyle}>
+              Jetzt anmelden
+            </a>
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
-import { prisma } from "./prisma.server";
+import { prisma } from "./prisma.server.js";
 
 const SESSION_COOKIE = "lmb_portal_session";
 
