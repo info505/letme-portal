@@ -24,7 +24,7 @@ export async function loader({ request }) {
     orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
   });
 
-  return { locale, addresses };
+  return { user, locale, addresses };
 }
 
 export async function action({ request }) {
@@ -117,7 +117,7 @@ export async function action({ request }) {
 }
 
 export default function LieferadressenPage() {
-  const { locale, addresses } = useLoaderData();
+  const { user, locale, addresses } = useLoaderData();
   const actionData = useActionData();
   const navigation = useNavigation();
   const t = dict[locale] || dict.de;

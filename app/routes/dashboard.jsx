@@ -64,10 +64,10 @@ export default function DashboardPage() {
           />
 
           <MainCard
-            title={t.addresses}
-            text={t.addressesText}
-            href={withLang("/adressen", locale)}
-            cta={t.openAddresses}
+            title={t.billingAddressNav}
+            text={t.billingAddressText}
+            href={withLang("/rechnungsadresse", locale)}
+            cta={t.billingAddressNav}
           />
 
           <MainCard
@@ -76,85 +76,6 @@ export default function DashboardPage() {
             href={withLang("/rechnungen", locale)}
             cta={t.openInvoices}
           />
-        </section>
-
-        <section
-          style={{
-            ...card.base,
-            padding: "28px",
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 1.15fr) minmax(280px, 0.85fr)",
-            gap: "18px",
-          }}
-        >
-          <div>
-            <div
-              style={{
-                fontSize: "13px",
-                fontWeight: 800,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                color: colors.gold,
-                marginBottom: "10px",
-              }}
-            >
-              {locale === "en" ? "Portal status" : "Portalstatus"}
-            </div>
-
-            <h3
-              style={{
-                margin: "0 0 10px",
-                fontSize: "28px",
-                lineHeight: 1.15,
-                color: colors.text,
-              }}
-            >
-              {locale === "en"
-                ? "Your account area is ready for the next steps"
-                : "Dein Kontobereich ist für die nächsten Schritte vorbereitet"}
-            </h3>
-
-            <p
-              style={{
-                margin: 0,
-                color: colors.muted,
-                lineHeight: 1.7,
-                fontSize: "16px",
-                maxWidth: "760px",
-              }}
-            >
-              {locale === "en"
-                ? "You can already manage your core business data, open your address area, review invoices and access the order section. Next we can connect more live functions step by step."
-                : "Du kannst bereits deine zentralen Firmendaten verwalten, den Adressbereich öffnen, Rechnungen ansehen und den Bestellbereich nutzen. Als Nächstes können wir weitere Live-Funktionen Schritt für Schritt anbinden."}
-            </p>
-          </div>
-
-          <div
-            style={{
-              border: `1px solid ${colors.border}`,
-              borderRadius: "20px",
-              padding: "18px",
-              background: "#fcf9f3",
-              alignSelf: "start",
-            }}
-          >
-            <StatusItem
-              label={locale === "en" ? "Login & account" : "Login & Konto"}
-              active
-            />
-            <StatusItem
-              label={locale === "en" ? "Address management" : "Adressverwaltung"}
-              active
-            />
-            <StatusItem
-              label={locale === "en" ? "Order area" : "Bestellbereich"}
-              active
-            />
-            <StatusItem
-              label={locale === "en" ? "Invoice overview" : "Rechnungsübersicht"}
-              active
-            />
-          </div>
         </section>
       </div>
     </PortalLayout>
@@ -208,7 +129,7 @@ function MainCard({ title, text, href, cta, primary = false }) {
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        minHeight: "230px",
+        minHeight: "220px",
       }}
     >
       <div>
@@ -253,41 +174,6 @@ function MainCard({ title, text, href, cta, primary = false }) {
           {cta}
         </a>
       </div>
-    </div>
-  );
-}
-
-function StatusItem({ label, active = false }) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "10px",
-        marginBottom: "12px",
-        color: colors.text,
-        fontSize: "14px",
-        fontWeight: 600,
-      }}
-    >
-      <span
-        style={{
-          width: "20px",
-          height: "20px",
-          borderRadius: "999px",
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: active ? "#edf7ee" : "#f4f4f4",
-          border: active ? "1px solid #cfe8d4" : "1px solid #dddddd",
-          color: active ? "#1f6b36" : "#666",
-          fontSize: "12px",
-          flexShrink: 0,
-        }}
-      >
-        {active ? "✓" : "•"}
-      </span>
-      <span>{label}</span>
     </div>
   );
 }
