@@ -13,12 +13,14 @@ export const dict = {
 
     welcome: "Willkommen",
     account: "Konto",
+    ordersTitle: "Bestellungen",
     addresses: "Adressen",
+    billingAddressNav: "Rechnungsadresse",
+    shippingAddressesNav: "Lieferadressen",
     invoices: "Rechnungen",
     orderNow: "Jetzt bestellen",
     logout: "Abmelden",
     homepage: "Zur Website",
-    menu: "Menü",
 
     loginTitle: "Anmelden",
     loginText: "Zugang zu deinem Firmenkonto",
@@ -71,16 +73,15 @@ export const dict = {
     openInvoices: "Rechnungen öffnen",
     startOrder: "Bestellung starten",
 
-    addressTitle: "Adressen",
-    addressText:
-      "Verwalte deine Rechnungs- und Lieferadressen für deine Bestellungen.",
+    billingAddressTitle: "Rechnungsadresse",
+    billingAddressText:
+      "Verwalte hier deine Rechnungsdaten für Angebote, Abrechnung und zukünftige Bestellungen.",
+    shippingAddressesTitle: "Lieferadressen",
+    shippingAddressesText:
+      "Verwalte deine gespeicherten Lieferorte für zukünftige Catering-Bestellungen.",
     billingAddress: "Rechnungsadresse",
     shippingAddresses: "Lieferadressen",
     noShippingAddress: "Noch keine Lieferadresse vorhanden.",
-    editBilling: "Rechnungsadresse bearbeiten",
-    addShipping: "Neue Lieferadresse",
-    contactPerson: "Ansprechpartner",
-    quickLinks: "Schnellzugriff",
 
     invoiceText:
       "Hier findest du alle Rechnungen und den aktuellen Zahlungsstatus.",
@@ -95,7 +96,6 @@ export const dict = {
     paid: "Bezahlt",
     open: "Offen",
 
-    ordersTitle: "Bestellungen",
     ordersText:
       "Hier findest du deine bisherigen und aktuellen Bestellungen übersichtlich an einem Ort.",
     orderNumber: "Bestellung",
@@ -110,10 +110,8 @@ export const dict = {
     accessDisabled: "Zugang ist deaktiviert.",
     passwordWrong: "Falsches Passwort.",
 
-    // Address editor
     save: "Speichern",
     saving: "Wird gespeichert...",
-    cancel: "Abbrechen",
     delete: "Löschen",
     defaultAddress: "Standardadresse",
     setAsDefault: "Als Standard setzen",
@@ -138,12 +136,26 @@ export const dict = {
     labelPlaceholder: "z. B. Büro, HQ, Lager",
     invoiceEmail: "Rechnungs-E-Mail",
     vatId: "USt-IdNr.",
-    addDeliveryTitle: "Lieferadresse hinzufügen",
+    addDeliveryTitle: "Neue Lieferadresse",
     existingDeliveryAddresses: "Gespeicherte Lieferadressen",
     noDeliverySaved:
       "Sobald du eine Lieferadresse anlegst, erscheint sie hier.",
-    backToView: "Zur Übersicht zurück",
-    makeChanges: "Änderungen",
+
+    forgotPasswordTitle: "Passwort zurücksetzen",
+    forgotPasswordText:
+      "Gib die E-Mail-Adresse deines Kontos ein. Den Mailversand bauen wir im nächsten Schritt vollständig an.",
+    requestResetLink: "Link anfordern",
+    resetEmailLabel: "E-Mail-Adresse",
+    sendInstructions: "Anleitung senden",
+    sendingInstructions: "Wird gesendet...",
+    backToLogin: "Zurück zum Login",
+    forgotPasswordInfoTitle: "Aktueller Status",
+    forgotPasswordInfoText:
+      "Die Oberfläche ist bereit. Der echte Mailversand wird als Nächstes mit Token und E-Mail-Logik angebunden.",
+    forgotPasswordInvalidEmail:
+      "Bitte gib eine gültige E-Mail-Adresse ein.",
+    forgotPasswordNotLive:
+      "Die Anfrage wurde erfasst. Der echte E-Mail-Versand ist aktuell noch nicht aktiv.",
   },
 
   en: {
@@ -151,12 +163,14 @@ export const dict = {
 
     welcome: "Welcome",
     account: "Account",
+    ordersTitle: "Orders",
     addresses: "Addresses",
+    billingAddressNav: "Billing address",
+    shippingAddressesNav: "Delivery addresses",
     invoices: "Invoices",
     orderNow: "Order now",
     logout: "Logout",
     homepage: "Website",
-    menu: "Menu",
 
     loginTitle: "Login",
     loginText: "Access your business account",
@@ -209,16 +223,15 @@ export const dict = {
     openInvoices: "Open invoices",
     startOrder: "Start order",
 
-    addressTitle: "Addresses",
-    addressText:
-      "Manage your billing and delivery addresses for your orders.",
+    billingAddressTitle: "Billing address",
+    billingAddressText:
+      "Manage your billing details for quotes, invoicing and future orders.",
+    shippingAddressesTitle: "Delivery addresses",
+    shippingAddressesText:
+      "Manage your saved delivery locations for future catering orders.",
     billingAddress: "Billing address",
-    shippingAddresses: "Shipping addresses",
-    noShippingAddress: "No shipping address yet.",
-    editBilling: "Edit billing address",
-    addShipping: "New delivery address",
-    contactPerson: "Contact person",
-    quickLinks: "Quick links",
+    shippingAddresses: "Delivery addresses",
+    noShippingAddress: "No delivery address yet.",
 
     invoiceText:
       "Here you will find all invoices and their current payment status.",
@@ -233,7 +246,6 @@ export const dict = {
     paid: "Paid",
     open: "Open",
 
-    ordersTitle: "Orders",
     ordersText:
       "Here you can find your past and current orders in one clear overview.",
     orderNumber: "Order",
@@ -248,10 +260,8 @@ export const dict = {
     accessDisabled: "Access is disabled.",
     passwordWrong: "Wrong password.",
 
-    // Address editor
     save: "Save",
     saving: "Saving...",
-    cancel: "Cancel",
     delete: "Delete",
     defaultAddress: "Default address",
     setAsDefault: "Set as default",
@@ -276,10 +286,25 @@ export const dict = {
     labelPlaceholder: "e.g. Office, HQ, Warehouse",
     invoiceEmail: "Invoice email",
     vatId: "VAT ID",
-    addDeliveryTitle: "Add delivery address",
+    addDeliveryTitle: "New delivery address",
     existingDeliveryAddresses: "Saved delivery addresses",
-    noDeliverySaved: "As soon as you add a delivery address, it will appear here.",
-    backToView: "Back to overview",
-    makeChanges: "Changes",
+    noDeliverySaved:
+      "As soon as you add a delivery address, it will appear here.",
+
+    forgotPasswordTitle: "Reset password",
+    forgotPasswordText:
+      "Enter the email address of your account. The real email delivery will be connected in the next step.",
+    requestResetLink: "Request link",
+    resetEmailLabel: "Email address",
+    sendInstructions: "Send instructions",
+    sendingInstructions: "Sending...",
+    backToLogin: "Back to login",
+    forgotPasswordInfoTitle: "Current status",
+    forgotPasswordInfoText:
+      "The interface is ready. Real email delivery will be connected next with token and mail logic.",
+    forgotPasswordInvalidEmail:
+      "Please enter a valid email address.",
+    forgotPasswordNotLive:
+      "Your request was recorded. Real email delivery is not active yet.",
   },
 };

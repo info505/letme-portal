@@ -7,8 +7,6 @@ import {
 } from "react-router";
 import { getUserFromRequest } from "../lib/auth.server.js";
 import { getLocaleFromRequest, dict, withLang } from "../lib/i18n.js";
-import { layout, card, button, input, colors } from "../lib/ui.js";
-import LanguageSwitch from "../components/LanguageSwitch.jsx";
 
 export async function loader({ request }) {
   const locale = getLocaleFromRequest(request);
@@ -23,28 +21,21 @@ export async function loader({ request }) {
 
 export async function action({ request }) {
   const locale = getLocaleFromRequest(request);
+  const t = dict[locale] || dict.de;
   const formData = await request.formData();
   const email = String(formData.get("email") || "").trim().toLowerCase();
 
   if (!email || !email.includes("@")) {
     return {
       ok: false,
-      locale,
-      message:
-        locale === "en"
-          ? "Please enter a valid email address."
-          : "Bitte gib eine gültige E-Mail-Adresse ein.",
+      message: t.forgotPasswordInvalidEmail,
       values: { email },
     };
   }
 
   return {
     ok: true,
-    locale,
-    message:
-      locale === "en"
-        ? "If an account exists for this email, you will receive reset instructions shortly."
-        : "Wenn für diese E-Mail ein Konto existiert, erhältst du in Kürze eine Anleitung zum Zurücksetzen.",
+    message: t.forgotPasswordNotLive,
     values: { email: "" },
   };
 }
@@ -54,335 +45,266 @@ export default function ForgotPasswordPage() {
   const actionData = useActionData();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
-  const values = actionData?.values || {};
   const t = dict[locale] || dict.de;
 
-  const pageTitle =
-    locale === "en" ? "Reset password" : "Passwort zurücksetzen";
-  const pageText =
-    locale === "en"
-      ? "Enter your email address and we will guide you through the next step."
-      : "Gib deine E-Mail-Adresse ein und wir führen dich zum nächsten Schritt.";
-  const formTitle =
-    locale === "en" ? "Request reset link" : "Link anfordern";
-  const formText =
-    locale === "en"
-      ? "Use the email address connected to your portal account."
-      : "Nutze die E-Mail-Adresse, die mit deinem Portal-Konto verknüpft ist.";
-  const emailLabel = locale === "en" ? "Email address" : "E-Mail-Adresse";
-  const emailPlaceholder =
-    locale === "en" ? "name@company.com" : "name@firma.de";
-  const submitLabel =
-    locale === "en" ? "Send instructions" : "Anleitung senden";
-  const submitLoading =
-    locale === "en" ? "Sending..." : "Wird gesendet...";
-  const backToLogin =
-    locale === "en" ? "Back to login" : "Zurück zum Login";
-  const feature1Text =
-    locale === "en"
-      ? "Secure access to your business account."
-      : "Sicherer Zugang zu deinem Firmenkonto.";
-  const feature2Text =
-    locale === "en"
-      ? "Structured management of addresses and invoices."
-      : "Strukturierte Verwaltung von Adressen und Rechnungen.";
-  const feature3Text =
-    locale === "en"
-      ? "Prepared for orders and future account functions."
-      : "Vorbereitet für Bestellungen und künftige Kontofunktionen.";
-
   return (
-    <div style={layout.page}>
-      <style>{`
-        .auth-layout {
-          min-height: 100vh;
-          display: grid;
-          grid-template-columns: minmax(0, 1.05fr) minmax(420px, 520px);
-        }
+    <div style={styles.page}>
+      <div style={styles.topbar}>
+        <a href="https://letmebowl-catering.de" style={styles.logo}>
+          LET ME BOWL
+        </a>
 
-        .auth-left {
-          padding: 34px 36px 40px;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          background: linear-gradient(180deg, #f8f6f2 0%, #f3eee4 100%);
-          border-right: 1px solid ${colors.border};
-        }
-
-        .auth-right {
-          padding: 34px 26px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: ${colors.bg};
-        }
-
-        .auth-features {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 14px;
-          max-width: 760px;
-        }
-
-        @media (max-width: 980px) {
-          .auth-layout {
-            grid-template-columns: 1fr;
-          }
-
-          .auth-left {
-            padding: 22px 18px 24px;
-            border-right: none;
-            border-bottom: 1px solid ${colors.border};
-            gap: 28px;
-          }
-
-          .auth-right {
-            padding: 20px 16px 28px;
-          }
-
-          .auth-features {
-            grid-template-columns: 1fr;
-            max-width: none;
-          }
-        }
-      `}</style>
-
-      <div className="auth-layout">
-        <section className="auth-left">
-          <div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: "16px",
-                marginBottom: "56px",
-                flexWrap: "wrap",
-              }}
-            >
-              <a
-                href="https://letmebowl-catering.de"
-                style={{
-                  textDecoration: "none",
-                  color: colors.text,
-                  fontWeight: 800,
-                  letterSpacing: "0.08em",
-                  fontSize: "15px",
-                }}
-              >
-                LET ME BOWL
-              </a>
-
-              <LanguageSwitch />
-            </div>
-
-            <div style={{ maxWidth: "640px" }}>
-              <div
-                style={{
-                  fontSize: "12px",
-                  letterSpacing: "0.18em",
-                  textTransform: "uppercase",
-                  color: colors.gold,
-                  fontWeight: 700,
-                  marginBottom: "14px",
-                }}
-              >
-                {t.brand}
-              </div>
-
-              <h1
-                style={{
-                  margin: 0,
-                  fontSize: "clamp(42px, 5vw, 72px)",
-                  lineHeight: 0.98,
-                  color: colors.text,
-                  letterSpacing: "-0.03em",
-                }}
-              >
-                {pageTitle}
-              </h1>
-
-              <p
-                style={{
-                  margin: "20px 0 0",
-                  fontSize: "18px",
-                  lineHeight: 1.7,
-                  color: colors.muted,
-                  maxWidth: "620px",
-                }}
-              >
-                {pageText}
-              </p>
-            </div>
-          </div>
-
-          <div className="auth-features">
-            <FeatureCard title={t.account} text={feature1Text} />
-            <FeatureCard title={t.addresses} text={feature2Text} />
-            <FeatureCard title={t.invoices} text={feature3Text} />
-          </div>
-        </section>
-
-        <section className="auth-right">
-          <div
-            style={{
-              ...card.base,
-              width: "100%",
-              maxWidth: "460px",
-              padding: "34px",
-            }}
+        <div style={styles.lang}>
+          <a
+            href={withLang("/forgot-password", "de")}
+            style={locale === "de" ? styles.langActive : styles.langLink}
           >
-            <div style={{ marginBottom: "24px" }}>
-              <h2
-                style={{
-                  margin: "0 0 10px",
-                  fontSize: "28px",
-                  color: colors.text,
-                  lineHeight: 1.1,
-                }}
-              >
-                {formTitle}
-              </h2>
+            DE
+          </a>
+          <span style={styles.langSep}>|</span>
+          <a
+            href={withLang("/forgot-password", "en")}
+            style={locale === "en" ? styles.langActive : styles.langLink}
+          >
+            EN
+          </a>
+        </div>
+      </div>
 
-              <p
-                style={{
-                  margin: 0,
-                  color: colors.muted,
-                  fontSize: "15px",
-                  lineHeight: 1.6,
-                }}
-              >
-                {formText}
-              </p>
-            </div>
+      <div style={styles.center}>
+        <div style={styles.shell}>
+          <div style={styles.mainCard}>
+            <div style={styles.eyebrow}>{t.brand}</div>
+            <h1 style={styles.title}>{t.forgotPasswordTitle}</h1>
+            <p style={styles.text}>{t.forgotPasswordText}</p>
 
             {actionData?.message ? (
               <div
-                style={{
-                  marginBottom: "18px",
-                  padding: "14px 16px",
-                  borderRadius: "14px",
-                  background: actionData.ok ? "#edf7ee" : "#fff4f4",
-                  color: actionData.ok ? "#1f6b36" : "#8b2222",
-                  border: actionData.ok
-                    ? "1px solid #cfe8d4"
-                    : "1px solid #efcaca",
-                  fontWeight: 600,
-                }}
+                style={actionData.ok ? styles.successBox : styles.errorBox}
               >
                 {actionData.message}
               </div>
             ) : null}
 
             <Form method="post">
-              <Field
-                label={emailLabel}
-                name="email"
-                type="email"
-                defaultValue={values.email}
-                placeholder={emailPlaceholder}
-              />
+              <label style={styles.field}>
+                <span style={styles.label}>{t.resetEmailLabel}</span>
+                <input
+                  name="email"
+                  type="email"
+                  defaultValue={actionData?.values?.email || ""}
+                  placeholder={t.emailPlaceholder}
+                  style={styles.input}
+                />
+              </label>
 
               <button
                 type="submit"
-                style={{
-                  ...button.primary,
-                  width: "100%",
-                  fontSize: "15px",
-                  marginTop: "6px",
-                }}
+                style={styles.button}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? submitLoading : submitLabel}
+                {isSubmitting ? t.sendingInstructions : t.sendInstructions}
               </button>
             </Form>
 
             <div style={{ marginTop: "16px" }}>
-              <a
-                href={withLang("/login", locale)}
-                style={{
-                  color: colors.muted,
-                  fontWeight: 700,
-                  textDecoration: "none",
-                }}
-              >
-                {backToLogin}
+              <a href={withLang("/login", locale)} style={styles.linkStrong}>
+                {t.backToLogin}
               </a>
             </div>
           </div>
-        </section>
+
+          <div style={styles.sideCard}>
+            <div style={styles.sideEyebrow}>{t.forgotPasswordInfoTitle}</div>
+            <p style={styles.sideText}>{t.forgotPasswordInfoText}</p>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-function Field({
-  label,
-  name,
-  type = "text",
-  placeholder = "",
-  defaultValue = "",
-}) {
-  return (
-    <label
-      style={{
-        display: "block",
-        marginBottom: "16px",
-      }}
-    >
-      <span
-        style={{
-          display: "block",
-          marginBottom: "8px",
-          fontWeight: 700,
-          color: colors.text,
-          fontSize: "14px",
-        }}
-      >
-        {label}
-      </span>
+const styles = {
+  page: {
+    minHeight: "100vh",
+    background: "#efebe2",
+    fontFamily:
+      'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    display: "flex",
+    flexDirection: "column",
+  },
 
-      <input
-        name={name}
-        type={type}
-        placeholder={placeholder}
-        defaultValue={defaultValue}
-        style={input.base}
-      />
-    </label>
-  );
-}
+  topbar: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "28px 34px 0",
+  },
 
-function FeatureCard({ title, text }) {
-  return (
-    <div
-      style={{
-        ...card.base,
-        padding: "18px",
-        borderRadius: "20px",
-        background: "rgba(255,255,255,0.72)",
-      }}
-    >
-      <div
-        style={{
-          fontSize: "14px",
-          fontWeight: 700,
-          color: colors.text,
-          marginBottom: "8px",
-        }}
-      >
-        {title}
-      </div>
+  logo: {
+    textDecoration: "none",
+    color: "#111",
+    fontWeight: 800,
+    letterSpacing: "0.08em",
+    fontSize: "15px",
+  },
 
-      <div
-        style={{
-          fontSize: "14px",
-          lineHeight: 1.6,
-          color: colors.muted,
-        }}
-      >
-        {text}
-      </div>
-    </div>
-  );
-}
+  lang: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    fontSize: "14px",
+  },
+
+  langLink: {
+    textDecoration: "none",
+    color: "#6f6a61",
+    fontWeight: 700,
+  },
+
+  langActive: {
+    textDecoration: "none",
+    color: "#111",
+    fontWeight: 800,
+  },
+
+  langSep: {
+    color: "#8b857b",
+  },
+
+  center: {
+    flex: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "32px 16px 48px",
+  },
+
+  shell: {
+    width: "100%",
+    maxWidth: "980px",
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1fr) 320px",
+    gap: "18px",
+  },
+
+  mainCard: {
+    background: "#fffdf9",
+    border: "1px solid #e5dcc8",
+    borderRadius: "24px",
+    padding: "36px",
+    boxShadow: "0 18px 50px rgba(0,0,0,0.06)",
+  },
+
+  sideCard: {
+    background: "#faf6ee",
+    border: "1px solid #e7dcc8",
+    borderRadius: "24px",
+    padding: "28px",
+    alignSelf: "start",
+  },
+
+  eyebrow: {
+    color: "#c8a96a",
+    fontWeight: 800,
+    letterSpacing: "0.14em",
+    textTransform: "uppercase",
+    fontSize: "12px",
+    marginBottom: "14px",
+  },
+
+  title: {
+    margin: "0 0 10px",
+    fontSize: "54px",
+    lineHeight: 0.95,
+    letterSpacing: "-0.04em",
+    color: "#111",
+  },
+
+  text: {
+    margin: "0 0 24px",
+    color: "#5f5a52",
+    fontSize: "18px",
+    lineHeight: 1.6,
+  },
+
+  sideEyebrow: {
+    color: "#c8a96a",
+    fontWeight: 800,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    fontSize: "12px",
+    marginBottom: "10px",
+  },
+
+  sideText: {
+    margin: 0,
+    color: "#5f5a52",
+    fontSize: "15px",
+    lineHeight: 1.7,
+  },
+
+  field: {
+    display: "block",
+    marginBottom: "16px",
+  },
+
+  label: {
+    display: "block",
+    marginBottom: "8px",
+    fontWeight: 800,
+    color: "#111",
+    fontSize: "14px",
+  },
+
+  input: {
+    width: "100%",
+    boxSizing: "border-box",
+    border: "1px solid #e2d8c5",
+    background: "#fff",
+    borderRadius: "14px",
+    padding: "15px 16px",
+    fontSize: "16px",
+    outline: "none",
+  },
+
+  button: {
+    width: "100%",
+    marginTop: "8px",
+    border: "none",
+    borderRadius: "14px",
+    background: "linear-gradient(135deg, #c8a96a, #b8934f)",
+    color: "#fff",
+    fontSize: "16px",
+    fontWeight: 800,
+    padding: "15px 18px",
+    cursor: "pointer",
+    boxShadow: "0 10px 24px rgba(184,147,79,0.22)",
+  },
+
+  errorBox: {
+    background: "#fff1f1",
+    padding: "12px 14px",
+    borderRadius: "12px",
+    marginBottom: "14px",
+    color: "#a12626",
+    border: "1px solid #efcaca",
+    fontWeight: 700,
+  },
+
+  successBox: {
+    background: "#edf7ee",
+    padding: "12px 14px",
+    borderRadius: "12px",
+    marginBottom: "14px",
+    color: "#1f6b36",
+    border: "1px solid #cfe8d4",
+    fontWeight: 700,
+  },
+
+  linkStrong: {
+    color: "#111",
+    fontWeight: 800,
+    textDecoration: "none",
+  },
+};
