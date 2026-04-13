@@ -1,7 +1,7 @@
 import { redirect, useLoaderData } from "react-router";
 import { prisma } from "../lib/prisma.server.js";
 import { getUserFromRequest } from "../lib/auth.server.js";
-import { getLocaleFromRequest, dict, withLang } from "../lib/i18n.js";
+import { getLocaleFromRequest, dict } from "../lib/i18n.js";
 import { card, button, colors } from "../lib/ui.js";
 import PortalLayout from "../components/PortalLayout.jsx";
 
@@ -34,141 +34,77 @@ export default function BestellungenPage() {
 
   return (
     <PortalLayout title={t.ordersTitle} subtitle={t.ordersText}>
-      <section
-        style={{
-          ...card.base,
-          padding: "20px",
-          overflowX: "auto",
-          marginBottom: "24px",
-        }}
-      >
-        {orders.length === 0 ? (
-          <EmptyOrders locale={locale} />
-        ) : (
-          <div style={{ minWidth: "860px" }}>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1.2fr 1fr 1fr 1fr 1fr 1fr",
-                gap: "16px",
-                padding: "14px 16px",
-                borderBottom: `1px solid ${colors.border}`,
-                color: colors.muted,
-                fontWeight: 700,
-                fontSize: "13px",
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-              }}
-            >
-              <div>{t.orderNumber}</div>
-              <div>{t.date}</div>
-              <div>{t.orderType}</div>
-              <div>{t.status}</div>
-              <div>{t.amount}</div>
-              <div>{t.positions}</div>
+      <div style={{ display: "grid", gap: "18px" }}>
+        <section
+          style={{
+            ...card.base,
+            padding: "20px",
+            overflowX: "auto",
+          }}
+        >
+          {orders.length === 0 ? (
+            <EmptyOrders locale={locale} />
+          ) : (
+            <div style={{ minWidth: "860px" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1.2fr 1fr 1fr 1fr 1fr 1fr",
+                  gap: "16px",
+                  padding: "14px 16px",
+                  borderBottom: `1px solid ${colors.border}`,
+                  color: colors.muted,
+                  fontWeight: 700,
+                  fontSize: "13px",
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                }}
+              >
+                <div>{t.orderNumber}</div>
+                <div>{t.date}</div>
+                <div>{t.orderType}</div>
+                <div>{t.status}</div>
+                <div>{t.amount}</div>
+                <div>{t.positions}</div>
+              </div>
+
+              {orders.map((order) => (
+                <OrderRow key={order.id} order={order} locale={locale} />
+              ))}
             </div>
+          )}
+        </section>
 
-            {orders.map((order) => (
-              <OrderRow key={order.id} order={order} locale={locale} />
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-          gap: "18px",
-          marginBottom: "24px",
-        }}
-      >
-        <ActionCard
-          title={t.reorderTitle}
-          text={t.reorderText}
-          href="https://letmebowl-catering.de"
-          cta={t.startOrder}
-          primary
-        />
-
-        <ActionCard
-          title={t.invoices}
-          text={t.invoicesText}
-          href={withLang("/rechnungen", locale)}
-          cta={t.openInvoices}
-        />
-
-        <ActionCard
-          title={t.addresses}
-          text={t.addressesText}
-          href={withLang("/adressen", locale)}
-          cta={t.openAddresses}
-        />
-      </section>
-
-      <section
-        style={{
-          ...card.base,
-          padding: "28px",
-        }}
-      >
-        <h3
+        <section
           style={{
-            margin: "0 0 12px",
-            fontSize: "24px",
-            color: colors.text,
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+            gap: "18px",
           }}
         >
-          {t.quickLinks}
-        </h3>
-
-        <div
-          style={{
-            display: "flex",
-            gap: "12px",
-            flexWrap: "wrap",
-          }}
-        >
-          <a
-            href={withLang("/dashboard", locale)}
-            style={{
-              ...button.secondary,
-              textDecoration: "none",
-              color: colors.text,
-              fontWeight: 700,
-            }}
-          >
-            {t.account}
-          </a>
-
-          <a
-            href={withLang("/rechnungen", locale)}
-            style={{
-              ...button.secondary,
-              textDecoration: "none",
-              color: colors.text,
-              fontWeight: 700,
-            }}
-          >
-            {t.invoices}
-          </a>
-
-          <a
+          <ActionCard
+            title={t.reorderTitle}
+            text={t.reorderText}
             href="https://letmebowl-catering.de"
-            style={{
-              ...button.primary,
-              textDecoration: "none",
-              color: "#fff",
-              fontWeight: 700,
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            {t.orderNow}
-          </a>
-        </div>
-      </section>
+            cta={t.startOrder}
+            primary
+          />
+
+          <ActionCard
+            title={t.addresses}
+            text={t.addressesText}
+            href={`/adressen?lang=${locale}`}
+            cta={t.openAddresses}
+          />
+
+          <ActionCard
+            title={t.invoices}
+            text={t.invoicesText}
+            href={`/rechnungen?lang=${locale}`}
+            cta={t.openInvoices}
+          />
+        </section>
+      </div>
     </PortalLayout>
   );
 }
@@ -190,9 +126,7 @@ function OrderRow({ order, locale }) {
         fontSize: "15px",
       }}
     >
-      <div style={{ fontWeight: 600 }}>
-        {order.orderNumber}
-      </div>
+      <div style={{ fontWeight: 600 }}>{order.orderNumber}</div>
 
       <div>{formatDate(order.createdAt, locale)}</div>
 
@@ -236,15 +170,16 @@ function EmptyOrders({ locale }) {
   return (
     <div
       style={{
-        padding: "34px 20px",
+        padding: "42px 24px",
         textAlign: "center",
       }}
     >
       <h3
         style={{
           margin: "0 0 10px",
-          fontSize: "24px",
+          fontSize: "34px",
           color: colors.text,
+          lineHeight: 1.1,
         }}
       >
         {title}
@@ -252,11 +187,11 @@ function EmptyOrders({ locale }) {
 
       <p
         style={{
-          margin: "0 auto 18px",
-          maxWidth: "620px",
+          margin: "0 auto 22px",
+          maxWidth: "700px",
           color: colors.muted,
-          lineHeight: 1.6,
-          fontSize: "15px",
+          lineHeight: 1.7,
+          fontSize: "17px",
         }}
       >
         {text}
@@ -272,6 +207,7 @@ function EmptyOrders({ locale }) {
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
+          background: "linear-gradient(135deg, #c8a96a, #b8934f)",
         }}
       >
         {cta}
@@ -326,6 +262,9 @@ function ActionCard({ title, text, href, cta, primary = false }) {
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
+            background: primary
+              ? "linear-gradient(135deg, #c8a96a, #b8934f)"
+              : "#fff",
           }}
         >
           {cta}
@@ -345,9 +284,10 @@ function formatDate(value, locale) {
 }
 
 function formatMoney(value, currency = "EUR", locale) {
-  const num = typeof value === "object" && value !== null && "toNumber" in value
-    ? value.toNumber()
-    : Number(value || 0);
+  const num =
+    typeof value === "object" && value !== null && "toNumber" in value
+      ? value.toNumber()
+      : Number(value || 0);
 
   return new Intl.NumberFormat(locale === "en" ? "en-GB" : "de-DE", {
     style: "currency",

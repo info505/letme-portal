@@ -1,7 +1,7 @@
 import { redirect, useLoaderData } from "react-router";
 import { getUserFromRequest } from "../lib/auth.server.js";
-import { getLocaleFromRequest, dict, withLang } from "../lib/i18n.js";
-import { card, button, colors } from "../lib/ui.js";
+import { getLocaleFromRequest, dict } from "../lib/i18n.js";
+import { card, colors } from "../lib/ui.js";
 import PortalLayout from "../components/PortalLayout.jsx";
 
 export async function loader({ request }) {
@@ -21,146 +21,82 @@ export default function RechnungenPage() {
 
   return (
     <PortalLayout title={t.invoices} subtitle={t.invoiceText}>
-      <section
-        style={{
-          ...card.base,
-          marginBottom: "24px",
-          padding: "28px",
-        }}
-      >
-        <h3
+      <div style={{ display: "grid", gap: "18px" }}>
+        <section
           style={{
-            margin: "0 0 12px",
-            fontSize: "24px",
-            color: colors.text,
+            ...card.base,
+            padding: "28px",
           }}
         >
-          {t.statusNow}
-        </h3>
-
-        <p
-          style={{
-            margin: 0,
-            color: colors.muted,
-            lineHeight: 1.6,
-            fontSize: "15px",
-          }}
-        >
-          {t.invoiceStatusTextStart}{" "}
-          <strong style={{ color: colors.text }}>{user.companyName}</strong>{" "}
-          {t.invoiceStatusTextEnd}
-        </p>
-      </section>
-
-      <section
-        style={{
-          ...card.base,
-          padding: "20px",
-          overflowX: "auto",
-          marginBottom: "24px",
-        }}
-      >
-        <div style={{ minWidth: "640px" }}>
-          <div
+          <h3
             style={{
-              display: "grid",
-              gridTemplateColumns: "1.2fr 1fr 1fr 1fr",
-              gap: "16px",
-              padding: "14px 16px",
-              borderBottom: `1px solid ${colors.border}`,
+              margin: "0 0 12px",
+              fontSize: "28px",
+              color: colors.text,
+            }}
+          >
+            {t.statusNow}
+          </h3>
+
+          <p
+            style={{
+              margin: 0,
               color: colors.muted,
-              fontWeight: 700,
-              fontSize: "13px",
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
+              lineHeight: 1.6,
+              fontSize: "16px",
             }}
           >
-            <div>{t.invoiceNumber}</div>
-            <div>{t.date}</div>
-            <div>{t.status}</div>
-            <div>{t.amount}</div>
+            {t.invoiceStatusTextStart}{" "}
+            <strong style={{ color: colors.text }}>{user.companyName}</strong>{" "}
+            {t.invoiceStatusTextEnd}
+          </p>
+        </section>
+
+        <section
+          style={{
+            ...card.base,
+            padding: "20px",
+            overflowX: "auto",
+          }}
+        >
+          <div style={{ minWidth: "640px" }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1.2fr 1fr 1fr 1fr",
+                gap: "16px",
+                padding: "14px 16px",
+                borderBottom: `1px solid ${colors.border}`,
+                color: colors.muted,
+                fontWeight: 700,
+                fontSize: "13px",
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+              }}
+            >
+              <div>{t.invoiceNumber}</div>
+              <div>{t.date}</div>
+              <div>{t.status}</div>
+              <div>{t.amount}</div>
+            </div>
+
+            <InvoiceRow
+              number="#2026-001"
+              date="12.04.2026"
+              status={t.paid}
+              amount="189,50 €"
+              paid
+            />
+
+            <InvoiceRow
+              number="#2026-002"
+              date="02.04.2026"
+              status={t.open}
+              amount="86,40 €"
+            />
           </div>
-
-          <InvoiceRow
-            number="#2026-001"
-            date="12.04.2026"
-            status={t.paid}
-            amount="189,50 €"
-            paid
-          />
-
-          <InvoiceRow
-            number="#2026-002"
-            date="02.04.2026"
-            status={t.open}
-            amount="86,40 €"
-          />
-        </div>
-      </section>
-
-      <section
-        style={{
-          ...card.base,
-          padding: "28px",
-        }}
-      >
-        <h3
-          style={{
-            margin: "0 0 12px",
-            fontSize: "24px",
-            color: colors.text,
-          }}
-        >
-          {t.quickLinks}
-        </h3>
-
-        <div
-          style={{
-            display: "flex",
-            gap: "12px",
-            flexWrap: "wrap",
-          }}
-        >
-          <a
-            href={withLang("/dashboard", locale)}
-            style={{
-              ...button.secondary,
-              textDecoration: "none",
-              color: colors.text,
-              fontWeight: 700,
-            }}
-          >
-            {t.account}
-          </a>
-
-          <a
-            href={withLang("/adressen", locale)}
-            style={{
-              ...button.secondary,
-              textDecoration: "none",
-              color: colors.text,
-              fontWeight: 700,
-            }}
-          >
-            {t.addresses}
-          </a>
-
-          <a
-            href="https://letmebowl-catering.de"
-            style={{
-              ...button.primary,
-              textDecoration: "none",
-              color: "#fff",
-              fontWeight: 700,
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            {t.orderNow}
-          </a>
-        </div>
-      </section>
+        </section>
+      </div>
     </PortalLayout>
   );
 }
