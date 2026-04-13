@@ -57,11 +57,7 @@ export async function action({ request }) {
     const invoiceEmail = String(formData.get("invoiceEmail") || "").trim();
 
     if (!companyName || !contactName || !email) {
-      return {
-        ok: false,
-        intent,
-        message: t.addressFormError,
-      };
+      return { ok: false, message: t.addressFormError };
     }
 
     await prisma.billingProfile.upsert({
@@ -95,11 +91,7 @@ export async function action({ request }) {
       },
     });
 
-    return {
-      ok: true,
-      intent,
-      message: t.billingUpdated,
-    };
+    return { ok: true, message: t.billingUpdated };
   }
 
   if (intent === "addDelivery") {
@@ -116,11 +108,7 @@ export async function action({ request }) {
     const isDefault = String(formData.get("isDefault") || "") === "on";
 
     if (!street || !postalCode || !city || !country) {
-      return {
-        ok: false,
-        intent,
-        message: t.addressFormError,
-      };
+      return { ok: false, message: t.addressFormError };
     }
 
     if (isDefault) {
@@ -147,11 +135,7 @@ export async function action({ request }) {
       },
     });
 
-    return {
-      ok: true,
-      intent,
-      message: t.deliveryCreated,
-    };
+    return { ok: true, message: t.deliveryCreated };
   }
 
   if (intent === "deleteDelivery") {
@@ -159,18 +143,11 @@ export async function action({ request }) {
 
     if (addressId) {
       await prisma.deliveryAddress.deleteMany({
-        where: {
-          id: addressId,
-          userId: user.id,
-        },
+        where: { id: addressId, userId: user.id },
       });
     }
 
-    return {
-      ok: true,
-      intent,
-      message: t.deliveryDeleted,
-    };
+    return { ok: true, message: t.deliveryDeleted };
   }
 
   if (intent === "setDefaultDelivery") {
@@ -188,18 +165,10 @@ export async function action({ request }) {
       });
     }
 
-    return {
-      ok: true,
-      intent,
-      message: t.deliveryDefaultUpdated,
-    };
+    return { ok: true, message: t.deliveryDefaultUpdated };
   }
 
-  return {
-    ok: false,
-    intent,
-    message: "Unknown action",
-  };
+  return { ok: false, message: "Unknown action" };
 }
 
 export default function AdressenPage() {
@@ -222,36 +191,15 @@ export default function AdressenPage() {
         <FeedbackBox success={actionData?.ok}>{actionData.message}</FeedbackBox>
       ) : null}
 
-      <section
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-          gap: "18px",
-          marginBottom: "18px",
-        }}
-      >
-        <div style={{ ...card.base, padding: "28px" }}>
-          <h3
-            style={{
-              margin: "0 0 18px",
-              fontSize: "24px",
-              color: colors.text,
-            }}
-          >
-            {t.billingAddress}
-          </h3>
+      <div style={{ display: "grid", gap: "18px", maxWidth: "960px" }}>
+        <section style={{ ...card.base, padding: "28px" }}>
+          <h3 style={styles.sectionTitle}>{t.billingAddress}</h3>
 
           <Form method="post">
             <input type="hidden" name="intent" value="saveBilling" />
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                gap: "14px",
-              }}
-            >
-              <div style={{ gridColumn: "1 / -1" }}>
+            <div style={styles.formGrid}>
+              <div style={styles.full}>
                 <Field
                   label={t.company}
                   name="companyName"
@@ -259,7 +207,7 @@ export default function AdressenPage() {
                 />
               </div>
 
-              <div style={{ gridColumn: "1 / -1" }}>
+              <div style={styles.full}>
                 <Field
                   label={t.contactPerson}
                   name="contactName"
@@ -314,7 +262,9 @@ export default function AdressenPage() {
               <Field
                 label={t.country}
                 name="country"
-                defaultValue={billing?.country || (locale === "en" ? "Germany" : "Deutschland")}
+                defaultValue={
+                  billing?.country || (locale === "en" ? "Germany" : "Deutschland")
+                }
                 placeholder={t.countryPlaceholder}
               />
 
@@ -324,7 +274,7 @@ export default function AdressenPage() {
                 defaultValue={billing?.vatId || ""}
               />
 
-              <div style={{ gridColumn: "1 / -1" }}>
+              <div style={styles.full}>
                 <Field
                   label={t.invoiceEmail}
                   name="invoiceEmail"
@@ -337,40 +287,23 @@ export default function AdressenPage() {
             <div style={{ marginTop: "18px" }}>
               <button
                 type="submit"
-                style={{
-                  ...button.primary,
-                  background: "linear-gradient(135deg, #c8a96a, #b8934f)",
-                }}
+                style={styles.primaryButton}
                 disabled={isSavingBilling}
               >
                 {isSavingBilling ? t.saving : t.save}
               </button>
             </div>
           </Form>
-        </div>
+        </section>
 
-        <div style={{ ...card.base, padding: "28px" }}>
-          <h3
-            style={{
-              margin: "0 0 18px",
-              fontSize: "24px",
-              color: colors.text,
-            }}
-          >
-            {t.addDeliveryTitle}
-          </h3>
+        <section style={{ ...card.base, padding: "28px" }}>
+          <h3 style={styles.sectionTitle}>{t.addDeliveryTitle}</h3>
 
           <Form method="post">
             <input type="hidden" name="intent" value="addDelivery" />
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                gap: "14px",
-              }}
-            >
-              <div style={{ gridColumn: "1 / -1" }}>
+            <div style={styles.formGrid}>
+              <div style={styles.full}>
                 <Field
                   label={t.label}
                   name="label"
@@ -378,7 +311,7 @@ export default function AdressenPage() {
                 />
               </div>
 
-              <div style={{ gridColumn: "1 / -1" }}>
+              <div style={styles.full}>
                 <Field
                   label={t.company}
                   name="companyName"
@@ -386,11 +319,8 @@ export default function AdressenPage() {
                 />
               </div>
 
-              <div style={{ gridColumn: "1 / -1" }}>
-                <Field
-                  label={t.contactPerson}
-                  name="contactName"
-                />
+              <div style={styles.full}>
+                <Field label={t.contactPerson} name="contactName" />
               </div>
 
               <Field
@@ -430,7 +360,7 @@ export default function AdressenPage() {
                 placeholder={t.cityPlaceholder}
               />
 
-              <div style={{ gridColumn: "1 / -1" }}>
+              <div style={styles.full}>
                 <Field
                   label={t.notes}
                   name="notes"
@@ -439,162 +369,81 @@ export default function AdressenPage() {
               </div>
             </div>
 
-            <label
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                marginTop: "16px",
-                color: colors.text,
-                fontWeight: 600,
-                fontSize: "14px",
-              }}
-            >
+            <label style={styles.checkboxRow}>
               <input type="checkbox" name="isDefault" />
               {t.setAsDefault}
             </label>
 
             <div style={{ marginTop: "18px" }}>
-              <button
-                type="submit"
-                style={button.secondary}
-                disabled={isAddingDelivery}
-              >
+              <button type="submit" style={button.secondary} disabled={isAddingDelivery}>
                 {isAddingDelivery ? t.saving : t.addShipping}
               </button>
             </div>
           </Form>
-        </div>
-      </section>
+        </section>
 
-      <section style={{ ...card.base, padding: "28px" }}>
-        <h3
-          style={{
-            margin: "0 0 18px",
-            fontSize: "24px",
-            color: colors.text,
-          }}
-        >
-          {t.existingDeliveryAddresses}
-        </h3>
+        <section style={{ ...card.base, padding: "28px" }}>
+          <h3 style={styles.sectionTitle}>{t.existingDeliveryAddresses}</h3>
 
-        {addresses.length === 0 ? (
-          <p
-            style={{
-              margin: 0,
-              color: colors.muted,
-              lineHeight: 1.6,
-              fontSize: "15px",
-            }}
-          >
-            {t.noDeliverySaved}
-          </p>
-        ) : (
-          <div
-            style={{
-              display: "grid",
-              gap: "14px",
-            }}
-          >
-            {addresses.map((address) => (
-              <div
-                key={address.id}
-                style={{
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: "18px",
-                  padding: "18px",
-                  background: address.isDefault ? "#fcf9f3" : "#fff",
-                }}
-              >
+          {addresses.length === 0 ? (
+            <p style={styles.emptyText}>{t.noDeliverySaved}</p>
+          ) : (
+            <div style={{ display: "grid", gap: "14px" }}>
+              {addresses.map((address) => (
                 <div
+                  key={address.id}
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: "12px",
-                    flexWrap: "wrap",
-                    marginBottom: "10px",
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: "18px",
+                    padding: "18px",
+                    background: address.isDefault ? "#fcf9f3" : "#fff",
                   }}
                 >
-                  <div>
-                    <div
-                      style={{
-                        fontSize: "18px",
-                        fontWeight: 800,
-                        color: colors.text,
-                      }}
-                    >
-                      {address.label || t.shippingAddresses}
+                  <div style={styles.addressHeader}>
+                    <div>
+                      <div style={styles.addressTitle}>
+                        {address.label || t.shippingAddresses}
+                      </div>
+
+                      {address.isDefault ? (
+                        <div style={styles.defaultBadge}>{t.defaultAddress}</div>
+                      ) : null}
                     </div>
 
-                    {address.isDefault ? (
-                      <div
-                        style={{
-                          display: "inline-flex",
-                          marginTop: "6px",
-                          padding: "5px 10px",
-                          borderRadius: "999px",
-                          background: "#f2eadb",
-                          color: "#8d6a2f",
-                          fontSize: "12px",
-                          fontWeight: 800,
-                        }}
-                      >
-                        {t.defaultAddress}
-                      </div>
-                    ) : null}
-                  </div>
+                    <div style={styles.addressActions}>
+                      {!address.isDefault ? (
+                        <Form method="post">
+                          <input type="hidden" name="intent" value="setDefaultDelivery" />
+                          <input type="hidden" name="addressId" value={address.id} />
+                          <button type="submit" style={button.secondary}>
+                            {t.setAsDefault}
+                          </button>
+                        </Form>
+                      ) : null}
 
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "10px",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    {!address.isDefault ? (
                       <Form method="post">
-                        <input type="hidden" name="intent" value="setDefaultDelivery" />
+                        <input type="hidden" name="intent" value="deleteDelivery" />
                         <input type="hidden" name="addressId" value={address.id} />
-                        <button type="submit" style={button.secondary}>
-                          {t.setAsDefault}
+                        <button type="submit" style={styles.deleteButton}>
+                          {t.delete}
                         </button>
                       </Form>
-                    ) : null}
-
-                    <Form method="post">
-                      <input type="hidden" name="intent" value="deleteDelivery" />
-                      <input type="hidden" name="addressId" value={address.id} />
-                      <button
-                        type="submit"
-                        style={{
-                          ...button.secondary,
-                          color: "#8b2222",
-                          borderColor: "#efcaca",
-                          background: "#fff8f8",
-                        }}
-                      >
-                        {t.delete}
-                      </button>
-                    </Form>
+                    </div>
                   </div>
-                </div>
 
-                <AddressLine value={address.companyName} />
-                <AddressLine value={address.contactName} />
-                <AddressLine
-                  value={[address.street, address.houseNumber].filter(Boolean).join(" ")}
-                />
-                <AddressLine
-                  value={[address.postalCode, address.city].filter(Boolean).join(" ")}
-                />
-                <AddressLine value={address.country} />
-                <AddressLine value={address.phone} />
-                {address.notes ? <AddressLine value={address.notes} muted /> : null}
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+                  <AddressLine value={address.companyName} />
+                  <AddressLine value={address.contactName} />
+                  <AddressLine value={[address.street, address.houseNumber].filter(Boolean).join(" ")} />
+                  <AddressLine value={[address.postalCode, address.city].filter(Boolean).join(" ")} />
+                  <AddressLine value={address.country} />
+                  <AddressLine value={address.phone} />
+                  {address.notes ? <AddressLine value={address.notes} muted /> : null}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
     </PortalLayout>
   );
 }
@@ -608,32 +457,13 @@ function Field({
 }) {
   return (
     <label style={{ display: "block" }}>
-      <span
-        style={{
-          display: "block",
-          marginBottom: "8px",
-          fontWeight: 800,
-          color: colors.text,
-          fontSize: "13px",
-          letterSpacing: "0.04em",
-          textTransform: "uppercase",
-        }}
-      >
-        {label}
-      </span>
-
+      <span style={styles.label}>{label}</span>
       <input
         name={name}
         type={type}
         placeholder={placeholder}
         defaultValue={defaultValue}
-        style={{
-          ...input.base,
-          background: "#fff",
-          border: "1px solid #e4dccb",
-          borderRadius: "14px",
-          padding: "14px 15px",
-        }}
+        style={styles.input}
       />
     </label>
   );
@@ -673,3 +503,99 @@ function AddressLine({ value, muted = false }) {
     </div>
   );
 }
+
+const styles = {
+  sectionTitle: {
+    margin: "0 0 20px",
+    fontSize: "28px",
+    color: colors.text,
+  },
+
+  formGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "14px",
+  },
+
+  full: {
+    gridColumn: "1 / -1",
+  },
+
+  label: {
+    display: "block",
+    marginBottom: "8px",
+    fontWeight: 800,
+    color: colors.text,
+    fontSize: "13px",
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
+  },
+
+  input: {
+    ...input.base,
+    background: "#fff",
+    border: "1px solid #e4dccb",
+    borderRadius: "14px",
+    padding: "14px 15px",
+  },
+
+  primaryButton: {
+    ...button.primary,
+    background: "linear-gradient(135deg, #c8a96a, #b8934f)",
+  },
+
+  checkboxRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    marginTop: "16px",
+    color: colors.text,
+    fontWeight: 600,
+    fontSize: "14px",
+  },
+
+  emptyText: {
+    margin: 0,
+    color: colors.muted,
+    lineHeight: 1.6,
+    fontSize: "15px",
+  },
+
+  addressHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "12px",
+    flexWrap: "wrap",
+    marginBottom: "10px",
+  },
+
+  addressTitle: {
+    fontSize: "18px",
+    fontWeight: 800,
+    color: colors.text,
+  },
+
+  defaultBadge: {
+    display: "inline-flex",
+    marginTop: "6px",
+    padding: "5px 10px",
+    borderRadius: "999px",
+    background: "#f2eadb",
+    color: "#8d6a2f",
+    fontSize: "12px",
+    fontWeight: 800,
+  },
+
+  addressActions: {
+    display: "flex",
+    gap: "10px",
+    flexWrap: "wrap",
+  },
+
+  deleteButton: {
+    ...button.secondary,
+    color: "#8b2222",
+    borderColor: "#efcaca",
+    background: "#fff8f8",
+  },
+};

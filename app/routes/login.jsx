@@ -5,7 +5,6 @@ import {
   useLoaderData,
   useNavigation,
 } from "react-router";
-
 import { prisma } from "../lib/prisma.server.js";
 import {
   verifyPassword,
@@ -13,7 +12,6 @@ import {
   createSessionCookie,
   getUserFromRequest,
 } from "../lib/auth.server.js";
-
 import { getLocaleFromRequest, dict, withLang } from "../lib/i18n.js";
 
 export async function loader({ request }) {
@@ -30,7 +28,6 @@ export async function loader({ request }) {
 export async function action({ request }) {
   const locale = getLocaleFromRequest(request);
   const t = dict[locale] || dict.de;
-
   const formData = await request.formData();
 
   const login = String(formData.get("login") || "").trim().toLowerCase();
@@ -74,83 +71,78 @@ export default function LoginPage() {
   const actionData = useActionData();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
-
   const t = dict[locale] || dict.de;
 
   return (
     <div style={styles.page}>
-      <div style={styles.wrapper}>
-        
-        {/* LEFT SIDE */}
-        <div style={styles.left}>
-          <div>
-            <div style={styles.logo}>LET ME BOWL</div>
+      <div style={styles.topbar}>
+        <a href="https://letmebowl-catering.de" style={styles.logo}>
+          LET ME BOWL
+        </a>
 
-            <h1 style={styles.headline}>{t.loginTitle}</h1>
-            <p style={styles.subline}>{t.loginText}</p>
-
-            <div style={styles.featureGrid}>
-              <Feature title="Account" text="Zentraler Zugang zu deinem Firmenkonto." />
-              <Feature title="Adressen" text="Alle Liefer- und Rechnungsdaten an einem Ort." />
-              <Feature title="Rechnungen" text="Zahlungen und Rechnungen übersichtlich." />
-            </div>
-          </div>
+        <div style={styles.lang}>
+          <a
+            href={withLang("/login", "de")}
+            style={locale === "de" ? styles.langActive : styles.langLink}
+          >
+            DE
+          </a>
+          <span style={styles.langSep}>|</span>
+          <a
+            href={withLang("/login", "en")}
+            style={locale === "en" ? styles.langActive : styles.langLink}
+          >
+            EN
+          </a>
         </div>
+      </div>
 
-        {/* RIGHT SIDE (JETZT ZENTRIERT) */}
-        <div style={styles.right}>
-          <div style={styles.formWrap}>
-            
-            {/* LANGUAGE */}
-            <div style={styles.langSwitch}>
-              <a href={withLang("/login", "de")} style={locale === "de" ? styles.langActive : styles.lang}>
-                DE
-              </a>
-              <span>|</span>
-              <a href={withLang("/login", "en")} style={locale === "en" ? styles.langActive : styles.lang}>
-                EN
-              </a>
-            </div>
+      <div style={styles.center}>
+        <div style={styles.card}>
+          <div style={styles.eyebrow}>{t.brand}</div>
+          <h1 style={styles.title}>{t.loginTitle}</h1>
+          <p style={styles.text}>{t.loginText}</p>
 
-            <div style={styles.card}>
-              <h2 style={styles.cardTitle}>
-                {locale === "en" ? "Sign in" : "Einloggen"}
-              </h2>
+          {actionData?.message ? (
+            <div style={styles.error}>{actionData.message}</div>
+          ) : null}
 
-              {actionData?.message && (
-                <div style={styles.error}>{actionData.message}</div>
-              )}
+          <Form method="post">
+            <label style={styles.field}>
+              <span style={styles.label}>{t.loginField}</span>
+              <input
+                name="login"
+                placeholder={t.loginPlaceholder}
+                style={styles.input}
+              />
+            </label>
 
-              <Form method="post">
-                <div style={styles.field}>
-                  <label>{t.loginField}</label>
-                  <input name="login" placeholder={t.loginPlaceholder} />
-                </div>
+            <label style={styles.field}>
+              <span style={styles.label}>{t.password}</span>
+              <input
+                type="password"
+                name="password"
+                placeholder={t.passwordPlaceholder}
+                style={styles.input}
+              />
+            </label>
 
-                <div style={styles.field}>
-                  <label>{t.password}</label>
-                  <input type="password" name="password" placeholder={t.passwordPlaceholder} />
-                </div>
+            <button type="submit" style={styles.button} disabled={isSubmitting}>
+              {isSubmitting ? t.signingIn : t.signInNow}
+            </button>
+          </Form>
 
-                <button type="submit" style={styles.button} disabled={isSubmitting}>
-                  {isSubmitting ? t.signingIn : t.signInNow}
-                </button>
-              </Form>
+          <div style={styles.links}>
+            <a href={withLang("/forgot-password", locale)} style={styles.link}>
+              {t.forgotPassword}
+            </a>
+          </div>
 
-              <div style={styles.links}>
-                <a href={withLang("/forgot-password", locale)}>
-                  {t.forgotPassword}
-                </a>
-              </div>
-
-              <div style={styles.links}>
-                {t.noAccountYet}{" "}
-                <a href={withLang("/register", locale)}>
-                  {t.registerNow}
-                </a>
-              </div>
-            </div>
-
+          <div style={styles.links}>
+            <span style={styles.muted}>{t.noAccountYet} </span>
+            <a href={withLang("/register", locale)} style={styles.linkStrong}>
+              {t.registerNow}
+            </a>
           </div>
         </div>
       </div>
@@ -158,138 +150,162 @@ export default function LoginPage() {
   );
 }
 
-function Feature({ title, text }) {
-  return (
-    <div style={styles.feature}>
-      <div style={styles.featureTitle}>{title}</div>
-      <div style={styles.featureText}>{text}</div>
-    </div>
-  );
-}
-
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#e9e5dc",
-    fontFamily: "Inter, sans-serif",
-  },
-
-  wrapper: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    minHeight: "100vh",
-  },
-
-  left: {
-    padding: "80px 60px",
+    background: "#efebe2",
+    fontFamily:
+      'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     display: "flex",
+    flexDirection: "column",
+  },
+
+  topbar: {
+    display: "flex",
+    justifyContent: "space-between",
     alignItems: "center",
+    padding: "28px 34px 0",
   },
 
   logo: {
+    textDecoration: "none",
+    color: "#111",
     fontWeight: 800,
-    marginBottom: 30,
-  },
-
-  headline: {
-    fontSize: 64,
-    margin: 0,
-  },
-
-  subline: {
-    marginTop: 12,
-    color: "#555",
-  },
-
-  featureGrid: {
-    display: "flex",
-    gap: 16,
-    marginTop: 40,
-  },
-
-  feature: {
-    background: "#fff",
-    padding: 16,
-    borderRadius: 16,
-    width: 160,
-  },
-
-  featureTitle: {
-    fontWeight: 700,
-  },
-
-  featureText: {
-    fontSize: 13,
-    color: "#666",
-    marginTop: 6,
-  },
-
-  right: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  formWrap: {
-    width: 380,
-  },
-
-  langSwitch: {
-    textAlign: "right",
-    marginBottom: 10,
-    fontSize: 14,
+    letterSpacing: "0.08em",
+    fontSize: "15px",
   },
 
   lang: {
-    color: "#777",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    fontSize: "14px",
+  },
+
+  langLink: {
     textDecoration: "none",
+    color: "#6f6a61",
+    fontWeight: 700,
   },
 
   langActive: {
-    fontWeight: 800,
-    color: "#000",
     textDecoration: "none",
+    color: "#111",
+    fontWeight: 800,
+  },
+
+  langSep: {
+    color: "#8b857b",
+  },
+
+  center: {
+    flex: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "32px 16px 48px",
   },
 
   card: {
-    background: "#fff",
-    padding: 28,
-    borderRadius: 18,
-    boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
+    width: "100%",
+    maxWidth: "520px",
+    background: "#fffdf9",
+    border: "1px solid #e5dcc8",
+    borderRadius: "24px",
+    padding: "36px",
+    boxShadow: "0 18px 50px rgba(0,0,0,0.06)",
   },
 
-  cardTitle: {
-    marginBottom: 20,
+  eyebrow: {
+    color: "#c8a96a",
+    fontWeight: 800,
+    letterSpacing: "0.14em",
+    textTransform: "uppercase",
+    fontSize: "12px",
+    marginBottom: "14px",
+  },
+
+  title: {
+    margin: "0 0 10px",
+    fontSize: "54px",
+    lineHeight: 0.95,
+    letterSpacing: "-0.04em",
+    color: "#111",
+  },
+
+  text: {
+    margin: "0 0 24px",
+    color: "#5f5a52",
+    fontSize: "18px",
+    lineHeight: 1.6,
+  },
+
+  error: {
+    background: "#fff1f1",
+    padding: "12px 14px",
+    borderRadius: "12px",
+    marginBottom: "14px",
+    color: "#a12626",
+    border: "1px solid #efcaca",
+    fontWeight: 700,
   },
 
   field: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 6,
-    marginBottom: 14,
+    display: "block",
+    marginBottom: "16px",
+  },
+
+  label: {
+    display: "block",
+    marginBottom: "8px",
+    fontWeight: 800,
+    color: "#111",
+    fontSize: "14px",
+  },
+
+  input: {
+    width: "100%",
+    boxSizing: "border-box",
+    border: "1px solid #e2d8c5",
+    background: "#fff",
+    borderRadius: "14px",
+    padding: "15px 16px",
+    fontSize: "16px",
+    outline: "none",
   },
 
   button: {
     width: "100%",
-    padding: 14,
-    borderRadius: 12,
+    marginTop: "8px",
     border: "none",
-    background: "#c8a96a",
+    borderRadius: "14px",
+    background: "linear-gradient(135deg, #c8a96a, #b8934f)",
     color: "#fff",
-    fontWeight: 700,
+    fontSize: "16px",
+    fontWeight: 800,
+    padding: "15px 18px",
     cursor: "pointer",
+    boxShadow: "0 10px 24px rgba(184,147,79,0.22)",
   },
 
   links: {
-    marginTop: 10,
-    fontSize: 14,
+    marginTop: "14px",
+    fontSize: "15px",
   },
 
-  error: {
-    background: "#ffecec",
-    padding: 10,
-    borderRadius: 10,
-    marginBottom: 10,
-    color: "#b30000",
+  muted: {
+    color: "#6f6a61",
+  },
+
+  link: {
+    color: "#5f5a52",
+    fontWeight: 700,
+    textDecoration: "none",
+  },
+
+  linkStrong: {
+    color: "#111",
+    fontWeight: 800,
+    textDecoration: "none",
   },
 };
