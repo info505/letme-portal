@@ -69,9 +69,9 @@ export async function invalidateAllUserResetTokens(userId) {
   });
 }
 
-export async function sendPasswordResetEmail({ user, locale, rawToken, request }) {
-  const url = new URL(request.url);
-  const origin = url.origin;
+export async function sendPasswordResetEmail({ user, locale, rawToken }) {
+  const origin = "https://konto.letmebowl-catering.de";
+
   const resetUrl = `${origin}/passwort-zuruecksetzen?token=${encodeURIComponent(
     rawToken
   )}&lang=${locale}`;
