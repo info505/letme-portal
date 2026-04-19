@@ -33,6 +33,7 @@ function SidebarLink({ href, label, active = false }) {
         border: active ? "1px solid #eadfc8" : "1px solid transparent",
         color: active ? colors.text : colors.muted,
         fontWeight: active ? 700 : 600,
+        transition: "all 0.2s ease",
       }}
     >
       {label}
@@ -54,7 +55,8 @@ export default function PortalLayout({
   const user = data?.user || null;
   const t = dict[locale] || dict.de;
 
-  const sidebarOrderHref = orderNowHref || withLang("/dashboard", locale);
+  const sidebarOrderHref =
+    orderNowHref || "https://letmebowl-catering.de/pages/bestellen";
 
   return (
     <div
@@ -86,6 +88,11 @@ export default function PortalLayout({
           flex-direction: column;
         }
 
+        .portal-sidebar-top {
+          display: grid;
+          gap: 18px;
+        }
+
         .portal-header {
           background: rgba(255,255,255,0.92);
           border-bottom: 1px solid ${colors.border};
@@ -98,6 +105,44 @@ export default function PortalLayout({
 
         .portal-content {
           padding: 24px;
+        }
+
+        .portal-user-card {
+          padding: 14px;
+          border-radius: 18px;
+          background: #f8f4ec;
+          border: 1px solid #ece2d0;
+        }
+
+        .portal-user-avatar {
+          width: 42px;
+          height: 42px;
+          border-radius: 999px;
+          background: #fff;
+          border: 1px solid #eadfc8;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 800;
+          color: #8d6a2f;
+          margin-bottom: 10px;
+        }
+
+        .portal-sidebar-nav {
+          display: grid;
+          gap: 8px;
+        }
+
+        .portal-sidebar-bottom {
+          margin-top: auto;
+          padding-top: 18px;
+          border-top: 1px solid ${colors.border};
+          display: grid;
+          gap: 10px;
+        }
+
+        .portal-mobile-order {
+          display: none;
         }
 
         @media (max-width: 980px) {
@@ -120,119 +165,96 @@ export default function PortalLayout({
           .portal-content {
             padding: 16px;
           }
+
+          .portal-mobile-order {
+            display: grid;
+            gap: 10px;
+            width: 100%;
+          }
         }
       `}</style>
 
       <div className="portal-layout">
         <aside className="portal-sidebar">
-          <a
-            href="https://letmebowl-catering.de"
-            style={{
-              textDecoration: "none",
-              color: colors.text,
-              fontWeight: 800,
-              letterSpacing: "0.08em",
-              fontSize: "15px",
-              marginBottom: "24px",
-            }}
-          >
-            LET ME BOWL
-          </a>
-
-          <div
-            style={{
-              padding: "14px",
-              borderRadius: "18px",
-              background: "#f8f4ec",
-              border: "1px solid #ece2d0",
-              marginBottom: "18px",
-            }}
-          >
-            <div
-              style={{
-                width: "42px",
-                height: "42px",
-                borderRadius: "999px",
-                background: "#fff",
-                border: "1px solid #eadfc8",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: 800,
-                color: "#8d6a2f",
-                marginBottom: "10px",
-              }}
-            >
-              {getInitials(user)}
-            </div>
-
-            <div
-              style={{
-                fontWeight: 700,
-                color: colors.text,
-                fontSize: "14px",
-                lineHeight: 1.4,
-              }}
-            >
-              {getDisplayName(user)}
-            </div>
-
-            <div
-              style={{
-                color: colors.muted,
-                fontSize: "13px",
-                marginTop: "4px",
-                lineHeight: 1.4,
-                wordBreak: "break-word",
-              }}
-            >
-              {user?.companyName || ""}
-            </div>
-          </div>
-
-          <nav style={{ display: "grid", gap: "8px" }}>
-            <SidebarLink
-              href={withLang("/dashboard", locale)}
-              label={t.account}
-              active={location.pathname === "/dashboard"}
-            />
-            <SidebarLink
-              href={withLang("/bestellungen", locale)}
-              label={t.ordersTitle}
-              active={location.pathname === "/bestellungen"}
-            />
-            <SidebarLink
-              href={withLang("/rechnungsadresse", locale)}
-              label={t.billingAddressNav}
-              active={location.pathname === "/rechnungsadresse"}
-            />
-            <SidebarLink
-              href={withLang("/lieferadressen", locale)}
-              label={t.shippingAddressesNav}
-              active={location.pathname === "/lieferadressen"}
-            />
-            <SidebarLink
-              href={withLang("/kostenstellen", locale)}
-              label={t.costCentersNav}
-              active={location.pathname === "/kostenstellen"}
-            />
-            <SidebarLink
-              href={withLang("/rechnungen", locale)}
-              label={t.invoices}
-              active={location.pathname === "/rechnungen"}
-            />
-          </nav>
-
-          <div style={{ flex: 1 }} />
-
-          <div style={{ display: "grid", gap: "10px", marginTop: "24px" }}>
+          <div className="portal-sidebar-top">
             <a
               href="https://letmebowl-catering.de"
-              style={sidebarSecondaryLink}
+              style={{
+                textDecoration: "none",
+                color: colors.text,
+                fontWeight: 800,
+                letterSpacing: "0.08em",
+                fontSize: "15px",
+              }}
             >
-              {t.homepage}
+              LET ME BOWL
             </a>
 
+            <div className="portal-user-card">
+              <div className="portal-user-avatar">{getInitials(user)}</div>
+
+              <div
+                style={{
+                  fontWeight: 700,
+                  color: colors.text,
+                  fontSize: "14px",
+                  lineHeight: 1.4,
+                }}
+              >
+                {getDisplayName(user)}
+              </div>
+
+              <div
+                style={{
+                  color: colors.muted,
+                  fontSize: "13px",
+                  marginTop: "4px",
+                  lineHeight: 1.4,
+                  wordBreak: "break-word",
+                }}
+              >
+                {user?.companyName || ""}
+              </div>
+            </div>
+
+            <nav className="portal-sidebar-nav">
+              <SidebarLink
+                href={withLang("/dashboard", locale)}
+                label={t.account}
+                active={location.pathname === "/dashboard"}
+              />
+              <SidebarLink
+                href={withLang("/bestellungen", locale)}
+                label={t.ordersTitle}
+                active={
+                  location.pathname === "/bestellungen" ||
+                  location.pathname.startsWith("/bestellungen/")
+                }
+              />
+              <SidebarLink
+                href={withLang("/rechnungsadresse", locale)}
+                label={t.billingAddressNav}
+                active={location.pathname === "/rechnungsadresse"}
+              />
+              <SidebarLink
+                href={withLang("/lieferadressen", locale)}
+                label={t.shippingAddressesNav}
+                active={location.pathname === "/lieferadressen"}
+              />
+              <SidebarLink
+                href={withLang("/kostenstellen", locale)}
+                label={t.costCentersNav}
+                active={location.pathname === "/kostenstellen"}
+              />
+              <SidebarLink
+                href={withLang("/rechnungen", locale)}
+                label={t.invoices}
+                active={location.pathname === "/rechnungen"}
+              />
+            </nav>
+          </div>
+
+          <div className="portal-sidebar-bottom">
             {orderNowOnClick ? (
               <button
                 type="button"
@@ -312,6 +334,33 @@ export default function PortalLayout({
               >
                 EN
               </a>
+            </div>
+
+            <div className="portal-mobile-order">
+              {orderNowOnClick ? (
+                <button
+                  type="button"
+                  onClick={orderNowOnClick}
+                  style={{
+                    ...sidebarPrimaryLink,
+                    border: "none",
+                    cursor: "pointer",
+                    width: "100%",
+                  }}
+                >
+                  {t.orderNow}
+                </button>
+              ) : (
+                <a
+                  href={sidebarOrderHref}
+                  style={{
+                    ...sidebarPrimaryLink,
+                    width: "100%",
+                  }}
+                >
+                  {t.orderNow}
+                </a>
+              )}
             </div>
           </header>
 

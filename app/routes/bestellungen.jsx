@@ -38,62 +38,358 @@ export default function BestellungenPage() {
 
   return (
     <PortalLayout title={t.ordersTitle} subtitle={t.ordersText}>
-      <div style={{ display: "grid", gap: "18px" }}>
-        <section
-          style={{
-            ...card.base,
-            padding: "28px",
-            background:
-              "linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(248,244,236,1) 100%)",
-            border: "1px solid #ece2d0",
-          }}
-        >
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: "16px",
-            }}
-          >
-            <SummaryCard
-              eyebrow={locale === "de" ? "Bestellungen" : "Orders"}
-              value={String(orders.length)}
-              text={
-                locale === "de"
-                  ? "Alle bisherigen und aktuellen Bestellungen deines Firmenkontos."
-                  : "All past and current orders linked to your business account."
-              }
-            />
+      <style>{`
+        .orders-shell {
+          display: grid;
+          gap: 18px;
+          max-width: 1180px;
+        }
 
-            <SummaryCard
-              eyebrow={locale === "de" ? "Aktiv" : "Active"}
-              value={String(openCount)}
-              text={
-                locale === "de"
-                  ? "Offene, bestätigte oder aktuell in Bearbeitung befindliche Bestellungen."
-                  : "Orders that are open, confirmed or currently in preparation."
-              }
-            />
+        .orders-hero {
+          position: relative;
+          overflow: hidden;
+          padding: 30px;
+          border-radius: 28px;
+          background:
+            radial-gradient(circle at top left, rgba(200,169,106,0.12), transparent 30%),
+            linear-gradient(180deg, #fcfaf6 0%, #f7f2e8 100%);
+          border: 1px solid rgba(226, 218, 203, 0.95);
+          box-shadow: 0 18px 50px rgba(24,24,24,0.05);
+        }
 
-            <SummaryCard
-              eyebrow={locale === "de" ? "Geliefert" : "Delivered"}
-              value={String(deliveredCount)}
-              text={
-                locale === "de"
-                  ? "Bereits erfolgreich ausgelieferte Bestellungen."
-                  : "Orders that have already been delivered successfully."
-              }
-            />
+        .orders-hero::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          background: linear-gradient(180deg, rgba(255,255,255,0.32), transparent 30%);
+        }
 
-            <SummaryCard
-              eyebrow={locale === "de" ? "Storniert" : "Cancelled"}
-              value={String(cancelledCount)}
-              text={
-                locale === "de"
-                  ? "Bestellungen, die im Portal storniert wurden."
-                  : "Orders that were cancelled in the portal."
-              }
-            />
+        .orders-hero-grid {
+          position: relative;
+          z-index: 1;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr);
+          gap: 18px;
+        }
+
+        .orders-eyebrow {
+          display: inline-flex;
+          align-items: center;
+          padding: 8px 12px;
+          border-radius: 999px;
+          border: 1px solid rgba(200,169,106,0.28);
+          background: rgba(255,255,255,0.72);
+          color: #b8934f;
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          margin-bottom: 16px;
+        }
+
+        .orders-hero-title {
+          margin: 0;
+          font-size: clamp(34px, 5vw, 54px);
+          line-height: 0.98;
+          letter-spacing: -0.04em;
+          color: ${colors.text};
+          max-width: 760px;
+        }
+
+        .orders-hero-copy {
+          margin: 14px 0 0;
+          max-width: 760px;
+          color: ${colors.muted};
+          line-height: 1.7;
+          font-size: 15px;
+        }
+
+        .summary-grid {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 16px;
+        }
+
+        .summary-card {
+          border: 1px solid ${colors.border};
+          border-radius: 18px;
+          padding: 20px;
+          background: rgba(255,255,255,0.88);
+        }
+
+        .summary-label {
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: ${colors.muted};
+          margin-bottom: 10px;
+        }
+
+        .summary-value {
+          font-size: 34px;
+          font-weight: 800;
+          color: ${colors.text};
+          line-height: 1.1;
+          margin-bottom: 8px;
+        }
+
+        .summary-text {
+          font-size: 14px;
+          line-height: 1.6;
+          color: ${colors.muted};
+        }
+
+        .list-card {
+          padding: 28px;
+          border-radius: 24px;
+        }
+
+        .list-title {
+          margin: 0 0 8px;
+          font-size: 24px;
+          color: ${colors.text};
+        }
+
+        .list-subtitle {
+          margin: 0;
+          color: ${colors.muted};
+          font-size: 14px;
+          line-height: 1.6;
+        }
+
+        .orders-list {
+          display: grid;
+          gap: 14px;
+          margin-top: 18px;
+        }
+
+        .order-card {
+          border: 1px solid ${colors.border};
+          border-radius: 20px;
+          background: #fff;
+          padding: 20px;
+          display: grid;
+          gap: 16px;
+        }
+
+        .order-card.is-cancelled {
+          opacity: 0.9;
+          background: #fcfcfc;
+        }
+
+        .order-head {
+          display: flex;
+          justify-content: space-between;
+          gap: 16px;
+          align-items: flex-start;
+          flex-wrap: wrap;
+        }
+
+        .order-kicker {
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: ${colors.muted};
+          margin-bottom: 8px;
+        }
+
+        .order-number {
+          font-size: 24px;
+          font-weight: 800;
+          color: ${colors.text};
+          line-height: 1.1;
+        }
+
+        .badge-row {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+        }
+
+        .info-grid {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 12px;
+        }
+
+        .info-box {
+          border: 1px solid ${colors.border};
+          border-radius: 16px;
+          padding: 14px 16px;
+          background: #fcfbf8;
+        }
+
+        .info-label {
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: ${colors.muted};
+          margin-bottom: 8px;
+        }
+
+        .info-value {
+          font-size: 16px;
+          font-weight: 700;
+          color: ${colors.text};
+          line-height: 1.4;
+          word-break: break-word;
+        }
+
+        .meta-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 12px;
+        }
+
+        .meta-box {
+          padding: 12px 14px;
+          border-radius: 14px;
+          background: #f8f4ec;
+          border: 1px solid #ece2d0;
+        }
+
+        .meta-label {
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: ${colors.muted};
+          margin-bottom: 6px;
+        }
+
+        .meta-value {
+          font-size: 14px;
+          font-weight: 700;
+          color: ${colors.text};
+          line-height: 1.5;
+          word-break: break-word;
+        }
+
+        .order-footer {
+          display: flex;
+          justify-content: space-between;
+          gap: 12px;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+
+        .order-note {
+          color: ${colors.muted};
+          font-size: 13px;
+          line-height: 1.55;
+          max-width: 640px;
+        }
+
+        .order-actions {
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+
+        .empty-card {
+          padding: 54px 24px;
+          text-align: center;
+          border-radius: 24px;
+        }
+
+        .empty-title {
+          margin: 0 0 10px;
+          font-size: 40px;
+          line-height: 1.05;
+          color: ${colors.text};
+        }
+
+        .empty-text {
+          margin: 0 auto 22px;
+          max-width: 720px;
+          color: ${colors.muted};
+          line-height: 1.7;
+          font-size: 17px;
+        }
+
+        @media (max-width: 980px) {
+          .orders-hero,
+          .list-card,
+          .empty-card {
+            padding: 20px 16px;
+            border-radius: 20px;
+          }
+
+          .summary-grid,
+          .info-grid,
+          .meta-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+
+      <div className="orders-shell">
+        <section className="orders-hero">
+          <div className="orders-hero-grid">
+            <div>
+              <div className="orders-eyebrow">
+                {locale === "de" ? "Bestellungen" : "Orders"}
+              </div>
+
+              <h1 className="orders-hero-title">
+                {locale === "de"
+                  ? "Alle Firmenbestellungen an einem Ort."
+                  : "All business orders in one place."}
+              </h1>
+
+              <p className="orders-hero-copy">
+                {locale === "de"
+                  ? "Hier siehst du den aktuellen Status, Beträge, zugeordnete Lieferadressen und kannst frühere Bestellungen direkt erneut in den Warenkorb legen."
+                  : "Here you can see current status, totals, linked delivery addresses and directly reorder previous orders into the cart."}
+              </p>
+            </div>
+
+            <div className="summary-grid">
+              <SummaryCard
+                eyebrow={locale === "de" ? "Bestellungen" : "Orders"}
+                value={String(orders.length)}
+                text={
+                  locale === "de"
+                    ? "Alle bisherigen und aktuellen Bestellungen deines Firmenkontos."
+                    : "All past and current orders linked to your business account."
+                }
+              />
+
+              <SummaryCard
+                eyebrow={locale === "de" ? "Aktiv" : "Active"}
+                value={String(openCount)}
+                text={
+                  locale === "de"
+                    ? "Offene, bestätigte oder in Vorbereitung befindliche Bestellungen."
+                    : "Orders that are open, confirmed or currently in preparation."
+                }
+              />
+
+              <SummaryCard
+                eyebrow={locale === "de" ? "Geliefert" : "Delivered"}
+                value={String(deliveredCount)}
+                text={
+                  locale === "de"
+                    ? "Bereits erfolgreich ausgelieferte Bestellungen."
+                    : "Orders that have already been delivered successfully."
+                }
+              />
+
+              <SummaryCard
+                eyebrow={locale === "de" ? "Storniert" : "Cancelled"}
+                value={String(cancelledCount)}
+                text={
+                  locale === "de"
+                    ? "Bestellungen, die im Portal storniert wurden."
+                    : "Orders that were cancelled in the portal."
+                }
+              />
+            </div>
           </div>
         </section>
 
@@ -101,37 +397,19 @@ export default function BestellungenPage() {
           <EmptyOrders locale={locale} />
         ) : (
           <section
+            className="list-card"
             style={{
               ...card.base,
-              padding: "28px",
             }}
           >
-            <div style={{ marginBottom: "18px" }}>
-              <h2
-                style={{
-                  margin: "0 0 8px",
-                  fontSize: "24px",
-                  color: colors.text,
-                }}
-              >
-                {t.ordersTitle}
-              </h2>
+            <h2 className="list-title">{t.ordersTitle}</h2>
+            <p className="list-subtitle">
+              {locale === "de"
+                ? "Alle Bestellungen inklusive Status, Betrag, Positionen und direktem Reorder."
+                : "All orders including status, amount, items and direct reorder."}
+            </p>
 
-              <p
-                style={{
-                  margin: 0,
-                  color: colors.muted,
-                  fontSize: "14px",
-                  lineHeight: 1.6,
-                }}
-              >
-                {locale === "de"
-                  ? "Hier findest du alle verknüpften Bestellungen inklusive Status, Betrag, Positionen und Reorder."
-                  : "Here you can find all linked orders including status, amount, items and reorder."}
-              </p>
-            </div>
-
-            <div style={{ display: "grid", gap: "14px" }}>
+            <div className="orders-list">
               {orders.map((order) => (
                 <OrderCard key={order.id} order={order} locale={locale} />
               ))}
@@ -144,45 +422,22 @@ export default function BestellungenPage() {
 }
 
 function EmptyOrders({ locale }) {
-  const title =
-    locale === "en" ? "No orders yet" : "Noch keine Bestellungen";
+  const title = locale === "en" ? "No orders yet" : "Noch keine Bestellungen";
   const text =
     locale === "en"
       ? "As soon as orders are linked to your account, they will appear here."
       : "Sobald Bestellungen mit deinem Konto verknüpft sind, erscheinen sie hier.";
-  const cta =
-    locale === "en" ? "Start first order" : "Erste Bestellung starten";
+  const cta = locale === "en" ? "Start first order" : "Erste Bestellung starten";
 
   return (
     <section
+      className="empty-card"
       style={{
         ...card.base,
-        padding: "54px 24px",
-        textAlign: "center",
       }}
     >
-      <h3
-        style={{
-          margin: "0 0 10px",
-          fontSize: "40px",
-          lineHeight: 1.05,
-          color: colors.text,
-        }}
-      >
-        {title}
-      </h3>
-
-      <p
-        style={{
-          margin: "0 auto 22px",
-          maxWidth: "720px",
-          color: colors.muted,
-          lineHeight: 1.7,
-          fontSize: "17px",
-        }}
-      >
-        {text}
-      </p>
+      <h3 className="empty-title">{title}</h3>
+      <p className="empty-text">{text}</p>
 
       <a
         href="https://letmebowl-catering.de/pages/bestellen"
@@ -221,53 +476,16 @@ function OrderCard({ order, locale }) {
   const isDelivered = order.status === "DELIVERED";
 
   return (
-    <div
-      style={{
-        border: `1px solid ${colors.border}`,
-        borderRadius: "20px",
-        background: isCancelled ? "#fcfcfc" : "#fff",
-        padding: "20px",
-        display: "grid",
-        gap: "16px",
-        opacity: isCancelled ? 0.9 : 1,
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          gap: "16px",
-          alignItems: "flex-start",
-          flexWrap: "wrap",
-        }}
-      >
+    <div className={`order-card ${isCancelled ? "is-cancelled" : ""}`}>
+      <div className="order-head">
         <div>
-          <div
-            style={{
-              fontSize: "12px",
-              fontWeight: 800,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: colors.muted,
-              marginBottom: "8px",
-            }}
-          >
+          <div className="order-kicker">
             {locale === "de" ? "Bestellung" : "Order"}
           </div>
-
-          <div
-            style={{
-              fontSize: "24px",
-              fontWeight: 800,
-              color: colors.text,
-              lineHeight: 1.1,
-            }}
-          >
-            {order.orderNumber}
-          </div>
+          <div className="order-number">{order.orderNumber}</div>
         </div>
 
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+        <div className="badge-row">
           <span
             style={{
               display: "inline-flex",
@@ -294,13 +512,7 @@ function OrderCard({ order, locale }) {
         </div>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
-          gap: "12px",
-        }}
-      >
+      <div className="info-grid">
         <InfoBox
           label={locale === "de" ? "Datum" : "Date"}
           value={formatDate(order.createdAt, locale)}
@@ -320,17 +532,15 @@ function OrderCard({ order, locale }) {
       </div>
 
       {(order.costCenter?.name || order.deliveryAddress?.label || order.referenceNumber) ? (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: "12px",
-          }}
-        >
+        <div className="meta-grid">
           {order.costCenter?.name ? (
             <MetaRow
               label={locale === "de" ? "Kostenstelle" : "Cost center"}
-              value={order.costCenter.name}
+              value={
+                order.costCenter.code
+                  ? `${order.costCenter.name} · ${order.costCenter.code}`
+                  : order.costCenter.name
+              }
             />
           ) : null}
 
@@ -350,36 +560,22 @@ function OrderCard({ order, locale }) {
         </div>
       ) : null}
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          gap: "12px",
-          alignItems: "center",
-          flexWrap: "wrap",
-        }}
-      >
-        <div
-          style={{
-            color: colors.muted,
-            fontSize: "13px",
-            lineHeight: 1.5,
-          }}
-        >
+      <div className="order-footer">
+        <div className="order-note">
           {isCancelled
             ? locale === "de"
               ? "Diese Bestellung wurde im Portal storniert."
               : "This order was cancelled in the portal."
             : isDelivered
             ? locale === "de"
-              ? "Geliefert. Reorder ist weiterhin möglich, falls Variant-IDs gespeichert sind."
-              : "Delivered. Reorder is still possible if variant IDs were saved."
+              ? "Geliefert. Reorder ist weiterhin möglich, wenn Shopify-Variant-IDs gespeichert wurden."
+              : "Delivered. Reorder is still possible if Shopify variant IDs were saved."
             : locale === "de"
-            ? "Details öffnen, Reorder starten oder Bestellung im Detail stornieren."
-            : "Open details, start reorder or cancel the order in detail view."}
+            ? "Details öffnen, Reorder starten oder Bestellung in der Detailansicht stornieren."
+            : "Open details, start reorder or cancel the order in the detail view."}
         </div>
 
-        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+        <div className="order-actions">
           <a
             href={withLang(`/bestellungen/${order.id}`, locale)}
             style={{
@@ -436,123 +632,28 @@ function buildShopifyCartPermalink(items) {
 
 function SummaryCard({ eyebrow, value, text }) {
   return (
-    <div
-      style={{
-        border: `1px solid ${colors.border}`,
-        borderRadius: "18px",
-        padding: "20px",
-        background: "#fff",
-      }}
-    >
-      <div
-        style={{
-          fontSize: "12px",
-          fontWeight: 800,
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-          color: colors.muted,
-          marginBottom: "10px",
-        }}
-      >
-        {eyebrow}
-      </div>
-
-      <div
-        style={{
-          fontSize: "34px",
-          fontWeight: 800,
-          color: colors.text,
-          lineHeight: 1.1,
-          marginBottom: "8px",
-        }}
-      >
-        {value}
-      </div>
-
-      <div
-        style={{
-          fontSize: "14px",
-          lineHeight: 1.6,
-          color: colors.muted,
-        }}
-      >
-        {text}
-      </div>
+    <div className="summary-card">
+      <div className="summary-label">{eyebrow}</div>
+      <div className="summary-value">{value}</div>
+      <div className="summary-text">{text}</div>
     </div>
   );
 }
 
 function InfoBox({ label, value }) {
   return (
-    <div
-      style={{
-        border: `1px solid ${colors.border}`,
-        borderRadius: "16px",
-        padding: "14px 16px",
-        background: "#fcfbf8",
-      }}
-    >
-      <div
-        style={{
-          fontSize: "12px",
-          fontWeight: 800,
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-          color: colors.muted,
-          marginBottom: "8px",
-        }}
-      >
-        {label}
-      </div>
-
-      <div
-        style={{
-          fontSize: "16px",
-          fontWeight: 700,
-          color: colors.text,
-          lineHeight: 1.4,
-          wordBreak: "break-word",
-        }}
-      >
-        {value}
-      </div>
+    <div className="info-box">
+      <div className="info-label">{label}</div>
+      <div className="info-value">{value}</div>
     </div>
   );
 }
 
 function MetaRow({ label, value }) {
   return (
-    <div
-      style={{
-        padding: "12px 14px",
-        borderRadius: "14px",
-        background: "#f8f4ec",
-        border: "1px solid #ece2d0",
-      }}
-    >
-      <div
-        style={{
-          fontSize: "12px",
-          fontWeight: 800,
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-          color: colors.muted,
-          marginBottom: "6px",
-        }}
-      >
-        {label}
-      </div>
-
-      <div
-        style={{
-          fontSize: "14px",
-          fontWeight: 700,
-          color: colors.text,
-          lineHeight: 1.5,
-        }}
-      >
-        {value}
-      </div>
+    <div className="meta-box">
+      <div className="meta-label">{label}</div>
+      <div className="meta-value">{value}</div>
     </div>
   );
 }

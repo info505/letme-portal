@@ -48,7 +48,6 @@ export async function loader({ request, params }) {
 
 export async function action({ request, params }) {
   const locale = getLocaleFromRequest(request);
-  const t = dict[locale] || dict.de;
   const user = await getUserFromRequest(request);
 
   if (!user) {
@@ -142,92 +141,307 @@ export default function BestellungDetailPage() {
     navigation.state === "submitting" &&
     navigation.formData?.get("intent") === "cancel";
 
+  const contactName = order.contact
+    ? [order.contact.firstName, order.contact.lastName].filter(Boolean).join(" ")
+    : order.billingContactName || "—";
+
+  const deliveryAddressText = order.deliveryAddress
+    ? [
+        order.deliveryAddress.label,
+        order.deliveryAddress.companyName,
+        order.deliveryAddress.contactName,
+        [order.deliveryAddress.street, order.deliveryAddress.houseNumber]
+          .filter(Boolean)
+          .join(" "),
+        [order.deliveryAddress.postalCode, order.deliveryAddress.city]
+          .filter(Boolean)
+          .join(" "),
+        order.deliveryAddress.country,
+      ]
+        .filter(Boolean)
+        .join("\n")
+    : "—";
+
   return (
     <PortalLayout
       title={`${t.orderNumber} ${order.orderNumber}`}
       subtitle={
         locale === "de"
-          ? "Hier findest du alle verfügbaren Details zu dieser Bestellung."
-          : "Here you can find all available details for this order."
+          ? "Alle wichtigen Informationen zu dieser Bestellung auf einen Blick."
+          : "All important information for this order at a glance."
       }
     >
-      <div style={{ display: "grid", gap: "18px" }}>
+      <style>{`
+        .order-detail-shell {
+          display: grid;
+          gap: 18px;
+          max-width: 1180px;
+        }
+
+        .order-hero {
+          position: relative;
+          overflow: hidden;
+          padding: 30px;
+          border-radius: 28px;
+          background:
+            radial-gradient(circle at top left, rgba(200,169,106,0.12), transparent 30%),
+            linear-gradient(180deg, #fcfaf6 0%, #f7f2e8 100%);
+          border: 1px solid rgba(226, 218, 203, 0.95);
+          box-shadow: 0 18px 50px rgba(24,24,24,0.05);
+        }
+
+        .order-hero::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          background: linear-gradient(180deg, rgba(255,255,255,0.32), transparent 30%);
+        }
+
+        .order-hero-grid {
+          position: relative;
+          z-index: 1;
+          display: grid;
+          grid-template-columns: minmax(0, 1.2fr) auto;
+          gap: 20px;
+          align-items: start;
+        }
+
+        .order-eyebrow {
+          display: inline-flex;
+          align-items: center;
+          padding: 8px 12px;
+          border-radius: 999px;
+          border: 1px solid rgba(200,169,106,0.28);
+          background: rgba(255,255,255,0.72);
+          color: #b8934f;
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          margin-bottom: 16px;
+        }
+
+        .order-hero-title {
+          margin: 0;
+          font-size: clamp(34px, 5vw, 54px);
+          line-height: 0.98;
+          letter-spacing: -0.04em;
+          color: ${colors.text};
+        }
+
+        .order-hero-copy {
+          margin: 14px 0 0;
+          max-width: 760px;
+          color: ${colors.muted};
+          line-height: 1.7;
+          font-size: 15px;
+        }
+
+        .order-hero-actions {
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+          margin-top: 24px;
+        }
+
+        .order-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 18px;
+        }
+
+        .detail-card {
+          padding: 26px;
+          border-radius: 24px;
+        }
+
+        .detail-section-title {
+          margin: 0 0 18px;
+          font-size: 24px;
+          color: ${colors.text};
+          letter-spacing: -0.02em;
+        }
+
+        .detail-box-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 14px;
+        }
+
+        .detail-box {
+          border: 1px solid ${colors.border};
+          border-radius: 18px;
+          padding: 16px;
+          background: #fff;
+        }
+
+        .detail-box-label {
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: ${colors.muted};
+          margin-bottom: 8px;
+        }
+
+        .detail-box-value {
+          font-size: 16px;
+          font-weight: 700;
+          color: ${colors.text};
+          line-height: 1.55;
+          white-space: pre-wrap;
+          word-break: break-word;
+        }
+
+        .items-list {
+          display: grid;
+          gap: 12px;
+        }
+
+        .item-card {
+          border: 1px solid ${colors.border};
+          border-radius: 18px;
+          padding: 18px;
+          background: #fff;
+        }
+
+        .item-head {
+          display: flex;
+          justify-content: space-between;
+          gap: 14px;
+          align-items: flex-start;
+          flex-wrap: wrap;
+        }
+
+        .item-title {
+          font-size: 18px;
+          font-weight: 800;
+          color: ${colors.text};
+          margin-bottom: 6px;
+        }
+
+        .item-meta {
+          color: ${colors.muted};
+          font-size: 14px;
+          line-height: 1.6;
+        }
+
+        .item-price {
+          min-width: 140px;
+          text-align: right;
+        }
+
+        .item-total {
+          font-size: 18px;
+          font-weight: 800;
+          color: ${colors.text};
+        }
+
+        .item-unit {
+          font-size: 14px;
+          color: ${colors.muted};
+          margin-bottom: 6px;
+        }
+
+        .badge-row {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin-top: 10px;
+        }
+
+        .action-panel {
+          padding: 24px;
+          border-radius: 24px;
+          background: linear-gradient(180deg, #f7f1e7 0%, #efe5d3 100%);
+          border: 1px solid #ece2d0;
+        }
+
+        .price-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 14px;
+        }
+
+        .notice-box {
+          padding: 14px 16px;
+          border-radius: 14px;
+          font-weight: 700;
+        }
+
+        @media (max-width: 980px) {
+          .order-hero-grid,
+          .order-grid,
+          .detail-box-grid,
+          .price-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .order-hero,
+          .detail-card,
+          .action-panel {
+            padding: 20px 16px;
+            border-radius: 20px;
+          }
+
+          .detail-section-title {
+            font-size: 22px;
+          }
+
+          .item-price {
+            min-width: 0;
+            text-align: left;
+          }
+        }
+      `}</style>
+
+      <div className="order-detail-shell">
         {actionData?.message ? (
           <div
+            className="notice-box"
             style={{
-              padding: "14px 16px",
-              borderRadius: "14px",
               background: actionData.ok ? "#edf7ee" : "#fff1f1",
               color: actionData.ok ? "#1f6b36" : "#8b2222",
               border: actionData.ok
                 ? "1px solid #cfe8d4"
                 : "1px solid #efcaca",
-              fontWeight: 700,
             }}
           >
             {actionData.message}
           </div>
         ) : null}
 
-        <section
-          style={{
-            ...card.base,
-            padding: "28px",
-            background:
-              "linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(248,244,236,1) 100%)",
-            border: "1px solid #ece2d0",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: "16px",
-              flexWrap: "wrap",
-              alignItems: "flex-start",
-            }}
-          >
+        <section className="order-hero">
+          <div className="order-hero-grid">
             <div>
-              <div
-                style={{
-                  fontSize: "12px",
-                  fontWeight: 800,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  color: colors.muted,
-                  marginBottom: "8px",
-                }}
-              >
-                {locale === "de" ? "Bestellübersicht" : "Order overview"}
+              <div className="order-eyebrow">
+                {locale === "de" ? "Bestellung" : "Order"}
               </div>
 
-              <h2
-                style={{
-                  margin: "0 0 10px",
-                  fontSize: "32px",
-                  lineHeight: 1.08,
-                  color: colors.text,
-                }}
-              >
-                {order.orderNumber}
-              </h2>
+              <h1 className="order-hero-title">{order.orderNumber}</h1>
 
-              <p
-                style={{
-                  margin: 0,
-                  color: colors.muted,
-                  fontSize: "15px",
-                  lineHeight: 1.7,
-                  maxWidth: "760px",
-                }}
-              >
+              <p className="order-hero-copy">
                 {locale === "de"
-                  ? "Status, Positionen, Betrag und zugeordnete Informationen dieser Bestellung."
-                  : "Status, items, amount and linked information for this order."}
+                  ? "Status, Positionen, Beträge und zugeordnete Informationen dieser Bestellung übersichtlich an einem Ort."
+                  : "Status, items, pricing and linked information for this order in one clear place."}
               </p>
+
+              <div className="order-hero-actions">
+                <a
+                  href={withLang("/bestellungen", locale)}
+                  style={{
+                    ...button.secondary,
+                    textDecoration: "none",
+                    color: colors.text,
+                  }}
+                >
+                  {locale === "de" ? "Zurück zu Bestellungen" : "Back to orders"}
+                </a>
+              </div>
             </div>
 
-            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+            <div>
               <span
                 style={{
                   display: "inline-flex",
@@ -241,458 +455,334 @@ export default function BestellungDetailPage() {
               >
                 {statusLabel}
               </span>
-
-              <a
-                href={withLang("/bestellungen", locale)}
-                style={{
-                  ...button.secondary,
-                  textDecoration: "none",
-                  color: colors.text,
-                }}
-              >
-                {locale === "de" ? "Zurück" : "Back"}
-              </a>
             </div>
           </div>
         </section>
 
         <section
+          className="detail-card"
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: "18px",
+            ...card.base,
           }}
         >
-          <InfoCard
-            label={locale === "de" ? "Datum" : "Date"}
-            value={formatDate(order.createdAt, locale)}
-          />
-          <InfoCard
-            label={locale === "de" ? "Typ" : "Type"}
-            value={order.orderType || "—"}
-          />
-          <InfoCard
-            label={locale === "de" ? "Betrag" : "Amount"}
-            value={formatMoney(order.totalAmount, order.currency || "EUR", locale)}
-          />
-          <InfoCard
-            label={locale === "de" ? "Positionen" : "Items"}
-            value={String(order.items?.length || 0)}
-          />
+          <h2 className="detail-section-title">
+            {locale === "de" ? "Bestellübersicht" : "Order overview"}
+          </h2>
+
+          <div className="detail-box-grid">
+            <DetailBox
+              label={locale === "de" ? "Bestellt am" : "Ordered on"}
+              value={formatDate(order.orderedAt || order.createdAt, locale)}
+            />
+            <DetailBox
+              label={locale === "de" ? "Lieferdatum" : "Delivery date"}
+              value={
+                order.deliveryDate
+                  ? formatDate(order.deliveryDate, locale)
+                  : "—"
+              }
+            />
+            <DetailBox
+              label={locale === "de" ? "Typ" : "Type"}
+              value={order.orderType || "—"}
+            />
+            <DetailBox
+              label={locale === "de" ? "Positionen" : "Items"}
+              value={String(order.items?.length || 0)}
+            />
+            <DetailBox
+              label={locale === "de" ? "Kostenstelle" : "Cost center"}
+              value={
+                order.costCenter
+                  ? `${order.costCenter.name}${
+                      order.costCenter.code ? ` · ${order.costCenter.code}` : ""
+                    }`
+                  : "—"
+              }
+            />
+            <DetailBox
+              label={locale === "de" ? "Referenz" : "Reference"}
+              value={order.referenceNumber || "—"}
+            />
+          </div>
         </section>
 
-        <section
-          style={{
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 1.2fr) minmax(280px, 0.8fr)",
-            gap: "18px",
-          }}
-        >
-          <div
+        <div className="order-grid">
+          <section
+            className="detail-card"
             style={{
               ...card.base,
-              padding: "28px",
             }}
           >
-            <h3
+            <h2 className="detail-section-title">
+              {locale === "de" ? "Kontakt & Lieferung" : "Contact & delivery"}
+            </h2>
+
+            <div className="detail-box-grid">
+              <DetailBox
+                label={locale === "de" ? "Kontakt" : "Contact"}
+                value={contactName}
+              />
+              <DetailBox
+                label={locale === "de" ? "E-Mail" : "Email"}
+                value={order.billingEmail || "—"}
+              />
+              <DetailBox
+                label={locale === "de" ? "Telefon" : "Phone"}
+                value={order.billingPhone || "—"}
+              />
+              <DetailBox
+                label={locale === "de" ? "Standort" : "Location"}
+                value={order.location?.name || "—"}
+              />
+              <DetailBox
+                label={locale === "de" ? "Lieferadresse" : "Delivery address"}
+                value={deliveryAddressText}
+              />
+              <DetailBox
+                label={locale === "de" ? "Rechnungsfirma" : "Billing company"}
+                value={order.billingCompanyName || "—"}
+              />
+            </div>
+          </section>
+
+          <section className="action-panel">
+            <h2
               style={{
-                margin: "0 0 18px",
+                margin: "0 0 10px",
                 fontSize: "24px",
                 color: colors.text,
+                letterSpacing: "-0.02em",
               }}
             >
-              {locale === "de" ? "Positionen" : "Items"}
-            </h3>
+              {locale === "de" ? "Aktionen" : "Actions"}
+            </h2>
 
-            {order.items?.length ? (
-              <div style={{ display: "grid", gap: "12px" }}>
-                {order.items.map((item) => {
-                  const isReorderable = Boolean(item.shopifyVariantId);
+            <p
+              style={{
+                margin: "0 0 16px",
+                color: colors.muted,
+                lineHeight: 1.65,
+                fontSize: "14px",
+              }}
+            >
+              {locale === "de"
+                ? "Du kannst diese Bestellung erneut in den Warenkorb legen oder — falls noch möglich — direkt im Portal stornieren."
+                : "You can add this order to the cart again or — if still possible — cancel it directly in the portal."}
+            </p>
 
-                  return (
-                    <div
-                      key={item.id}
-                      style={{
-                        border: `1px solid ${colors.border}`,
-                        borderRadius: "18px",
-                        padding: "18px",
-                        background: "#fff",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          gap: "14px",
-                          flexWrap: "wrap",
-                          alignItems: "flex-start",
-                        }}
-                      >
-                        <div style={{ minWidth: 0, flex: "1 1 360px" }}>
-                          <div
-                            style={{
-                              fontSize: "18px",
-                              fontWeight: 800,
-                              color: colors.text,
-                              marginBottom: "8px",
-                            }}
-                          >
-                            {item.title}
-                          </div>
+            <div style={{ display: "grid", gap: "10px" }}>
+              {hasReorderableItems ? (
+                <a
+                  href={reorderUrl}
+                  style={{
+                    ...button.primary,
+                    textDecoration: "none",
+                    color: "#fff",
+                    background: "linear-gradient(135deg, #c8a96a, #b8934f)",
+                    textAlign: "center",
+                  }}
+                >
+                  {locale === "de" ? "Erneut bestellen" : "Reorder"}
+                </a>
+              ) : (
+                <span
+                  style={{
+                    ...button.primary,
+                    color: "#fff",
+                    background: "#c9c1b0",
+                    cursor: "not-allowed",
+                    opacity: 0.8,
+                    textAlign: "center",
+                  }}
+                >
+                  {locale === "de" ? "Erneut bestellen" : "Reorder"}
+                </span>
+              )}
 
-                          <div
-                            style={{
-                              color: colors.muted,
-                              fontSize: "14px",
-                              lineHeight: 1.6,
-                            }}
-                          >
-                            {locale === "de" ? "Menge" : "Quantity"}: {item.quantity}
-                            {item.unit ? ` ${item.unit}` : ""}
-                          </div>
-
-                          {item.variantTitle ? (
-                            <div
-                              style={{
-                                marginTop: "6px",
-                                color: colors.muted,
-                                fontSize: "14px",
-                                lineHeight: 1.6,
-                              }}
-                            >
-                              {locale === "de" ? "Variante" : "Variant"}: {item.variantTitle}
-                            </div>
-                          ) : null}
-
-                          {item.notes ? (
-                            <div
-                              style={{
-                                marginTop: "8px",
-                                color: colors.muted,
-                                fontSize: "14px",
-                                lineHeight: 1.6,
-                                whiteSpace: "pre-wrap",
-                              }}
-                            >
-                              {item.notes}
-                            </div>
-                          ) : null}
-
-                          <div
-                            style={{
-                              marginTop: "10px",
-                              display: "flex",
-                              flexWrap: "wrap",
-                              gap: "8px",
-                            }}
-                          >
-                            {isReorderable ? (
-                              <span style={okBadgeStyle}>
-                                {locale === "de"
-                                  ? "Für Reorder verfügbar"
-                                  : "Available for reorder"}
-                              </span>
-                            ) : (
-                              <span style={mutedBadgeStyle}>
-                                {locale === "de"
-                                  ? "Nicht für Reorder verfügbar"
-                                  : "Not available for reorder"}
-                              </span>
-                            )}
-
-                            {item.sku ? (
-                              <span style={mutedBadgeStyle}>SKU: {item.sku}</span>
-                            ) : null}
-                          </div>
-                        </div>
-
-                        <div
-                          style={{
-                            textAlign: "right",
-                            minWidth: "140px",
-                          }}
-                        >
-                          {item.unitPrice != null ? (
-                            <div
-                              style={{
-                                fontSize: "14px",
-                                color: colors.muted,
-                                marginBottom: "6px",
-                              }}
-                            >
-                              {formatMoney(item.unitPrice, order.currency || "EUR", locale)}
-                            </div>
-                          ) : null}
-
-                          {item.totalPrice != null ? (
-                            <div
-                              style={{
-                                fontSize: "18px",
-                                fontWeight: 800,
-                                color: colors.text,
-                              }}
-                            >
-                              {formatMoney(item.totalPrice, order.currency || "EUR", locale)}
-                            </div>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <EmptyBox>
-                {locale === "de"
-                  ? "Für diese Bestellung sind aktuell keine Positionen hinterlegt."
-                  : "There are currently no items stored for this order."}
-              </EmptyBox>
-            )}
-          </div>
-
-          <div style={{ display: "grid", gap: "18px" }}>
-            <SidebarMetaCard
-              title={locale === "de" ? "Bestelldaten" : "Order details"}
-              entries={[
-                {
-                  label: locale === "de" ? "Status" : "Status",
-                  value: statusLabel,
-                },
-                {
-                  label: locale === "de" ? "Bestellnummer" : "Order number",
-                  value: order.orderNumber,
-                },
-                {
-                  label: locale === "de" ? "Bestellt am" : "Ordered on",
-                  value: formatDate(order.orderedAt || order.createdAt, locale),
-                },
-                {
-                  label: locale === "de" ? "Lieferdatum" : "Delivery date",
-                  value: order.deliveryDate
-                    ? formatDate(order.deliveryDate, locale)
-                    : "—",
-                },
-              ]}
-            />
-
-            <SidebarMetaCard
-              title={locale === "de" ? "Zuordnung" : "Assignment"}
-              entries={[
-                {
-                  label: locale === "de" ? "Kostenstelle" : "Cost center",
-                  value: order.costCenter?.name || "—",
-                },
-                {
-                  label: locale === "de" ? "Referenz" : "Reference",
-                  value: order.referenceNumber || "—",
-                },
-                {
-                  label: locale === "de" ? "Standort" : "Location",
-                  value: order.location?.name || "—",
-                },
-                {
-                  label: locale === "de" ? "Kontakt" : "Contact",
-                  value: order.contact
-                    ? [order.contact.firstName, order.contact.lastName]
-                        .filter(Boolean)
-                        .join(" ")
-                    : "—",
-                },
-              ]}
-            />
-
-            <SidebarMetaCard
-              title={locale === "de" ? "Lieferadresse" : "Delivery address"}
-              entries={[
-                {
-                  label: locale === "de" ? "Bezeichnung" : "Label",
-                  value: order.deliveryAddress?.label || "—",
-                },
-                {
-                  label: locale === "de" ? "Adresse" : "Address",
-                  value: order.deliveryAddress
-                    ? [
-                        [order.deliveryAddress.street, order.deliveryAddress.houseNumber]
-                          .filter(Boolean)
-                          .join(" "),
-                        [order.deliveryAddress.postalCode, order.deliveryAddress.city]
-                          .filter(Boolean)
-                          .join(" "),
-                        order.deliveryAddress.country,
-                      ]
-                        .filter(Boolean)
-                        .join(", ")
-                    : "—",
-                },
-              ]}
-            />
+              {canCancel ? (
+                <Form method="post">
+                  <input type="hidden" name="intent" value="cancel" />
+                  <button
+                    type="submit"
+                    style={dangerButton}
+                    disabled={isCancelling}
+                    onClick={(event) => {
+                      const ok = window.confirm(
+                        locale === "de"
+                          ? "Möchtest du diese Bestellung wirklich stornieren?"
+                          : "Do you really want to cancel this order?"
+                      );
+                      if (!ok) {
+                        event.preventDefault();
+                      }
+                    }}
+                  >
+                    {isCancelling
+                      ? locale === "de"
+                        ? "Wird storniert..."
+                        : "Cancelling..."
+                      : locale === "de"
+                      ? "Bestellung stornieren"
+                      : "Cancel order"}
+                  </button>
+                </Form>
+              ) : (
+                <span
+                  style={{
+                    ...button.secondary,
+                    textAlign: "center",
+                    opacity: 0.7,
+                    cursor: "not-allowed",
+                    color: colors.muted,
+                  }}
+                >
+                  {locale === "de" ? "Nicht stornierbar" : "Cannot be cancelled"}
+                </span>
+              )}
+            </div>
 
             <div
               style={{
-                ...card.base,
-                padding: "22px",
+                marginTop: "14px",
+                color: colors.muted,
+                fontSize: "13px",
+                lineHeight: 1.55,
               }}
             >
-              <h3
-                style={{
-                  margin: "0 0 10px",
-                  fontSize: "20px",
-                  color: colors.text,
-                }}
-              >
-                {locale === "de" ? "Aktionen" : "Actions"}
-              </h3>
-
-              <p
-                style={{
-                  margin: "0 0 16px",
-                  color: colors.muted,
-                  lineHeight: 1.6,
-                  fontSize: "14px",
-                }}
-              >
-                {locale === "de"
-                  ? "Du kannst diese Bestellung erneut in den Warenkorb legen oder im Portal stornieren."
-                  : "You can add this order to the cart again or cancel it in the portal."}
-              </p>
-
-              <div style={{ display: "grid", gap: "10px" }}>
-                {hasReorderableItems ? (
-                  <a
-                    href={reorderUrl}
-                    style={{
-                      ...button.primary,
-                      textDecoration: "none",
-                      color: "#fff",
-                      background: "linear-gradient(135deg, #c8a96a, #b8934f)",
-                      textAlign: "center",
-                    }}
-                  >
-                    {locale === "de" ? "Erneut bestellen" : "Reorder"}
-                  </a>
-                ) : (
-                  <span
-                    style={{
-                      ...button.primary,
-                      color: "#fff",
-                      background: "#c9c1b0",
-                      cursor: "not-allowed",
-                      opacity: 0.8,
-                      textAlign: "center",
-                    }}
-                  >
-                    {locale === "de" ? "Erneut bestellen" : "Reorder"}
-                  </span>
-                )}
-
-                {canCancel ? (
-                  <Form method="post">
-                    <input type="hidden" name="intent" value="cancel" />
-                    <button
-                      type="submit"
-                      style={dangerButton}
-                      disabled={isCancelling}
-                      onClick={(event) => {
-                        const ok = window.confirm(
-                          locale === "de"
-                            ? "Möchtest du diese Bestellung wirklich stornieren?"
-                            : "Do you really want to cancel this order?"
-                        );
-                        if (!ok) {
-                          event.preventDefault();
-                        }
-                      }}
-                    >
-                      {isCancelling
-                        ? locale === "de"
-                          ? "Wird storniert..."
-                          : "Cancelling..."
-                        : locale === "de"
-                        ? "Stornieren"
-                        : "Cancel order"}
-                    </button>
-                  </Form>
-                ) : (
-                  <span
-                    style={{
-                      ...button.secondary,
-                      textAlign: "center",
-                      opacity: 0.7,
-                      cursor: "not-allowed",
-                      color: colors.muted,
-                    }}
-                  >
-                    {locale === "de" ? "Nicht stornierbar" : "Cannot be cancelled"}
-                  </span>
-                )}
-              </div>
-
-              {hasReorderableItems ? (
-                <div
-                  style={{
-                    marginTop: "12px",
-                    color: colors.muted,
-                    fontSize: "13px",
-                    lineHeight: 1.55,
-                  }}
-                >
-                  {locale === "de"
-                    ? `${reorderableItems.length} Position(en) sind für den Reorder verfügbar.`
-                    : `${reorderableItems.length} item(s) are available for reorder.`}
-                </div>
-              ) : (
-                <div
-                  style={{
-                    marginTop: "12px",
-                    color: colors.muted,
-                    fontSize: "13px",
-                    lineHeight: 1.55,
-                  }}
-                >
-                  {locale === "de"
-                    ? "Für ältere Bestellungen fehlen noch Shopify-Variant-IDs."
-                    : "Older orders do not yet contain Shopify variant IDs."}
-                </div>
-              )}
+              {hasReorderableItems
+                ? locale === "de"
+                  ? `${reorderableItems.length} Position(en) können direkt erneut in den Shopify-Warenkorb gelegt werden.`
+                  : `${reorderableItems.length} item(s) can be added directly to the Shopify cart again.`
+                : locale === "de"
+                ? "Für diese Bestellung fehlen noch Shopify-Variant-IDs für einen Reorder."
+                : "This order does not yet include Shopify variant IDs for reorder."}
             </div>
-          </div>
+          </section>
+        </div>
+
+        <section
+          className="detail-card"
+          style={{
+            ...card.base,
+          }}
+        >
+          <h2 className="detail-section-title">
+            {locale === "de" ? "Positionen" : "Items"}
+          </h2>
+
+          {order.items?.length ? (
+            <div className="items-list">
+              {order.items.map((item) => {
+                const isReorderable = Boolean(item.shopifyVariantId);
+
+                return (
+                  <div key={item.id} className="item-card">
+                    <div className="item-head">
+                      <div style={{ minWidth: 0, flex: "1 1 360px" }}>
+                        <div className="item-title">{item.title}</div>
+
+                        <div className="item-meta">
+                          {locale === "de" ? "Menge" : "Quantity"}: {item.quantity}
+                          {item.unit ? ` ${item.unit}` : ""}
+                        </div>
+
+                        {item.variantTitle ? (
+                          <div className="item-meta">
+                            {locale === "de" ? "Variante" : "Variant"}:{" "}
+                            {item.variantTitle}
+                          </div>
+                        ) : null}
+
+                        {item.notes ? (
+                          <div className="item-meta" style={{ whiteSpace: "pre-wrap" }}>
+                            {item.notes}
+                          </div>
+                        ) : null}
+
+                        <div className="badge-row">
+                          {isReorderable ? (
+                            <span style={okBadgeStyle}>
+                              {locale === "de"
+                                ? "Für Reorder verfügbar"
+                                : "Available for reorder"}
+                            </span>
+                          ) : (
+                            <span style={mutedBadgeStyle}>
+                              {locale === "de"
+                                ? "Nicht für Reorder verfügbar"
+                                : "Not available for reorder"}
+                            </span>
+                          )}
+
+                          {item.sku ? (
+                            <span style={mutedBadgeStyle}>SKU: {item.sku}</span>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <div className="item-price">
+                        {item.unitPrice != null ? (
+                          <div className="item-unit">
+                            {formatMoney(
+                              item.unitPrice,
+                              order.currency || "EUR",
+                              locale
+                            )}
+                          </div>
+                        ) : null}
+
+                        {item.totalPrice != null ? (
+                          <div className="item-total">
+                            {formatMoney(
+                              item.totalPrice,
+                              order.currency || "EUR",
+                              locale
+                            )}
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <EmptyBox>
+              {locale === "de"
+                ? "Für diese Bestellung sind aktuell keine Positionen hinterlegt."
+                : "There are currently no items stored for this order."}
+            </EmptyBox>
+          )}
         </section>
 
         {(order.subtotalAmount != null ||
           order.taxAmount != null ||
           order.totalAmount != null) && (
           <section
+            className="detail-card"
             style={{
               ...card.base,
-              padding: "28px",
             }}
           >
-            <h3
-              style={{
-                margin: "0 0 18px",
-                fontSize: "24px",
-                color: colors.text,
-              }}
-            >
+            <h2 className="detail-section-title">
               {locale === "de" ? "Preisübersicht" : "Price summary"}
-            </h3>
+            </h2>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                gap: "14px",
-              }}
-            >
-              <InfoCard
+            <div className="price-grid">
+              <DetailBox
                 label={locale === "de" ? "Zwischensumme" : "Subtotal"}
                 value={
                   order.subtotalAmount != null
-                    ? formatMoney(order.subtotalAmount, order.currency || "EUR", locale)
+                    ? formatMoney(
+                        order.subtotalAmount,
+                        order.currency || "EUR",
+                        locale
+                      )
                     : "—"
                 }
               />
-              <InfoCard
+              <DetailBox
                 label={locale === "de" ? "Steuern" : "Tax"}
                 value={
                   order.taxAmount != null
@@ -700,7 +790,7 @@ export default function BestellungDetailPage() {
                     : "—"
                 }
               />
-              <InfoCard
+              <DetailBox
                 label={locale === "de" ? "Gesamt" : "Total"}
                 value={formatMoney(order.totalAmount, order.currency || "EUR", locale)}
               />
@@ -724,99 +814,11 @@ function buildShopifyCartPermalink(items) {
   return `https://letmebowl-catering.de/cart/${lineItems.join(",")}`;
 }
 
-function InfoCard({ label, value }) {
+function DetailBox({ label, value }) {
   return (
-    <div
-      style={{
-        ...card.base,
-        padding: "20px",
-      }}
-    >
-      <div
-        style={{
-          fontSize: "12px",
-          fontWeight: 800,
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-          color: colors.muted,
-          marginBottom: "10px",
-        }}
-      >
-        {label}
-      </div>
-
-      <div
-        style={{
-          fontSize: "22px",
-          fontWeight: 800,
-          color: colors.text,
-          lineHeight: 1.2,
-          wordBreak: "break-word",
-        }}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function SidebarMetaCard({ title, entries }) {
-  return (
-    <div
-      style={{
-        ...card.base,
-        padding: "22px",
-      }}
-    >
-      <h3
-        style={{
-          margin: "0 0 14px",
-          fontSize: "20px",
-          color: colors.text,
-        }}
-      >
-        {title}
-      </h3>
-
-      <div style={{ display: "grid", gap: "12px" }}>
-        {entries.map((entry) => (
-          <div
-            key={`${title}-${entry.label}`}
-            style={{
-              padding: "12px 14px",
-              borderRadius: "14px",
-              background: "#f8f4ec",
-              border: "1px solid #ece2d0",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "12px",
-                fontWeight: 800,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                color: colors.muted,
-                marginBottom: "6px",
-              }}
-            >
-              {entry.label}
-            </div>
-
-            <div
-              style={{
-                fontSize: "14px",
-                fontWeight: 700,
-                color: colors.text,
-                lineHeight: 1.5,
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
-              }}
-            >
-              {entry.value || "—"}
-            </div>
-          </div>
-        ))}
-      </div>
+    <div className="detail-box">
+      <div className="detail-box-label">{label}</div>
+      <div className="detail-box-value">{value || "—"}</div>
     </div>
   );
 }
