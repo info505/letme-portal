@@ -12,74 +12,105 @@ export async function loader({ request }) {
     throw redirect(`/login?lang=${locale}`);
   }
 
-  // Platzhalterdaten – später durch echte DB-Daten ersetzen
+  // Noch Platzhalterdaten, aber jetzt strukturiert und systemisch eingebunden
+  // Später hier durch echte DB-Rechnungen ersetzen
   const invoices = [
     {
       id: "inv_1",
-      number: "#2026-001",
+      number: "RE-2026-001",
       date: "2026-04-12",
       status: "paid",
-      amount: "189,50 €",
+      amountCents: 18950,
+      currency: "EUR",
+      note:
+        locale === "de"
+          ? "Zahlung eingegangen"
+          : "Payment received",
     },
     {
       id: "inv_2",
-      number: "#2026-002",
+      number: "RE-2026-002",
       date: "2026-04-02",
       status: "open",
-      amount: "86,40 €",
+      amountCents: 8640,
+      currency: "EUR",
+      note:
+        locale === "de"
+          ? "Noch offen"
+          : "Still open",
     },
     {
       id: "inv_3",
-      number: "#2026-003",
+      number: "RE-2026-003",
       date: "2026-03-21",
       status: "paid",
-      amount: "420,00 €",
+      amountCents: 42000,
+      currency: "EUR",
+      note:
+        locale === "de"
+          ? "Zahlung eingegangen"
+          : "Payment received",
     },
   ];
 
-  return { user, locale, invoices };
+  const paidInvoices = invoices.filter((invoice) => invoice.status === "paid");
+  const openInvoices = invoices.filter((invoice) => invoice.status === "open");
+
+  const totalAmountCents = invoices.reduce(
+    (sum, invoice) => sum + Number(invoice.amountCents || 0),
+    0
+  );
+
+  const openAmountCents = openInvoices.reduce(
+    (sum, invoice) => sum + Number(invoice.amountCents || 0),
+    0
+  );
+
+  return {
+    user,
+    locale,
+    invoices,
+    summary: {
+      totalCount: invoices.length,
+      paidCount: paidInvoices.length,
+      openCount: openInvoices.length,
+      totalAmountCents,
+      openAmountCents,
+    },
+  };
 }
 
 export default function RechnungenPage() {
-  const { user, locale, invoices } = useLoaderData();
+  const { user, locale, invoices, summary } = useLoaderData();
   const t = dict[locale] || dict.de;
-
-  const paidInvoices = invoices.filter((invoice) => invoice.status === "paid");
-  const openInvoices = invoices.filter((invoice) => invoice.status === "open");
 
   return (
     <PortalLayout
       title={t.invoices}
       subtitle={
         locale === "de"
-          ? "Alle Rechnungen und Zahlungsstände deines Firmenkontos im Überblick."
-          : "All invoices and payment statuses for your business account at a glance."
+          ? "Alle Rechnungen und Zahlungsstände deines Firmenkontos."
+          : "All invoices and payment statuses for your business account."
       }
     >
       <style>{`
         .invoice-shell {
           display: grid;
           gap: 18px;
-          max-width: 1220px;
+          max-width: 1180px;
         }
 
         .invoice-top {
           display: grid;
-          grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+          grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
           gap: 18px;
         }
 
-        .invoice-panel {
+        .invoice-top-card,
+        .invoice-stats-card,
+        .invoice-list-card {
+          padding: 22px;
           border-radius: 24px;
-          padding: 24px;
-        }
-
-        .invoice-hero {
-          background:
-            radial-gradient(circle at top left, rgba(200,169,106,0.12), transparent 28%),
-            linear-gradient(180deg, #fcfaf6 0%, #f7f2e8 100%);
-          border: 1px solid rgba(226, 218, 203, 0.95);
-          box-shadow: 0 18px 50px rgba(24,24,24,0.05);
         }
 
         .eyebrow {
@@ -97,42 +128,41 @@ export default function RechnungenPage() {
           margin-bottom: 14px;
         }
 
-        .hero-title {
+        .top-title {
           margin: 0;
-          font-size: clamp(30px, 3.5vw, 42px);
-          line-height: 1.02;
-          letter-spacing: -0.04em;
+          font-size: 30px;
+          line-height: 1.08;
+          letter-spacing: -0.03em;
           color: ${colors.text};
-          max-width: 760px;
         }
 
-        .hero-copy {
-          margin: 14px 0 0;
-          max-width: 760px;
+        .top-text {
+          margin: 12px 0 0;
           color: ${colors.muted};
-          line-height: 1.7;
           font-size: 15px;
+          line-height: 1.7;
+          max-width: 760px;
         }
 
-        .hero-summary {
-          margin-top: 18px;
+        .account-grid {
           display: grid;
           gap: 10px;
+          margin-top: 18px;
         }
 
-        .hero-summary-row {
+        .account-row {
           display: grid;
-          grid-template-columns: 170px 1fr;
+          grid-template-columns: 150px 1fr;
           gap: 10px;
           padding: 10px 0;
           border-bottom: 1px solid rgba(0,0,0,0.05);
         }
 
-        .hero-summary-row:last-child {
+        .account-row:last-child {
           border-bottom: none;
         }
 
-        .hero-summary-label {
+        .account-label {
           font-size: 12px;
           font-weight: 800;
           letter-spacing: 0.08em;
@@ -140,12 +170,12 @@ export default function RechnungenPage() {
           color: ${colors.muted};
         }
 
-        .hero-summary-value {
+        .account-value {
           font-size: 15px;
           line-height: 1.6;
+          font-weight: 700;
           color: ${colors.text};
           word-break: break-word;
-          font-weight: 700;
         }
 
         .stats-grid {
@@ -153,19 +183,19 @@ export default function RechnungenPage() {
           gap: 12px;
         }
 
-        .stat-card {
+        .stat-box {
           border: 1px solid ${colors.border};
-          border-radius: 20px;
+          border-radius: 18px;
+          padding: 16px;
           background: #fff;
-          padding: 18px;
         }
 
-        .stat-card.is-success {
+        .stat-box.is-success {
           background: #edf7ee;
           border-color: #cfe8d4;
         }
 
-        .stat-card.is-warning {
+        .stat-box.is-warning {
           background: #fff6e9;
           border-color: #f0dfbf;
         }
@@ -180,36 +210,32 @@ export default function RechnungenPage() {
         }
 
         .stat-value {
-          font-size: 32px;
+          font-size: 30px;
           line-height: 1.05;
           font-weight: 800;
           color: ${colors.text};
           margin-bottom: 6px;
         }
 
-        .stat-text {
+        .stat-sub {
           font-size: 14px;
           line-height: 1.6;
           color: ${colors.muted};
-        }
-
-        .list-card {
-          padding: 26px;
-          border-radius: 24px;
         }
 
         .list-head {
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
-          gap: 16px;
+          gap: 14px;
           flex-wrap: wrap;
           margin-bottom: 18px;
         }
 
         .list-title {
           margin: 0 0 8px;
-          font-size: 26px;
+          font-size: 24px;
+          line-height: 1.1;
           color: ${colors.text};
           letter-spacing: -0.02em;
         }
@@ -221,58 +247,47 @@ export default function RechnungenPage() {
           line-height: 1.6;
         }
 
-        .invoice-list {
+        .invoice-table {
           display: grid;
-          gap: 12px;
-        }
-
-        .invoice-row {
-          border: 1px solid ${colors.border};
-          border-radius: 18px;
-          background: #fff;
-          padding: 18px;
-          display: grid;
-          gap: 12px;
-        }
-
-        .invoice-row-top {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 14px;
-          flex-wrap: wrap;
-        }
-
-        .invoice-number {
-          font-size: 20px;
-          font-weight: 800;
-          color: ${colors.text};
-          line-height: 1.2;
-        }
-
-        .invoice-meta {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 10px;
         }
 
-        .invoice-meta-box {
+        .invoice-row {
+          display: grid;
+          grid-template-columns: minmax(160px, 1.1fr) minmax(120px, 0.8fr) minmax(120px, 0.8fr) minmax(120px, 0.8fr) minmax(180px, 1fr);
+          gap: 10px;
+          align-items: center;
+          padding: 16px;
           border: 1px solid ${colors.border};
-          border-radius: 14px;
-          padding: 12px 14px;
-          background: #fcfbf8;
+          border-radius: 18px;
+          background: #fff;
         }
 
-        .invoice-meta-label {
+        .invoice-number {
+          font-size: 18px;
+          font-weight: 800;
+          color: ${colors.text};
+          line-height: 1.3;
+          word-break: break-word;
+        }
+
+        .invoice-note {
+          font-size: 13px;
+          line-height: 1.5;
+          color: ${colors.muted};
+          margin-top: 4px;
+        }
+
+        .cell-label {
           font-size: 11px;
           font-weight: 800;
           letter-spacing: 0.08em;
           text-transform: uppercase;
           color: ${colors.muted};
-          margin-bottom: 6px;
+          margin-bottom: 4px;
         }
 
-        .invoice-meta-value {
+        .cell-value {
           font-size: 14px;
           font-weight: 700;
           color: ${colors.text};
@@ -280,33 +295,21 @@ export default function RechnungenPage() {
           word-break: break-word;
         }
 
-        .invoice-row-footer {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 12px;
-          flex-wrap: wrap;
-        }
-
-        .invoice-note {
-          color: ${colors.muted};
-          font-size: 13px;
-          line-height: 1.55;
-        }
-
         .status-badge {
           display: inline-flex;
           align-items: center;
+          justify-content: center;
           padding: 8px 12px;
           border-radius: 999px;
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 800;
+          white-space: nowrap;
         }
 
         .empty-state {
           border: 1px dashed ${colors.border};
           border-radius: 18px;
-          padding: 24px;
+          padding: 20px;
           background: #fff;
         }
 
@@ -321,28 +324,32 @@ export default function RechnungenPage() {
           .invoice-top {
             grid-template-columns: 1fr;
           }
-        }
 
-        @media (max-width: 850px) {
-          .invoice-meta {
-            grid-template-columns: 1fr;
+          .invoice-row {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            align-items: flex-start;
           }
         }
 
-        @media (max-width: 640px) {
-          .invoice-panel,
-          .list-card {
+        @media (max-width: 700px) {
+          .invoice-top-card,
+          .invoice-stats-card,
+          .invoice-list-card {
             padding: 18px 16px;
             border-radius: 20px;
           }
 
-          .hero-summary-row {
+          .account-row {
             grid-template-columns: 1fr;
             gap: 4px;
           }
 
-          .list-title {
-            font-size: 22px;
+          .invoice-row {
+            grid-template-columns: 1fr;
+          }
+
+          .top-title {
+            font-size: 24px;
           }
         }
       `}</style>
@@ -350,94 +357,105 @@ export default function RechnungenPage() {
       <div className="invoice-shell">
         <section className="invoice-top">
           <div
-            className="invoice-panel invoice-hero"
+            className="invoice-top-card"
             style={{
               ...card.base,
             }}
           >
             <div className="eyebrow">
-              {locale === "de" ? "Zahlungsstatus" : "Payment status"}
+              {locale === "de" ? "Rechnungsstatus" : "Invoice status"}
             </div>
 
-            <h2 className="hero-title">
+            <h2 className="top-title">
               {locale === "de"
-                ? "Rechnungen und Zahlungsstände sauber im Blick behalten."
-                : "Keep invoices and payment statuses clearly in view."}
+                ? "Zahlungsstände klar und übersichtlich verwalten."
+                : "Manage payment statuses clearly and efficiently."}
             </h2>
 
-            <p className="hero-copy">
+            <p className="top-text">
               {locale === "de"
-                ? "Hier siehst du den aktuellen Stand deines Firmenkontos. Später können an dieser Stelle echte PDF-Belege, Rechnungsdetails und Zahlungsabgleiche ergänzt werden."
-                : "Here you can see the current status of your business account. Later, real PDF receipts, invoice details and payment reconciliation can be added here."}
+                ? "Hier findest du alle aktuellen Rechnungen deines Firmenkontos. Die Liste ist so vorbereitet, dass später echte PDF-Belege und Detailansichten sauber ergänzt werden können."
+                : "Here you can find all current invoices for your business account. The structure is prepared so real PDF documents and detailed views can be added later."}
             </p>
 
-            <div className="hero-summary">
-              <div className="hero-summary-row">
-                <div className="hero-summary-label">
+            <div className="account-grid">
+              <div className="account-row">
+                <div className="account-label">
                   {locale === "de" ? "Firma" : "Company"}
                 </div>
-                <div className="hero-summary-value">
-                  {user.companyName || "—"}
-                </div>
+                <div className="account-value">{user.companyName || "—"}</div>
               </div>
 
-              <div className="hero-summary-row">
-                <div className="hero-summary-label">
+              <div className="account-row">
+                <div className="account-label">
                   {locale === "de" ? "Kontakt" : "Contact"}
                 </div>
-                <div className="hero-summary-value">
+                <div className="account-value">
                   {[user.firstName, user.lastName].filter(Boolean).join(" ") || "—"}
                 </div>
               </div>
 
-              <div className="hero-summary-row">
-                <div className="hero-summary-label">
-                  {locale === "de" ? "E-Mail" : "Email"}
-                </div>
-                <div className="hero-summary-value">
-                  {user.email || "—"}
-                </div>
+              <div className="account-row">
+                <div className="account-label">E-Mail</div>
+                <div className="account-value">{user.email || "—"}</div>
               </div>
             </div>
           </div>
 
-          <div className="stats-grid">
-            <StatCard
-              label={locale === "de" ? "Gesamt" : "Total"}
-              value={String(invoices.length)}
-              text={
-                locale === "de"
-                  ? "Alle aktuell gelisteten Rechnungen."
-                  : "All currently listed invoices."
-              }
-            />
+          <div
+            className="invoice-stats-card"
+            style={{
+              ...card.base,
+            }}
+          >
+            <div className="stats-grid">
+              <StatBox
+                label={locale === "de" ? "Gesamt" : "Total"}
+                value={String(summary.totalCount)}
+                sub={
+                  locale === "de"
+                    ? "Alle aktuell gelisteten Rechnungen."
+                    : "All currently listed invoices."
+                }
+              />
 
-            <StatCard
-              label={locale === "de" ? "Bezahlt" : "Paid"}
-              value={String(paidInvoices.length)}
-              text={
-                locale === "de"
-                  ? "Bereits beglichene Rechnungen."
-                  : "Invoices already settled."
-              }
-              className="is-success"
-            />
+              <StatBox
+                label={locale === "de" ? "Bezahlt" : "Paid"}
+                value={String(summary.paidCount)}
+                sub={
+                  locale === "de"
+                    ? "Bereits beglichene Rechnungen."
+                    : "Invoices already settled."
+                }
+                className="is-success"
+              />
 
-            <StatCard
-              label={locale === "de" ? "Offen" : "Open"}
-              value={String(openInvoices.length)}
-              text={
-                locale === "de"
-                  ? "Noch nicht bezahlte oder offene Posten."
-                  : "Invoices that are still unpaid or pending."
-              }
-              className="is-warning"
-            />
+              <StatBox
+                label={locale === "de" ? "Offen" : "Open"}
+                value={String(summary.openCount)}
+                sub={
+                  locale === "de"
+                    ? "Noch nicht bezahlte Rechnungen."
+                    : "Invoices not yet paid."
+                }
+                className="is-warning"
+              />
+
+              <StatBox
+                label={locale === "de" ? "Offener Betrag" : "Open amount"}
+                value={formatMoney(summary.openAmountCents, "EUR", locale)}
+                sub={
+                  locale === "de"
+                    ? "Noch ausstehender Gesamtbetrag."
+                    : "Outstanding total amount."
+                }
+              />
+            </div>
           </div>
         </section>
 
         <section
-          className="list-card"
+          className="invoice-list-card"
           style={{
             ...card.base,
           }}
@@ -447,14 +465,14 @@ export default function RechnungenPage() {
               <h3 className="list-title">{t.invoices}</h3>
               <p className="list-subtitle">
                 {locale === "de"
-                  ? "Belegnummer, Rechnungsdatum, Zahlungsstatus und Betrag auf einen Blick."
-                  : "Invoice number, invoice date, payment status and amount at a glance."}
+                  ? "Rechnungsnummer, Datum, Betrag und Zahlungsstatus auf einen Blick."
+                  : "Invoice number, date, amount and payment status at a glance."}
               </p>
             </div>
           </div>
 
           {invoices.length > 0 ? (
-            <div className="invoice-list">
+            <div className="invoice-table">
               {invoices.map((invoice) => (
                 <InvoiceRow
                   key={invoice.id}
@@ -468,7 +486,7 @@ export default function RechnungenPage() {
             <div className="empty-state">
               <p className="empty-text">
                 {locale === "de"
-                  ? "Aktuell sind diesem Konto noch keine Rechnungen zugeordnet."
+                  ? "Diesem Konto sind aktuell noch keine Rechnungen zugeordnet."
                   : "No invoices are currently assigned to this account."}
               </p>
             </div>
@@ -479,12 +497,12 @@ export default function RechnungenPage() {
   );
 }
 
-function StatCard({ label, value, text, className = "" }) {
+function StatBox({ label, value, sub, className = "" }) {
   return (
-    <div className={`stat-card ${className}`}>
+    <div className={`stat-box ${className}`}>
       <div className="stat-label">{label}</div>
       <div className="stat-value">{value}</div>
-      <div className="stat-text">{text}</div>
+      <div className="stat-sub">{sub}</div>
     </div>
   );
 }
@@ -494,45 +512,44 @@ function InvoiceRow({ invoice, locale, t }) {
 
   return (
     <div className="invoice-row">
-      <div className="invoice-row-top">
-        <div>
-          <div className="invoice-number">{invoice.number}</div>
-        </div>
-
-        <StatusBadge label={paid ? t.paid : t.open} paid={paid} />
+      <div>
+        <div className="invoice-number">{invoice.number}</div>
+        <div className="invoice-note">{invoice.note || ""}</div>
       </div>
 
-      <div className="invoice-meta">
-        <MetaBox
-          label={t.date}
-          value={formatDate(invoice.date, locale)}
-        />
-        <MetaBox
-          label={t.amount}
-          value={invoice.amount}
-        />
-        <MetaBox
-          label={t.status}
-          value={paid ? t.paid : t.open}
-        />
+      <div>
+        <div className="cell-label">{t.date}</div>
+        <div className="cell-value">{formatDate(invoice.date, locale)}</div>
       </div>
 
-      <div className="invoice-row-footer">
-        <div className="invoice-note">
-          {locale === "de"
-            ? "PDF-Download und Detailansicht können im nächsten Schritt angebunden werden."
-            : "PDF download and detailed invoice view can be connected in the next step."}
+      <div>
+        <div className="cell-label">{t.amount}</div>
+        <div className="cell-value">
+          {formatMoney(invoice.amountCents, invoice.currency || "EUR", locale)}
         </div>
       </div>
-    </div>
-  );
-}
 
-function MetaBox({ label, value }) {
-  return (
-    <div className="invoice-meta-box">
-      <div className="invoice-meta-label">{label}</div>
-      <div className="invoice-meta-value">{value}</div>
+      <div>
+        <div className="cell-label">{t.status}</div>
+        <div className="cell-value">
+          <StatusBadge label={paid ? t.paid : t.open} paid={paid} />
+        </div>
+      </div>
+
+      <div>
+        <div className="cell-label">
+          {locale === "de" ? "Hinweis" : "Note"}
+        </div>
+        <div className="cell-value">
+          {paid
+            ? locale === "de"
+              ? "Abgeschlossen"
+              : "Completed"
+            : locale === "de"
+            ? "Zahlung ausstehend"
+            : "Payment pending"}
+        </div>
+      </div>
     </div>
   );
 }
@@ -562,4 +579,13 @@ function formatDate(value, locale) {
   } catch {
     return value;
   }
+}
+
+function formatMoney(valueInCents, currency = "EUR", locale) {
+  const value = Number(valueInCents || 0) / 100;
+
+  return new Intl.NumberFormat(locale === "de" ? "de-DE" : "en-GB", {
+    style: "currency",
+    currency,
+  }).format(value);
 }

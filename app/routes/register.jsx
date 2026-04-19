@@ -160,14 +160,14 @@ export default function RegisterPage() {
   const bullets =
     locale === "en"
       ? [
-          "Central company access for business orders",
-          "Saved delivery and billing data for future checkouts",
-          "Prepared for order history, invoices and internal structures",
+          "Central business access for orders and invoices",
+          "Saved company data for future checkouts",
+          "Prepared for delivery addresses and internal structures",
         ]
       : [
-          "Zentraler Firmenzugang für Geschäftsbestellungen",
-          "Gespeicherte Liefer- und Rechnungsdaten für künftige Checkouts",
-          "Vorbereitet für Bestellhistorie, Rechnungen und interne Strukturen",
+          "Zentraler Firmenzugang für Bestellungen und Rechnungen",
+          "Gespeicherte Firmendaten für künftige Checkouts",
+          "Vorbereitet für Lieferadressen und interne Strukturen",
         ];
 
   return (
@@ -182,7 +182,7 @@ export default function RegisterPage() {
     >
       <style>{`
         .register-page {
-          max-width: 1240px;
+          max-width: 1180px;
           margin: 0 auto;
           padding: 28px 18px 36px;
         }
@@ -193,7 +193,7 @@ export default function RegisterPage() {
           align-items: center;
           gap: 16px;
           flex-wrap: wrap;
-          margin-bottom: 26px;
+          margin-bottom: 22px;
         }
 
         .register-logo {
@@ -206,34 +206,34 @@ export default function RegisterPage() {
 
         .register-layout {
           display: grid;
-          grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
-          gap: 22px;
+          grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.1fr);
+          gap: 18px;
           align-items: start;
         }
 
         .register-side,
         .register-form-wrap {
-          border-radius: 28px;
+          border-radius: 24px;
           border: 1px solid rgba(226, 218, 203, 0.95);
-          background: rgba(255,255,255,0.9);
+          background: rgba(255,255,255,0.92);
           box-shadow: 0 18px 50px rgba(24,24,24,0.05);
         }
 
         .register-side {
-          padding: 30px;
+          padding: 24px;
           background:
             radial-gradient(circle at top left, rgba(200,169,106,0.12), transparent 30%),
             linear-gradient(180deg, #fcfaf6 0%, #f7f2e8 100%);
         }
 
         .register-form-wrap {
-          padding: 30px;
+          padding: 24px;
         }
 
         .eyebrow {
           display: inline-flex;
           align-items: center;
-          padding: 8px 12px;
+          padding: 7px 11px;
           border-radius: 999px;
           border: 1px solid rgba(200,169,106,0.28);
           background: rgba(255,255,255,0.72);
@@ -242,79 +242,79 @@ export default function RegisterPage() {
           font-weight: 800;
           letter-spacing: 0.14em;
           text-transform: uppercase;
-          margin-bottom: 16px;
+          margin-bottom: 14px;
         }
 
         .side-title {
           margin: 0;
-          font-size: clamp(36px, 4vw, 58px);
-          line-height: 0.96;
+          font-size: clamp(34px, 4vw, 56px);
+          line-height: 0.95;
           letter-spacing: -0.05em;
           color: ${colors.text};
-          max-width: 540px;
+          max-width: 480px;
         }
 
         .side-text {
-          margin: 18px 0 0;
+          margin: 16px 0 0;
           color: ${colors.muted};
           font-size: 16px;
-          line-height: 1.8;
-          max-width: 560px;
+          line-height: 1.75;
+          max-width: 500px;
         }
 
         .bullet-list {
           display: grid;
-          gap: 12px;
-          margin-top: 28px;
+          gap: 10px;
+          margin-top: 22px;
         }
 
         .bullet-item {
           display: flex;
           gap: 12px;
           align-items: flex-start;
-          padding: 14px 16px;
-          border-radius: 18px;
-          background: rgba(255,255,255,0.72);
+          padding: 13px 14px;
+          border-radius: 16px;
+          background: rgba(255,255,255,0.78);
           border: 1px solid rgba(231, 223, 207, 0.95);
         }
 
         .bullet-icon {
-          width: 24px;
-          height: 24px;
-          flex: 0 0 24px;
+          width: 22px;
+          height: 22px;
+          flex: 0 0 22px;
           border-radius: 999px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
           background: linear-gradient(135deg, #c8a96a, #b8934f);
           color: #fff;
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 800;
           margin-top: 1px;
         }
 
         .bullet-text {
           color: ${colors.text};
-          font-size: 15px;
-          line-height: 1.7;
+          font-size: 14px;
+          line-height: 1.65;
           font-weight: 600;
         }
 
         .side-footer {
-          margin-top: 24px;
+          margin-top: 20px;
           color: ${colors.muted};
           font-size: 14px;
           line-height: 1.7;
         }
 
         .form-head {
-          margin-bottom: 20px;
+          margin-bottom: 18px;
         }
 
         .form-title {
-          margin: 0 0 10px;
-          font-size: 32px;
-          line-height: 1.06;
+          margin: 0 0 8px;
+          font-size: 30px;
+          line-height: 1.08;
           color: ${colors.text};
           letter-spacing: -0.03em;
         }
@@ -323,7 +323,7 @@ export default function RegisterPage() {
           margin: 0;
           color: ${colors.muted};
           font-size: 15px;
-          line-height: 1.75;
+          line-height: 1.7;
           max-width: 620px;
         }
 
@@ -339,15 +339,15 @@ export default function RegisterPage() {
         }
 
         .section {
-          padding: 18px;
-          border-radius: 20px;
+          padding: 16px;
+          border-radius: 18px;
           background: #faf7f1;
           border: 1px solid rgba(231, 223, 207, 0.95);
-          margin-bottom: 14px;
+          margin-bottom: 12px;
         }
 
         .section-title {
-          margin: 0 0 14px;
+          margin: 0 0 12px;
           font-size: 13px;
           font-weight: 800;
           color: ${colors.text};
@@ -358,7 +358,7 @@ export default function RegisterPage() {
         .grid {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 16px;
+          gap: 14px;
         }
 
         .full {
@@ -368,7 +368,7 @@ export default function RegisterPage() {
         .submit-button {
           width: 100%;
           min-height: 54px;
-          margin-top: 6px;
+          margin-top: 8px;
           border: none;
           border-radius: 16px;
           background: linear-gradient(135deg, #c8a96a, #b8934f);
@@ -385,7 +385,7 @@ export default function RegisterPage() {
         }
 
         .bottom-line {
-          margin-top: 18px;
+          margin-top: 16px;
           color: ${colors.muted};
           font-size: 14px;
           line-height: 1.7;
@@ -404,12 +404,12 @@ export default function RegisterPage() {
 
           .register-side,
           .register-form-wrap {
-            padding: 22px 18px;
-            border-radius: 22px;
+            padding: 20px 16px;
+            border-radius: 20px;
           }
 
           .side-title {
-            font-size: clamp(34px, 9vw, 48px);
+            font-size: clamp(32px, 9vw, 46px);
           }
         }
 
@@ -443,8 +443,8 @@ export default function RegisterPage() {
 
             <p className="side-text">
               {locale === "en"
-                ? "Create your business account for orders, invoices, delivery addresses and future team ordering workflows."
-                : "Erstelle dein Firmenkonto für Bestellungen, Rechnungen, Lieferadressen und spätere Team-Bestellprozesse."}
+                ? "Create your business access for orders, invoices and future internal ordering workflows."
+                : "Erstelle deinen Firmenzugang für Bestellungen, Rechnungen und spätere interne Bestellabläufe."}
             </p>
 
             <div className="bullet-list">
@@ -458,7 +458,7 @@ export default function RegisterPage() {
 
             <div className="side-footer">
               {locale === "en"
-                ? "Already registered? Sign in and manage your business details directly in the portal."
+                ? "Already registered? Sign in and manage your business data directly in the portal."
                 : "Bereits registriert? Melde dich an und verwalte deine Firmendaten direkt im Portal."}
             </div>
           </section>
@@ -468,7 +468,7 @@ export default function RegisterPage() {
               <h2 className="form-title">{t.registerNow}</h2>
               <p className="form-text">
                 {locale === "en"
-                  ? "Set up your business access in a few clear steps."
+                  ? "Set up your company access in a few clear steps."
                   : "Richte deinen Firmenzugang in wenigen klaren Schritten ein."}
               </p>
             </div>
