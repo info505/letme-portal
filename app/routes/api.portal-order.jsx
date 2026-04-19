@@ -1,4 +1,3 @@
-import { json } from "react-router";
 import { prisma } from "../lib/prisma.server.js";
 import { getUserFromRequest } from "../lib/auth.server.js";
 
@@ -8,7 +7,9 @@ function getCorsHeaders(origin) {
     "https://www.letmebowl-catering.de",
   ]);
 
-  const safeOrigin = allowedOrigins.has(origin) ? origin : "https://letmebowl-catering.de";
+  const safeOrigin = allowedOrigins.has(origin)
+    ? origin
+    : "https://letmebowl-catering.de";
 
   return {
     "Access-Control-Allow-Origin": safeOrigin,
@@ -17,6 +18,15 @@ function getCorsHeaders(origin) {
     "Access-Control-Allow-Headers": "Content-Type",
     Vary: "Origin",
   };
+}
+
+function jsonResponse(data, init = {}) {
+  const headers = new Headers(init.headers || {});
+  headers.set("Content-Type", "application/json");
+  return new Response(JSON.stringify(data), {
+    ...init,
+    headers,
+  });
 }
 
 function toDecimal(valueInCents) {
@@ -58,7 +68,7 @@ export async function action({ request }) {
     const user = await getUserFromRequest(request);
 
     if (!user) {
-      return json(
+      return jsonResponse(
         { ok: false, message: "Nicht eingeloggt." },
         { status: 401, headers: corsHeaders }
       );
@@ -110,7 +120,7 @@ export async function action({ request }) {
     const items = JSON.parse(rawItems);
 
     if (!Array.isArray(items) || items.length === 0) {
-      return json(
+      return jsonResponse(
         { ok: false, message: "Keine Positionen gefunden." },
         { status: 400, headers: corsHeaders }
       );
@@ -134,7 +144,8 @@ export async function action({ request }) {
         billingContactName: contactName || null,
         billingEmail: contactEmail || null,
         billingPhone: contactPhone || null,
-        billingCompanyName: billingCompany || deliveryCompany || user.companyName || null,
+        billingCompanyName:
+          billingCompany || deliveryCompany || user.companyName || null,
 
         deliveryAddressId,
         costCenterId,
@@ -152,12 +163,16 @@ export async function action({ request }) {
             title: String(item.title || "").trim() || "Produkt",
             quantity: Number(item.quantity || 1),
             unit: clean(item.unit),
-            unitPrice: item.unitPriceCents != null ? toDecimal(item.unitPriceCents) : null,
-            totalPrice: item.totalPriceCents != null ? toDecimal(item.totalPriceCents) : null,
+            unitPrice:
+              item.unitPriceCents != null ? toDecimal(item.unitPriceCents) : null,
+            totalPrice:
+              item.totalPriceCents != null ? toDecimal(item.totalPriceCents) : null,
             notes: clean(item.notes),
 
-            shopifyProductId: item.productId != null ? String(item.productId) : null,
-            shopifyVariantId: item.variantId != null ? String(item.variantId) : null,
+            shopifyProductId:
+              item.productId != null ? String(item.productId) : null,
+            shopifyVariantId:
+              item.variantId != null ? String(item.variantId) : null,
             shopifyHandle: clean(item.handle),
             variantTitle: clean(item.variantTitle),
             sku: clean(item.sku),
@@ -169,7 +184,7 @@ export async function action({ request }) {
       },
     });
 
-    return json(
+    return jsonResponse(
       {
         ok: true,
         orderId: order.id,
@@ -198,9 +213,12 @@ export async function action({ request }) {
   } catch (error) {
     console.error("portal-order create error", error);
 
-    return json(
-      { ok: false, message: "Portal-Bestellung konnte nicht gespeichert werden." },
-      { status: 500, headers: getCorsHeaders(origin) }
+    return jsonResponse(
+      {
+        ok: false,
+        message: "Portal-Bestellung konnte nicht gespeichert werden.",
+      },
+      { status: 500, headers: corsHeaders }
     );
   }
 }
