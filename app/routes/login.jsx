@@ -133,7 +133,10 @@ export default function LoginPage() {
           </Form>
 
           <div style={styles.links}>
-            <a href={withLang("/forgot-password", locale)} style={styles.link}>
+            <a
+              href={withLang("/passwort-vergessen", locale)}
+              style={styles.link}
+            >
               {t.forgotPassword}
             </a>
           </div>

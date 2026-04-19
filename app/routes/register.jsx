@@ -13,7 +13,7 @@ import {
   getUserFromRequest,
 } from "../lib/auth.server.js";
 import { getLocaleFromRequest, dict, withLang } from "../lib/i18n.js";
-import { button, input, colors } from "../lib/ui.js";
+import { input, colors } from "../lib/ui.js";
 import LanguageSwitch from "../components/LanguageSwitch.jsx";
 
 export async function loader({ request }) {
@@ -157,17 +157,17 @@ export default function RegisterPage() {
   const values = actionData?.values || {};
   const t = dict[locale] || dict.de;
 
-  const featureItems =
+  const bullets =
     locale === "en"
       ? [
-          "Central company access for team orders",
-          "Manage delivery and billing addresses clearly",
-          "Prepared for invoices, order history and future B2B functions",
+          "Central company access for business orders",
+          "Saved delivery and billing data for future checkouts",
+          "Prepared for order history, invoices and internal structures",
         ]
       : [
-          "Zentraler Firmenzugang für Team-Bestellungen",
-          "Liefer- und Rechnungsadressen übersichtlich verwalten",
-          "Vorbereitet für Rechnungen, Bestellhistorie und spätere B2B-Funktionen",
+          "Zentraler Firmenzugang für Geschäftsbestellungen",
+          "Gespeicherte Liefer- und Rechnungsdaten für künftige Checkouts",
+          "Vorbereitet für Bestellhistorie, Rechnungen und interne Strukturen",
         ];
 
   return (
@@ -175,43 +175,25 @@ export default function RegisterPage() {
       style={{
         minHeight: "100vh",
         background:
-          "radial-gradient(circle at top left, rgba(200,169,106,0.08), transparent 22%), linear-gradient(180deg, #f8f6f2 0%, #f3eee5 100%)",
+          "radial-gradient(circle at top left, rgba(200,169,106,0.08), transparent 24%), linear-gradient(180deg, #f7f4ee 0%, #f1ece3 100%)",
+        fontFamily:
+          'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
       }}
     >
       <style>{`
-        .register-shell {
-          min-height: 100vh;
-          max-width: 1600px;
+        .register-page {
+          max-width: 1240px;
           margin: 0 auto;
-          display: grid;
-          grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+          padding: 28px 18px 36px;
         }
 
-        .register-left {
-          padding: 36px 56px 42px 56px;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          border-right: 1px solid rgba(201, 190, 170, 0.42);
-        }
-
-        .register-right {
-          padding: 36px 56px 42px 56px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background:
-            radial-gradient(circle at top right, rgba(200,169,106,0.06), transparent 26%),
-            rgba(255,255,255,0.28);
-        }
-
-        .register-brand {
+        .register-topbar {
           display: flex;
           justify-content: space-between;
           align-items: center;
           gap: 16px;
           flex-wrap: wrap;
-          margin-bottom: 44px;
+          margin-bottom: 26px;
         }
 
         .register-logo {
@@ -222,142 +204,149 @@ export default function RegisterPage() {
           font-size: 15px;
         }
 
-        .register-left-inner {
-          max-width: 760px;
+        .register-layout {
+          display: grid;
+          grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+          gap: 22px;
+          align-items: start;
         }
 
-        .register-badge {
+        .register-side,
+        .register-form-wrap {
+          border-radius: 28px;
+          border: 1px solid rgba(226, 218, 203, 0.95);
+          background: rgba(255,255,255,0.9);
+          box-shadow: 0 18px 50px rgba(24,24,24,0.05);
+        }
+
+        .register-side {
+          padding: 30px;
+          background:
+            radial-gradient(circle at top left, rgba(200,169,106,0.12), transparent 30%),
+            linear-gradient(180deg, #fcfaf6 0%, #f7f2e8 100%);
+        }
+
+        .register-form-wrap {
+          padding: 30px;
+        }
+
+        .eyebrow {
           display: inline-flex;
           align-items: center;
-          padding: 8px 14px;
+          padding: 8px 12px;
           border-radius: 999px;
           border: 1px solid rgba(200,169,106,0.28);
-          background: rgba(255,255,255,0.75);
+          background: rgba(255,255,255,0.72);
           color: #b8934f;
           font-size: 12px;
           font-weight: 800;
           letter-spacing: 0.14em;
           text-transform: uppercase;
-          margin-bottom: 18px;
+          margin-bottom: 16px;
         }
 
-        .register-title {
+        .side-title {
           margin: 0;
-          font-size: clamp(54px, 6vw, 84px);
-          line-height: 0.92;
-          letter-spacing: -0.055em;
+          font-size: clamp(36px, 4vw, 58px);
+          line-height: 0.96;
+          letter-spacing: -0.05em;
           color: ${colors.text};
-          max-width: 700px;
+          max-width: 540px;
         }
 
-        .register-subtitle {
-          margin: 24px 0 0;
-          max-width: 660px;
+        .side-text {
+          margin: 18px 0 0;
           color: ${colors.muted};
-          font-size: 20px;
-          line-height: 1.75;
+          font-size: 16px;
+          line-height: 1.8;
+          max-width: 560px;
         }
 
-        .register-info-grid {
+        .bullet-list {
           display: grid;
-          gap: 14px;
-          max-width: 660px;
-          margin-top: 34px;
-        }
-
-        .info-line {
-          display: flex;
-          align-items: flex-start;
           gap: 12px;
-          padding: 15px 16px;
-          border-radius: 18px;
-          background: rgba(255,255,255,0.68);
-          border: 1px solid rgba(231, 223, 207, 0.95);
-          box-shadow: 0 10px 26px rgba(24,24,24,0.03);
+          margin-top: 28px;
         }
 
-        .info-check {
-          flex: 0 0 24px;
+        .bullet-item {
+          display: flex;
+          gap: 12px;
+          align-items: flex-start;
+          padding: 14px 16px;
+          border-radius: 18px;
+          background: rgba(255,255,255,0.72);
+          border: 1px solid rgba(231, 223, 207, 0.95);
+        }
+
+        .bullet-icon {
           width: 24px;
           height: 24px;
+          flex: 0 0 24px;
           border-radius: 999px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          margin-top: 1px;
+          background: linear-gradient(135deg, #c8a96a, #b8934f);
+          color: #fff;
           font-size: 13px;
           font-weight: 800;
-          color: #fff;
-          background: linear-gradient(135deg, #c8a96a, #b8934f);
-          box-shadow: 0 10px 18px rgba(200,169,106,0.22);
+          margin-top: 1px;
         }
 
-        .register-login-hint {
-          margin-top: 28px;
+        .bullet-text {
+          color: ${colors.text};
           font-size: 15px;
+          line-height: 1.7;
+          font-weight: 600;
+        }
+
+        .side-footer {
+          margin-top: 24px;
           color: ${colors.muted};
+          font-size: 14px;
           line-height: 1.7;
         }
 
-        .register-panel-wrap {
-          width: 100%;
-          display: flex;
-          justify-content: center;
+        .form-head {
+          margin-bottom: 20px;
         }
 
-        .register-panel {
-          width: 100%;
-          max-width: 620px;
-          position: relative;
-          overflow: hidden;
-          border-radius: 30px;
-          border: 1px solid rgba(226, 218, 203, 0.9);
-          background: rgba(255,255,255,0.9);
-          box-shadow: 0 24px 70px rgba(24,24,24,0.08);
-          padding: 36px;
-        }
-
-        .register-panel::before {
-          content: "";
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
-          background: linear-gradient(180deg, rgba(200,169,106,0.05), transparent 18%);
-        }
-
-        .register-panel-head {
-          position: relative;
-          z-index: 1;
-          margin-bottom: 22px;
-        }
-
-        .register-panel-title {
+        .form-title {
           margin: 0 0 10px;
-          font-size: 34px;
+          font-size: 32px;
           line-height: 1.06;
           color: ${colors.text};
           letter-spacing: -0.03em;
         }
 
-        .register-panel-text {
+        .form-text {
           margin: 0;
           color: ${colors.muted};
           font-size: 15px;
           line-height: 1.75;
-          max-width: 480px;
+          max-width: 620px;
         }
 
-        .register-section {
-          position: relative;
-          z-index: 1;
+        .alert {
+          margin-bottom: 16px;
+          padding: 14px 16px;
+          border-radius: 16px;
+          background: #fff4f4;
+          color: #8b2222;
+          border: 1px solid #efcaca;
+          font-weight: 700;
+          line-height: 1.5;
+        }
+
+        .section {
           padding: 18px;
           border-radius: 20px;
-          background: rgba(248,246,242,0.78);
+          background: #faf7f1;
           border: 1px solid rgba(231, 223, 207, 0.95);
           margin-bottom: 14px;
         }
 
-        .register-section-title {
+        .section-title {
           margin: 0 0 14px;
           font-size: 13px;
           font-weight: 800;
@@ -366,7 +355,7 @@ export default function RegisterPage() {
           letter-spacing: 0.12em;
         }
 
-        .register-grid {
+        .grid {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 16px;
@@ -376,286 +365,230 @@ export default function RegisterPage() {
           grid-column: 1 / -1;
         }
 
-        .register-alert {
-          margin-bottom: 16px;
-          padding: 14px 16px;
-          border-radius: 16px;
-          background: #fff4f4;
-          color: #8b2222;
-          border: 1px solid #efcaca;
-          font-weight: 600;
-          line-height: 1.5;
-          position: relative;
-          z-index: 1;
-        }
-
-        .register-submit {
+        .submit-button {
           width: 100%;
-          margin-top: 8px;
-          min-height: 56px;
-          font-size: 15px;
-          background: linear-gradient(135deg, #c8a96a, #b8934f);
-          box-shadow: 0 14px 30px rgba(200,169,106,0.22);
+          min-height: 54px;
+          margin-top: 6px;
           border: none;
-          color: #fff;
-          font-weight: 800;
           border-radius: 16px;
+          background: linear-gradient(135deg, #c8a96a, #b8934f);
+          color: #fff;
+          font-size: 15px;
+          font-weight: 800;
+          box-shadow: 0 14px 30px rgba(200,169,106,0.22);
           cursor: pointer;
         }
 
-        .register-submit:disabled {
-          opacity: 0.72;
+        .submit-button:disabled {
+          opacity: 0.7;
           cursor: not-allowed;
         }
 
-        .register-bottom {
+        .bottom-line {
           margin-top: 18px;
-          position: relative;
-          z-index: 1;
           color: ${colors.muted};
           font-size: 14px;
           line-height: 1.7;
         }
 
-        .register-bottom-link {
+        .bottom-link {
           color: ${colors.text};
-          font-weight: 700;
+          font-weight: 800;
           text-decoration: none;
         }
 
-        @media (max-width: 1180px) {
-          .register-shell {
+        @media (max-width: 980px) {
+          .register-layout {
             grid-template-columns: 1fr;
           }
 
-          .register-left {
-            border-right: none;
-            border-bottom: 1px solid rgba(201, 190, 170, 0.42);
-            padding: 26px 20px 30px;
-          }
-
-          .register-right {
-            padding: 24px 16px 32px;
-          }
-
-          .register-brand {
-            margin-bottom: 28px;
-          }
-
-          .register-title {
-            font-size: clamp(44px, 11vw, 66px);
-          }
-
-          .register-subtitle {
-            font-size: 17px;
-          }
-
-          .register-panel {
-            max-width: 100%;
-            padding: 24px 18px;
+          .register-side,
+          .register-form-wrap {
+            padding: 22px 18px;
             border-radius: 22px;
+          }
+
+          .side-title {
+            font-size: clamp(34px, 9vw, 48px);
           }
         }
 
         @media (max-width: 700px) {
-          .register-grid {
+          .grid {
             grid-template-columns: 1fr;
           }
 
-          .register-section {
-            padding: 14px;
+          .register-page {
+            padding: 20px 14px 28px;
           }
         }
       `}</style>
 
-      <div className="register-shell">
-        <section className="register-left">
-          <div className="register-left-inner">
-            <div className="register-brand">
-              <a
-                href="https://letmebowl-catering.de"
-                className="register-logo"
-              >
-                LET ME BOWL
-              </a>
+      <div className="register-page">
+        <div className="register-topbar">
+          <a href="https://letmebowl-catering.de" className="register-logo">
+            LET ME BOWL
+          </a>
 
-              <LanguageSwitch />
+          <LanguageSwitch />
+        </div>
+
+        <div className="register-layout">
+          <section className="register-side">
+            <div className="eyebrow">
+              {locale === "en" ? "Business registration" : "Firmenregistrierung"}
             </div>
 
-            <div className="register-badge">
-              {locale === "en" ? "For business customers" : "Für Firmenkunden"}
-            </div>
+            <h1 className="side-title">{t.registerTitle}</h1>
 
-            <h1 className="register-title">{t.registerTitle}</h1>
-
-            <p className="register-subtitle">
+            <p className="side-text">
               {locale === "en"
-                ? "Create your company account for orders, invoices, delivery addresses and future team ordering workflows."
+                ? "Create your business account for orders, invoices, delivery addresses and future team ordering workflows."
                 : "Erstelle dein Firmenkonto für Bestellungen, Rechnungen, Lieferadressen und spätere Team-Bestellprozesse."}
             </p>
 
-            <div className="register-info-grid">
-              {featureItems.map((item) => (
-                <div key={item} className="info-line">
-                  <span className="info-check">✓</span>
-                  <div
-                    style={{
-                      color: colors.text,
-                      fontSize: "15px",
-                      lineHeight: 1.7,
-                      fontWeight: 600,
-                    }}
-                  >
-                    {item}
-                  </div>
+            <div className="bullet-list">
+              {bullets.map((item) => (
+                <div key={item} className="bullet-item">
+                  <span className="bullet-icon">✓</span>
+                  <div className="bullet-text">{item}</div>
                 </div>
               ))}
             </div>
 
-            <div className="register-login-hint">
-              {t.alreadyRegistered}{" "}
-              <a
-                href={withLang("/login", locale)}
-                className="register-bottom-link"
+            <div className="side-footer">
+              {locale === "en"
+                ? "Already registered? Sign in and manage your business details directly in the portal."
+                : "Bereits registriert? Melde dich an und verwalte deine Firmendaten direkt im Portal."}
+            </div>
+          </section>
+
+          <section className="register-form-wrap">
+            <div className="form-head">
+              <h2 className="form-title">{t.registerNow}</h2>
+              <p className="form-text">
+                {locale === "en"
+                  ? "Set up your business access in a few clear steps."
+                  : "Richte deinen Firmenzugang in wenigen klaren Schritten ein."}
+              </p>
+            </div>
+
+            {actionData?.message ? (
+              <div className="alert">{actionData.message}</div>
+            ) : null}
+
+            <Form method="post">
+              <div className="section">
+                <h3 className="section-title">
+                  {locale === "en" ? "Company" : "Firma"}
+                </h3>
+
+                <div className="grid">
+                  <div className="full">
+                    <Field
+                      label={t.company}
+                      name="companyName"
+                      defaultValue={values.companyName}
+                      placeholder={t.companyPlaceholder}
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="section">
+                <h3 className="section-title">
+                  {locale === "en" ? "Contact person" : "Ansprechpartner"}
+                </h3>
+
+                <div className="grid">
+                  <Field
+                    label={t.firstName}
+                    name="firstName"
+                    defaultValue={values.firstName}
+                    placeholder={t.firstNamePlaceholder}
+                    required
+                  />
+
+                  <Field
+                    label={t.lastName}
+                    name="lastName"
+                    defaultValue={values.lastName}
+                    placeholder={t.lastNamePlaceholder}
+                    required
+                  />
+
+                  <Field
+                    label={t.phone}
+                    name="phone"
+                    defaultValue={values.phone}
+                    placeholder={t.phonePlaceholder}
+                  />
+
+                  <div className="full">
+                    <Field
+                      label={t.email}
+                      name="email"
+                      type="email"
+                      defaultValue={values.email}
+                      placeholder={t.emailPlaceholder}
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="section">
+                <h3 className="section-title">
+                  {locale === "en" ? "Access" : "Zugang"}
+                </h3>
+
+                <div className="grid">
+                  <div className="full">
+                    <Field
+                      label={t.username}
+                      name="username"
+                      defaultValue={values.username}
+                      placeholder={t.usernamePlaceholder}
+                      required
+                    />
+                  </div>
+
+                  <Field
+                    label={t.password}
+                    name="password"
+                    type="password"
+                    placeholder={t.passwordRegisterPlaceholder}
+                    required
+                  />
+
+                  <Field
+                    label={t.confirmPassword}
+                    name="confirmPassword"
+                    type="password"
+                    placeholder={t.confirmPasswordPlaceholder}
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="submit-button"
+                disabled={isSubmitting}
               >
+                {isSubmitting ? t.registerSubmitting : t.registerNow}
+              </button>
+            </Form>
+
+            <div className="bottom-line">
+              {t.alreadyRegistered}{" "}
+              <a href={withLang("/login", locale)} className="bottom-link">
                 {t.loginNow}
               </a>
             </div>
-          </div>
-        </section>
-
-        <section className="register-right">
-          <div className="register-panel-wrap">
-            <div className="register-panel">
-              <div className="register-panel-head">
-                <h2 className="register-panel-title">{t.registerNow}</h2>
-                <p className="register-panel-text">
-                  {locale === "en"
-                    ? "Set up your company access in just a few steps."
-                    : "Richte deinen Firmenzugang in wenigen Schritten ein."}
-                </p>
-              </div>
-
-              {actionData?.message ? (
-                <div className="register-alert">{actionData.message}</div>
-              ) : null}
-
-              <Form method="post" style={{ position: "relative", zIndex: 1 }}>
-                <div className="register-section">
-                  <h3 className="register-section-title">
-                    {locale === "en" ? "Company" : "Firma"}
-                  </h3>
-
-                  <div className="register-grid">
-                    <div className="full">
-                      <Field
-                        label={t.company}
-                        name="companyName"
-                        defaultValue={values.companyName}
-                        placeholder={t.companyPlaceholder}
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="register-section">
-                  <h3 className="register-section-title">
-                    {locale === "en" ? "Contact person" : "Ansprechpartner"}
-                  </h3>
-
-                  <div className="register-grid">
-                    <Field
-                      label={t.firstName}
-                      name="firstName"
-                      defaultValue={values.firstName}
-                      placeholder={t.firstNamePlaceholder}
-                      required
-                    />
-
-                    <Field
-                      label={t.lastName}
-                      name="lastName"
-                      defaultValue={values.lastName}
-                      placeholder={t.lastNamePlaceholder}
-                      required
-                    />
-
-                    <Field
-                      label={t.phone}
-                      name="phone"
-                      defaultValue={values.phone}
-                      placeholder={t.phonePlaceholder}
-                    />
-
-                    <div className="full">
-                      <Field
-                        label={t.email}
-                        name="email"
-                        type="email"
-                        defaultValue={values.email}
-                        placeholder={t.emailPlaceholder}
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="register-section">
-                  <h3 className="register-section-title">
-                    {locale === "en" ? "Access" : "Zugang"}
-                  </h3>
-
-                  <div className="register-grid">
-                    <div className="full">
-                      <Field
-                        label={t.username}
-                        name="username"
-                        defaultValue={values.username}
-                        placeholder={t.usernamePlaceholder}
-                        required
-                      />
-                    </div>
-
-                    <Field
-                      label={t.password}
-                      name="password"
-                      type="password"
-                      placeholder={t.passwordRegisterPlaceholder}
-                      required
-                    />
-
-                    <Field
-                      label={t.confirmPassword}
-                      name="confirmPassword"
-                      type="password"
-                      placeholder={t.confirmPasswordPlaceholder}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="register-submit"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? t.registerSubmitting : t.registerNow}
-                </button>
-              </Form>
-
-              <div className="register-bottom">
-                {t.alreadyRegistered}{" "}
-                <a
-                  href={withLang("/login", locale)}
-                  className="register-bottom-link"
-                >
-                  {t.loginNow}
-                </a>
-              </div>
-            </div>
-          </div>
-        </section>
+          </section>
+        </div>
       </div>
     </div>
   );
@@ -702,13 +635,11 @@ function Field({
         defaultValue={defaultValue}
         style={{
           ...input.base,
-          width: "100%",
-          minHeight: "54px",
+          minHeight: "52px",
           borderRadius: "16px",
           background: "#fff",
           border: "1px solid rgba(221, 214, 201, 0.95)",
           boxShadow: "inset 0 1px 2px rgba(0,0,0,0.02)",
-          boxSizing: "border-box",
         }}
       />
     </label>

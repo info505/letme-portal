@@ -13,37 +13,59 @@ export async function loader({ request }) {
     throw redirect(`/login?lang=${locale}`);
   }
 
-  const defaultDeliveryAddress = await prisma.deliveryAddress.findFirst({
-    where: {
-      userId: user.id,
-      isDefault: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  const [defaultDeliveryAddress, activeCostCenter, deliveryAddressCount, costCenterCount, orders] =
+    await Promise.all([
+      prisma.deliveryAddress.findFirst({
+        where: {
+          userId: user.id,
+          isDefault: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      }),
 
-  const activeCostCenter = await prisma.costCenter.findFirst({
-    where: {
-      userId: user.id,
-      isActive: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+      prisma.costCenter.findFirst({
+        where: {
+          userId: user.id,
+          isActive: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      }),
 
-  const deliveryAddressCount = await prisma.deliveryAddress.count({
-    where: {
-      userId: user.id,
-    },
-  });
+      prisma.deliveryAddress.count({
+        where: {
+          userId: user.id,
+        },
+      }),
 
-  const costCenterCount = await prisma.costCenter.count({
-    where: {
-      userId: user.id,
-    },
-  });
+      prisma.costCenter.count({
+        where: {
+          userId: user.id,
+        },
+      }),
+
+      prisma.portalOrder.findMany({
+        where: {
+          userId: user.id,
+        },
+        include: {
+          items: true,
+          costCenter: true,
+          deliveryAddress: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 5,
+      }),
+    ]);
+
+  const openOrdersCount = orders.filter((order) =>
+    ["OPEN", "CONFIRMED", "IN_PREPARATION"].includes(order.status)
+  ).length;
 
   return {
     user,
@@ -52,6 +74,8 @@ export async function loader({ request }) {
     activeCostCenter,
     deliveryAddressCount,
     costCenterCount,
+    orders,
+    openOrdersCount,
   };
 }
 
@@ -63,6 +87,8 @@ export default function DashboardPage() {
     activeCostCenter,
     deliveryAddressCount,
     costCenterCount,
+    orders,
+    openOrdersCount,
   } = useLoaderData();
 
   const t = dict[locale] || dict.de;
@@ -71,8 +97,6 @@ export default function DashboardPage() {
     const form = document.createElement("form");
     form.method = "POST";
     form.action = "https://letmebowl-catering.de/cart/update";
-
-    const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim();
 
     const attrs = {
       "attributes[Lieferadresse_ID]": defaultDeliveryAddress?.id || "",
@@ -90,17 +114,14 @@ export default function DashboardPage() {
             .filter(Boolean)
             .join(", ")
         : "",
-
       "attributes[Kostenstelle_ID]": activeCostCenter?.id || "",
       "attributes[Kostenstelle_Name]": activeCostCenter?.name || "",
       "attributes[Kostenstelle_Code]": activeCostCenter?.code || "",
-
-      "attributes[Kontaktname]": fullName || "",
-      "attributes[Kontakt Vorname]": user?.firstName || "",
-      "attributes[Kontakt Nachname]": user?.lastName || "",
-      "attributes[Telefon]": user?.phone || "",
-      "attributes[E-Mail]": user?.email || "",
-
+      "attributes[Kontaktname]": [user.firstName, user.lastName]
+        .filter(Boolean)
+        .join(" "),
+      "attributes[Telefon]": user.phone || "",
+      "attributes[E-Mail]": user.email || "",
       return_to: "/pages/bestellen",
     };
 
@@ -118,22 +139,37 @@ export default function DashboardPage() {
 
   return (
     <PortalLayout
-      title={`${t.welcome}, ${user.firstName || user.companyName || "User"}`}
-      subtitle={t.accountText}
+      title={
+        locale === "en"
+          ? `Welcome, ${user.firstName || user.companyName || "User"}`
+          : `Willkommen, ${user.firstName || user.companyName || "User"}`
+      }
+      subtitle={
+        locale === "en"
+          ? "Your business account for orders, addresses and internal ordering structure."
+          : "Dein Firmenkonto für Bestellungen, Adressen und interne Bestellstruktur."
+      }
       orderNowOnClick={handleOrderNow}
     >
       <style>{`
         .dashboard-shell {
           display: grid;
           gap: 18px;
-          max-width: 1120px;
+          max-width: 1220px;
         }
 
-        .hero-card {
-          position: relative;
-          overflow: hidden;
-          padding: 30px;
-          border-radius: 28px;
+        .top-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
+          gap: 18px;
+        }
+
+        .panel {
+          border-radius: 24px;
+          padding: 24px;
+        }
+
+        .hero-panel {
           background:
             radial-gradient(circle at top left, rgba(200,169,106,0.12), transparent 28%),
             linear-gradient(180deg, #fcfaf6 0%, #f7f2e8 100%);
@@ -141,27 +177,10 @@ export default function DashboardPage() {
           box-shadow: 0 18px 50px rgba(24,24,24,0.05);
         }
 
-        .hero-card::before {
-          content: "";
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
-          background: linear-gradient(180deg, rgba(255,255,255,0.32), transparent 30%);
-        }
-
-        .hero-grid {
-          position: relative;
-          z-index: 1;
-          display: grid;
-          grid-template-columns: minmax(0, 1.3fr) minmax(280px, 380px);
-          gap: 20px;
-          align-items: stretch;
-        }
-
-        .hero-eyebrow {
+        .eyebrow {
           display: inline-flex;
           align-items: center;
-          padding: 8px 12px;
+          padding: 7px 11px;
           border-radius: 999px;
           border: 1px solid rgba(200,169,106,0.28);
           background: rgba(255,255,255,0.72);
@@ -170,14 +189,23 @@ export default function DashboardPage() {
           font-weight: 800;
           letter-spacing: 0.14em;
           text-transform: uppercase;
-          margin-bottom: 16px;
+          margin-bottom: 14px;
+        }
+
+        .hero-title {
+          margin: 0;
+          font-size: clamp(34px, 4vw, 52px);
+          line-height: 0.98;
+          letter-spacing: -0.04em;
+          color: ${colors.text};
+          max-width: 760px;
         }
 
         .hero-copy {
           margin: 16px 0 0;
-          max-width: 640px;
+          max-width: 760px;
           color: ${colors.muted};
-          line-height: 1.75;
+          line-height: 1.7;
           font-size: 16px;
         }
 
@@ -185,37 +213,48 @@ export default function DashboardPage() {
           display: flex;
           flex-wrap: wrap;
           gap: 12px;
-          margin-top: 24px;
+          margin-top: 22px;
         }
 
-        .hero-side {
+        .stats-grid {
           display: grid;
           gap: 12px;
         }
 
-        .mini-stat {
-          padding: 18px;
+        .stat-card {
+          border: 1px solid ${colors.border};
           border-radius: 20px;
-          background: rgba(255,255,255,0.8);
-          border: 1px solid rgba(227, 219, 204, 0.95);
-          box-shadow: 0 10px 28px rgba(24,24,24,0.03);
+          background: #fff;
+          padding: 18px;
         }
 
-        .quick-grid {
+        .stat-label {
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: ${colors.muted};
+          margin-bottom: 8px;
+        }
+
+        .stat-value {
+          font-size: 30px;
+          line-height: 1.05;
+          font-weight: 800;
+          color: ${colors.text};
+          margin-bottom: 6px;
+        }
+
+        .stat-text {
+          font-size: 14px;
+          line-height: 1.6;
+          color: ${colors.muted};
+        }
+
+        .middle-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-          gap: 16px;
-        }
-
-        .info-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-          gap: 16px;
-        }
-
-        .section-card {
-          padding: 26px;
-          border-radius: 24px;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 18px;
         }
 
         .section-title {
@@ -225,18 +264,7 @@ export default function DashboardPage() {
           letter-spacing: -0.02em;
         }
 
-        .address-box {
-          border: 1px solid ${colors.border};
-          border-radius: 20px;
-          padding: 18px;
-          background: #fff;
-        }
-
-        .address-box--active {
-          background: #fcf8ef;
-        }
-
-        .address-badge {
+        .mini-badge {
           display: inline-flex;
           align-items: center;
           padding: 6px 10px;
@@ -245,10 +273,27 @@ export default function DashboardPage() {
           color: #8d6a2f;
           font-size: 12px;
           font-weight: 800;
-          margin-bottom: 10px;
+          margin-bottom: 12px;
         }
 
-        .empty-note {
+        .box {
+          border: 1px solid ${colors.border};
+          border-radius: 18px;
+          padding: 18px;
+          background: #fff;
+        }
+
+        .box.active {
+          background: #fcf8ef;
+        }
+
+        .box-title {
+          margin: 0 0 12px;
+          font-size: 20px;
+          color: ${colors.text};
+        }
+
+        .muted {
           color: ${colors.muted};
           font-size: 15px;
           line-height: 1.7;
@@ -261,165 +306,333 @@ export default function DashboardPage() {
           font-weight: 700;
         }
 
-        @media (max-width: 980px) {
-          .hero-grid {
+        .summary-row {
+          display: grid;
+          grid-template-columns: 160px 1fr;
+          gap: 10px;
+          padding: 8px 0;
+          border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .summary-row:last-child {
+          border-bottom: none;
+        }
+
+        .summary-label {
+          font-size: 13px;
+          font-weight: 800;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+          color: ${colors.muted};
+        }
+
+        .summary-value {
+          font-size: 15px;
+          color: ${colors.text};
+          line-height: 1.6;
+          word-break: break-word;
+        }
+
+        .orders-card {
+          padding: 26px;
+          border-radius: 24px;
+        }
+
+        .orders-head {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 16px;
+          flex-wrap: wrap;
+          margin-bottom: 18px;
+        }
+
+        .orders-subtitle {
+          margin: 8px 0 0;
+          color: ${colors.muted};
+          font-size: 14px;
+          line-height: 1.6;
+        }
+
+        .orders-list {
+          display: grid;
+          gap: 12px;
+        }
+
+        .order-row {
+          border: 1px solid ${colors.border};
+          border-radius: 18px;
+          padding: 18px;
+          background: #fff;
+          display: grid;
+          gap: 12px;
+        }
+
+        .order-row-top {
+          display: flex;
+          justify-content: space-between;
+          gap: 16px;
+          flex-wrap: wrap;
+          align-items: flex-start;
+        }
+
+        .order-number {
+          font-size: 20px;
+          font-weight: 800;
+          color: ${colors.text};
+          line-height: 1.2;
+        }
+
+        .order-meta {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 10px;
+        }
+
+        .order-meta-box {
+          border: 1px solid ${colors.border};
+          border-radius: 14px;
+          padding: 12px 14px;
+          background: #fcfbf8;
+        }
+
+        .order-meta-label {
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: ${colors.muted};
+          margin-bottom: 6px;
+        }
+
+        .order-meta-value {
+          font-size: 14px;
+          font-weight: 700;
+          color: ${colors.text};
+          line-height: 1.45;
+          word-break: break-word;
+        }
+
+        .order-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+
+        .status-badge {
+          display: inline-flex;
+          align-items: center;
+          padding: 8px 12px;
+          border-radius: 999px;
+          font-size: 13px;
+          font-weight: 800;
+        }
+
+        .empty-state {
+          border: 1px dashed ${colors.border};
+          border-radius: 18px;
+          padding: 24px;
+          background: #fff;
+        }
+
+        @media (max-width: 1100px) {
+          .top-grid,
+          .middle-grid {
             grid-template-columns: 1fr;
           }
+        }
 
-          .hero-card,
-          .section-card {
-            padding: 20px 16px;
+        @media (max-width: 900px) {
+          .order-meta {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+
+        @media (max-width: 640px) {
+          .panel,
+          .orders-card {
+            padding: 18px 16px;
             border-radius: 20px;
           }
 
           .section-title {
             font-size: 22px;
           }
+
+          .hero-title {
+            font-size: 38px;
+          }
+
+          .summary-row {
+            grid-template-columns: 1fr;
+            gap: 4px;
+          }
+
+          .order-meta {
+            grid-template-columns: 1fr;
+          }
         }
       `}</style>
 
       <div className="dashboard-shell">
-        <section className="hero-card">
-          <div className="hero-grid">
-            <div>
-              <div className="hero-eyebrow">
-                {locale === "en" ? "Business account" : "Firmenkonto"}
-              </div>
+        <section className="top-grid">
+          <div
+            className="panel hero-panel"
+            style={{
+              ...card.base,
+            }}
+          >
+            <div className="eyebrow">
+              {locale === "en" ? "Business account" : "Firmenkonto"}
+            </div>
 
-              <h1
+            <h2 className="hero-title">
+              {locale === "en"
+                ? "Manage orders, addresses and internal ordering workflows centrally."
+                : "Verwalte Bestellungen, Adressen und interne Bestellabläufe zentral an einem Ort."}
+            </h2>
+
+            <p className="hero-copy">
+              {locale === "en"
+                ? "Use your saved company data directly for the next catering order and keep all relevant business information bundled in one place."
+                : "Nutze deine hinterlegten Firmendaten direkt für die nächste Catering-Bestellung und halte alle relevanten B2B-Daten an einem Ort gebündelt."}
+            </p>
+
+            <div className="hero-actions">
+              <button
+                type="button"
+                onClick={handleOrderNow}
                 style={{
-                  margin: 0,
-                  fontSize: "clamp(34px, 5vw, 54px)",
-                  lineHeight: 0.98,
-                  letterSpacing: "-0.04em",
-                  color: colors.text,
-                  maxWidth: "760px",
+                  ...button.primary,
+                  color: "#fff",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 800,
+                  minHeight: "50px",
+                  background: "linear-gradient(135deg, #c8a96a, #b8934f)",
+                  boxShadow: "0 14px 30px rgba(200,169,106,0.2)",
+                  border: "none",
+                  cursor: "pointer",
                 }}
               >
-                {locale === "en"
-                  ? "Manage orders, addresses and internal ordering workflows centrally."
-                  : "Verwalte Bestellungen, Adressen und interne Bestellabläufe zentral an einem Ort."}
-              </h1>
+                {t.orderNow}
+              </button>
 
-              <p className="hero-copy">
-                {locale === "en"
-                  ? "Use your saved company data for future catering orders and keep delivery addresses, billing details and internal structures clearly organized."
-                  : "Nutze deine hinterlegten Firmendaten für künftige Catering-Bestellungen und halte Lieferadressen, Rechnungsdaten und interne Strukturen übersichtlich an einem Ort."}
-              </p>
-
-              <div className="hero-actions">
-                <button
-                  type="button"
-                  onClick={handleOrderNow}
-                  style={{
-                    ...button.primary,
-                    color: "#fff",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 800,
-                    minHeight: "50px",
-                    background: "linear-gradient(135deg, #c8a96a, #b8934f)",
-                    boxShadow: "0 14px 30px rgba(200,169,106,0.2)",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                >
-                  {t.orderNow}
-                </button>
-
-                <a
-                  href={withLang("/bestellungen", locale)}
-                  style={{
-                    ...button.secondary,
-                    textDecoration: "none",
-                    color: colors.text,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 700,
-                    minHeight: "50px",
-                    background: "#fff",
-                  }}
-                >
-                  {locale === "en" ? "View orders" : "Bestellungen ansehen"}
-                </a>
-              </div>
+              <a
+                href={withLang("/bestellungen", locale)}
+                style={{
+                  ...button.secondary,
+                  textDecoration: "none",
+                  color: colors.text,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 700,
+                  minHeight: "50px",
+                  background: "#fff",
+                }}
+              >
+                {locale === "en" ? "View orders" : "Bestellungen ansehen"}
+              </a>
             </div>
+          </div>
 
-            <div className="hero-side">
-              <MiniStat
-                label={locale === "en" ? "Company" : "Firma"}
-                value={user.companyName || "—"}
-              />
-              <MiniStat
-                label={locale === "en" ? "User" : "Benutzer"}
-                value={[user.firstName, user.lastName].filter(Boolean).join(" ") || "—"}
-              />
-              <MiniStat
-                label={locale === "en" ? "Email" : "E-Mail"}
-                value={user.email || "—"}
-              />
-              <MiniStat
-                label={locale === "en" ? "Phone" : "Telefon"}
-                value={user.phone || "—"}
-              />
-            </div>
+          <div className="stats-grid">
+            <StatCard
+              label={locale === "en" ? "Company" : "Firma"}
+              value={user.companyName || "—"}
+              text={locale === "en" ? user.email || "—" : user.email || "—"}
+            />
+
+            <StatCard
+              label={locale === "en" ? "User" : "Benutzer"}
+              value={[user.firstName, user.lastName].filter(Boolean).join(" ") || "—"}
+              text={user.phone || "—"}
+            />
+
+            <StatCard
+              label={locale === "en" ? "Saved delivery addresses" : "Gespeicherte Lieferadressen"}
+              value={String(deliveryAddressCount || 0)}
+              text={
+                locale === "en"
+                  ? "Available for future orders."
+                  : "Für künftige Bestellungen verfügbar."
+              }
+            />
+
+            <StatCard
+              label={locale === "en" ? "Open orders" : "Offene Bestellungen"}
+              value={String(openOrdersCount || 0)}
+              text={
+                locale === "en"
+                  ? "Currently open, confirmed or in preparation."
+                  : "Aktuell offen, bestätigt oder in Vorbereitung."
+              }
+            />
           </div>
         </section>
 
-        <section
-          className="section-card"
-          style={{
-            ...card.base,
-          }}
-        >
-          <h2 className="section-title">
-            {locale === "en"
-              ? "Current order setup"
-              : "Aktuelle Bestellgrundlage"}
-          </h2>
+        <section className="middle-grid">
+          <div
+            className="panel"
+            style={{
+              ...card.base,
+            }}
+          >
+            <h3 className="section-title">
+              {locale === "en" ? "Current order setup" : "Aktuelle Bestellgrundlage"}
+            </h3>
 
-          <div className="quick-grid">
-            <div
-              className={`address-box ${
-                defaultDeliveryAddress ? "address-box--active" : ""
-              }`}
-            >
-              <div className="address-badge">
-                {locale === "en"
-                  ? "Active delivery address"
-                  : "Aktive Lieferadresse"}
+            <div className={`box ${defaultDeliveryAddress ? "active" : ""}`}>
+              <div className="mini-badge">
+                {locale === "en" ? "Active delivery address" : "Aktive Lieferadresse"}
               </div>
 
               {defaultDeliveryAddress ? (
                 <>
-                  <AddressLine
-                    strong
-                    value={defaultDeliveryAddress.label || t.shippingAddressesNav}
-                  />
-                  <AddressLine value={defaultDeliveryAddress.companyName} />
-                  <AddressLine value={defaultDeliveryAddress.contactName} />
-                  <AddressLine
-                    value={[
-                      defaultDeliveryAddress.street,
-                      defaultDeliveryAddress.houseNumber,
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                  />
-                  <AddressLine
-                    value={[
-                      defaultDeliveryAddress.postalCode,
-                      defaultDeliveryAddress.city,
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                  />
-                  <AddressLine value={defaultDeliveryAddress.country} />
-                  {defaultDeliveryAddress.phone ? (
-                    <AddressLine value={defaultDeliveryAddress.phone} />
-                  ) : null}
+                  <div className="summary-row">
+                    <div className="summary-label">
+                      {locale === "en" ? "Label" : "Bezeichnung"}
+                    </div>
+                    <div className="summary-value">
+                      {defaultDeliveryAddress.label || "—"}
+                    </div>
+                  </div>
+
+                  <div className="summary-row">
+                    <div className="summary-label">
+                      {locale === "en" ? "Address" : "Adresse"}
+                    </div>
+                    <div className="summary-value">
+                      {[
+                        [defaultDeliveryAddress.street, defaultDeliveryAddress.houseNumber]
+                          .filter(Boolean)
+                          .join(" "),
+                        [defaultDeliveryAddress.postalCode, defaultDeliveryAddress.city]
+                          .filter(Boolean)
+                          .join(" "),
+                        defaultDeliveryAddress.country,
+                      ]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </div>
+                  </div>
+
+                  {(defaultDeliveryAddress.contactName || defaultDeliveryAddress.phone) && (
+                    <div className="summary-row">
+                      <div className="summary-label">
+                        {locale === "en" ? "Contact" : "Kontakt"}
+                      </div>
+                      <div className="summary-value">
+                        {[defaultDeliveryAddress.contactName, defaultDeliveryAddress.phone]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </div>
+                    </div>
+                  )}
 
                   <div style={{ marginTop: "14px" }}>
                     <a
@@ -427,14 +640,14 @@ export default function DashboardPage() {
                       className="soft-link"
                     >
                       {locale === "en"
-                        ? "Change delivery address"
-                        : "Lieferadresse ändern"}
+                        ? "Manage delivery addresses"
+                        : "Lieferadressen verwalten"}
                     </a>
                   </div>
                 </>
               ) : (
                 <>
-                  <p className="empty-note">
+                  <p className="muted">
                     {locale === "en"
                       ? "No active delivery address has been selected yet."
                       : "Es wurde noch keine aktive Lieferadresse ausgewählt."}
@@ -453,27 +666,47 @@ export default function DashboardPage() {
                 </>
               )}
             </div>
+          </div>
 
-            <div
-              className={`address-box ${
-                activeCostCenter ? "address-box--active" : ""
-              }`}
-            >
-              <div className="address-badge">
-                {locale === "en"
-                  ? "Active cost center"
-                  : "Aktive Kostenstelle"}
+          <div
+            className="panel"
+            style={{
+              ...card.base,
+            }}
+          >
+            <h3 className="section-title">
+              {locale === "en" ? "Internal assignment" : "Interne Zuordnung"}
+            </h3>
+
+            <div className={`box ${activeCostCenter ? "active" : ""}`}>
+              <div className="mini-badge">
+                {locale === "en" ? "Active cost center" : "Aktive Kostenstelle"}
               </div>
 
               {activeCostCenter ? (
                 <>
-                  <AddressLine strong value={activeCostCenter.name} />
-                  {activeCostCenter.code ? (
-                    <AddressLine value={activeCostCenter.code} />
-                  ) : null}
-                  {activeCostCenter.description ? (
-                    <AddressLine value={activeCostCenter.description} />
-                  ) : null}
+                  <div className="summary-row">
+                    <div className="summary-label">
+                      {locale === "en" ? "Name" : "Name"}
+                    </div>
+                    <div className="summary-value">{activeCostCenter.name}</div>
+                  </div>
+
+                  <div className="summary-row">
+                    <div className="summary-label">
+                      {locale === "en" ? "Code" : "Code"}
+                    </div>
+                    <div className="summary-value">{activeCostCenter.code || "—"}</div>
+                  </div>
+
+                  <div className="summary-row">
+                    <div className="summary-label">
+                      {locale === "en" ? "Description" : "Beschreibung"}
+                    </div>
+                    <div className="summary-value">
+                      {activeCostCenter.description || "—"}
+                    </div>
+                  </div>
 
                   <div style={{ marginTop: "14px" }}>
                     <a
@@ -481,14 +714,14 @@ export default function DashboardPage() {
                       className="soft-link"
                     >
                       {locale === "en"
-                        ? "Change cost center"
-                        : "Kostenstelle ändern"}
+                        ? "Manage cost centers"
+                        : "Kostenstellen verwalten"}
                     </a>
                   </div>
                 </>
               ) : (
                 <>
-                  <p className="empty-note">
+                  <p className="muted">
                     {locale === "en"
                       ? "No active cost center has been selected yet."
                       : "Es wurde noch keine aktive Kostenstelle ausgewählt."}
@@ -511,114 +744,230 @@ export default function DashboardPage() {
         </section>
 
         <section
-          className="section-card"
+          className="orders-card"
           style={{
             ...card.base,
           }}
         >
-          <h2 className="section-title">
-            {locale === "en" ? "Account overview" : "Kontoübersicht"}
-          </h2>
+          <div className="orders-head">
+            <div>
+              <h3 className="section-title" style={{ marginBottom: 0 }}>
+                {locale === "en" ? "Recent orders" : "Letzte Bestellungen"}
+              </h3>
+              <p className="orders-subtitle">
+                {locale === "en"
+                  ? "Quick access to your latest orders, including status and amount."
+                  : "Schnellzugriff auf deine letzten Bestellungen inklusive Status und Betrag."}
+              </p>
+            </div>
 
-          <div className="info-grid">
-            <OverviewCard title={t.company} value={user.companyName || "—"} />
-            <OverviewCard
-              title={locale === "en" ? "Full name" : "Name"}
-              value={[user.firstName, user.lastName].filter(Boolean).join(" ") || "—"}
-            />
-            <OverviewCard title={t.email} value={user.email || "—"} />
-            <OverviewCard title={t.phone} value={user.phone || "—"} />
+            <a
+              href={withLang("/bestellungen", locale)}
+              style={{
+                ...button.secondary,
+                textDecoration: "none",
+                color: colors.text,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: 700,
+                background: "#fff",
+              }}
+            >
+              {locale === "en" ? "All orders" : "Alle Bestellungen"}
+            </a>
           </div>
+
+          {orders.length > 0 ? (
+            <div className="orders-list">
+              {orders.map((order) => (
+                <RecentOrderRow key={order.id} order={order} locale={locale} />
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <p className="muted">
+                {locale === "en"
+                  ? "No orders are linked to your account yet."
+                  : "Deinem Konto sind aktuell noch keine Bestellungen zugeordnet."}
+              </p>
+
+              <div style={{ marginTop: "14px" }}>
+                <button
+                  type="button"
+                  onClick={handleOrderNow}
+                  style={{
+                    ...button.primary,
+                    border: "none",
+                    cursor: "pointer",
+                    background: "linear-gradient(135deg, #c8a96a, #b8934f)",
+                    color: "#fff",
+                    fontWeight: 800,
+                  }}
+                >
+                  {t.orderNow}
+                </button>
+              </div>
+            </div>
+          )}
         </section>
       </div>
     </PortalLayout>
   );
 }
 
-function MiniStat({ label, value }) {
+function StatCard({ label, value, text }) {
   return (
-    <div className="mini-stat">
-      <div
-        style={{
-          fontSize: "12px",
-          fontWeight: 800,
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-          color: colors.muted,
-          marginBottom: "8px",
-        }}
-      >
-        {label}
+    <div className="stat-card">
+      <div className="stat-label">{label}</div>
+      <div className="stat-value">{value}</div>
+      <div className="stat-text">{text}</div>
+    </div>
+  );
+}
+
+function RecentOrderRow({ order, locale }) {
+  const statusLabel = getStatusLabel(order.status, locale);
+  const statusStyle = getStatusStyle(order.status);
+
+  return (
+    <div className="order-row">
+      <div className="order-row-top">
+        <div>
+          <div className="order-number">{order.orderNumber}</div>
+        </div>
+
+        <span
+          className="status-badge"
+          style={statusStyle}
+        >
+          {statusLabel}
+        </span>
       </div>
 
-      <div
-        style={{
-          fontSize: "18px",
-          fontWeight: 800,
-          color: colors.text,
-          lineHeight: 1.45,
-          wordBreak: "break-word",
-        }}
-      >
-        {value}
+      <div className="order-meta">
+        <MetaBox
+          label={locale === "en" ? "Date" : "Datum"}
+          value={formatDate(order.createdAt, locale)}
+        />
+        <MetaBox
+          label={locale === "en" ? "Amount" : "Betrag"}
+          value={formatMoney(order.totalAmount, order.currency || "EUR", locale)}
+        />
+        <MetaBox
+          label={locale === "en" ? "Items" : "Positionen"}
+          value={String(order.items?.length || 0)}
+        />
+        <MetaBox
+          label={locale === "en" ? "Cost center" : "Kostenstelle"}
+          value={order.costCenter?.name || "—"}
+        />
+      </div>
+
+      <div className="order-footer">
+        <div className="muted" style={{ fontSize: "13px", lineHeight: 1.5 }}>
+          {order.deliveryAddress?.label
+            ? locale === "en"
+              ? `Delivery address: ${order.deliveryAddress.label}`
+              : `Lieferadresse: ${order.deliveryAddress.label}`
+            : locale === "en"
+            ? "No delivery address assigned."
+            : "Keine Lieferadresse zugeordnet."}
+        </div>
+
+        <a
+          href={withLang(`/bestellungen/${order.id}`, locale)}
+          style={{
+            ...button.secondary,
+            textDecoration: "none",
+            color: colors.text,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontWeight: 700,
+            background: "#fff",
+          }}
+        >
+          {locale === "en" ? "Details" : "Details"}
+        </a>
       </div>
     </div>
   );
 }
 
-function OverviewCard({ title, value }) {
+function MetaBox({ label, value }) {
   return (
-    <div
-      style={{
-        border: `1px solid ${colors.border}`,
-        borderRadius: "18px",
-        padding: "20px",
-        background: "#fff",
-      }}
-    >
-      <div
-        style={{
-          fontSize: "13px",
-          fontWeight: 800,
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-          color: colors.muted,
-          marginBottom: "10px",
-        }}
-      >
-        {title}
-      </div>
-
-      <div
-        style={{
-          fontSize: "18px",
-          fontWeight: 700,
-          color: colors.text,
-          lineHeight: 1.5,
-          wordBreak: "break-word",
-        }}
-      >
-        {value}
-      </div>
+    <div className="order-meta-box">
+      <div className="order-meta-label">{label}</div>
+      <div className="order-meta-value">{value}</div>
     </div>
   );
 }
 
-function AddressLine({ value, strong = false }) {
-  if (!value) return null;
+function formatDate(value, locale) {
+  const date = new Date(value);
+  return new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
+}
 
-  return (
-    <div
-      style={{
-        color: colors.text,
-        fontSize: strong ? "16px" : "15px",
-        fontWeight: strong ? 800 : 500,
-        lineHeight: 1.65,
-        marginBottom: "4px",
-        whiteSpace: "pre-wrap",
-      }}
-    >
-      {value}
-    </div>
-  );
+function formatMoney(value, currency = "EUR", locale) {
+  const num =
+    typeof value === "object" && value !== null && "toNumber" in value
+      ? value.toNumber()
+      : Number(value || 0);
+
+  return new Intl.NumberFormat(locale === "en" ? "en-GB" : "de-DE", {
+    style: "currency",
+    currency,
+  }).format(num);
+}
+
+function getStatusLabel(status, locale) {
+  const map = {
+    OPEN: locale === "en" ? "Open" : "Offen",
+    CONFIRMED: locale === "en" ? "Confirmed" : "Bestätigt",
+    IN_PREPARATION: locale === "en" ? "In preparation" : "In Vorbereitung",
+    DELIVERED: locale === "en" ? "Delivered" : "Geliefert",
+    CANCELLED: locale === "en" ? "Cancelled" : "Storniert",
+  };
+
+  return map[status] || status || "—";
+}
+
+function getStatusStyle(status) {
+  switch (status) {
+    case "DELIVERED":
+      return {
+        background: "#edf7ee",
+        color: "#1f6b36",
+        border: "1px solid #cfe8d4",
+      };
+    case "CONFIRMED":
+      return {
+        background: "#eef4ff",
+        color: "#285ea8",
+        border: "1px solid #cfddf6",
+      };
+    case "IN_PREPARATION":
+      return {
+        background: "#fff6e9",
+        color: "#8a5a00",
+        border: "1px solid #f0dfbf",
+      };
+    case "CANCELLED":
+      return {
+        background: "#fff1f1",
+        color: "#8b2222",
+        border: "1px solid #efcaca",
+      };
+    default:
+      return {
+        background: "#f3f3f3",
+        color: "#555",
+        border: "1px solid #dfdfdf",
+      };
+  }
 }
