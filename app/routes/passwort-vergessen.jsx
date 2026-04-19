@@ -48,6 +48,7 @@ export async function action({ request }) {
   if (user) {
     try {
       await invalidateAllUserResetTokens(user.id);
+
       const { rawToken } = await createPasswordResetToken(user.id);
 
       await sendPasswordResetEmail({
