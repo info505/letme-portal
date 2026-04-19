@@ -23,6 +23,7 @@ export const dict = {
     logout: "Abmelden",
     homepage: "Zur Website",
 
+    // LOGIN
     loginTitle: "Anmelden",
     loginText: "Zugang zu deinem Firmenkonto",
     loginField: "E-Mail oder Benutzername",
@@ -35,12 +36,35 @@ export const dict = {
     noAccountYet: "Noch kein Konto?",
     registerNow: "Jetzt registrieren",
 
-    registerTitle: "Konto erstellen",
+    // REGISTER (NEU & BESSER)
+    registerTitle: "Firmenkonto erstellen",
     registerText:
-      "Erstelle dein Firmenkonto für Bestellungen, Rechnungen und Lieferadressen.",
+      "Erstelle den ersten Zugang für dein Unternehmen und verwalte Bestellungen, Rechnungen, Lieferadressen und weitere Mitarbeitende zentral an einem Ort.",
     registerSubmitting: "Wird erstellt...",
     alreadyRegistered: "Bereits registriert?",
     loginNow: "Jetzt anmelden",
+
+    registerBadgeBusiness: "Für Firmenkunden",
+    registerIntroTitle: "Erster Firmenzugang",
+    registerIntroText:
+      "Lege den ersten Admin-Zugang für dein Unternehmen an. Weitere Mitarbeitende können später hinzugefügt werden.",
+
+    registerSectionCompany: "Firma",
+    registerSectionContact: "Ansprechpartner",
+    registerSectionAccess: "Zugang",
+
+    registerBenefits1:
+      "Zentraler Firmenzugang für Team-Bestellungen",
+    registerBenefits2:
+      "Liefer- und Rechnungsadressen übersichtlich verwalten",
+    registerBenefits3:
+      "Vorbereitet für Rechnungen, Bestellhistorie und B2B-Prozesse",
+
+    registerPanelText:
+      "Richte deinen Firmenzugang in wenigen Schritten ein.",
+
+    usernameHelp:
+      "Jeder Mitarbeitende kann später einen eigenen Benutzernamen erhalten.",
 
     registerFillRequired: "Bitte fülle alle Pflichtfelder aus.",
     registerEmailInvalid: "Bitte gib eine gültige E-Mail-Adresse ein.",
@@ -56,7 +80,7 @@ export const dict = {
     lastName: "Nachname",
     lastNamePlaceholder: "Nachname",
     username: "Benutzername",
-    usernamePlaceholder: "z. B. firma-berlin",
+    usernamePlaceholder: "z. B. maria-office oder firma-berlin",
     email: "E-Mail",
     emailPlaceholder: "name@firma.de",
     phone: "Telefon",
@@ -65,6 +89,7 @@ export const dict = {
     confirmPassword: "Passwort wiederholen",
     confirmPasswordPlaceholder: "Passwort wiederholen",
 
+    // DASHBOARD
     accountText:
       "Verwalte deine Kontodaten, Rechnungen, Bestellungen und Lieferadressen zentral an einem Ort.",
     addressesText: "Verwalte deine Liefer- und Rechnungsadressen.",
@@ -74,51 +99,18 @@ export const dict = {
     openInvoices: "Rechnungen öffnen",
     startOrder: "Bestellung starten",
 
+    // ADDRESSES
     billingAddressTitle: "Rechnungsadresse",
     billingAddressText:
-      "Verwalte hier deine Rechnungsdaten für Angebote, Abrechnung und zukünftige Bestellungen.",
+      "Verwalte hier deine Rechnungsdaten für Angebote und Abrechnung.",
     shippingAddressesTitle: "Lieferadressen",
     shippingAddressesText:
-      "Verwalte deine gespeicherten Lieferorte für zukünftige Catering-Bestellungen.",
+      "Verwalte deine gespeicherten Lieferorte für zukünftige Bestellungen.",
     shippingAddressesFormText:
-      "Verwalte hier deine Lieferorte für zukünftige Catering-Bestellungen und interne Firmenstandorte.",
+      "Verwalte hier deine Lieferorte und Firmenstandorte.",
     billingAddress: "Rechnungsadresse",
     shippingAddresses: "Lieferadressen",
     noShippingAddress: "Noch keine Lieferadresse vorhanden.",
-
-    invoiceText:
-      "Hier findest du alle Rechnungen und den aktuellen Zahlungsstatus.",
-    statusNow: "Aktueller Stand",
-    invoiceStatusTextStart: "Für",
-    invoiceStatusTextEnd:
-      "ist die Rechnungsübersicht vorbereitet. Als Nächstes binden wir echte Rechnungsdaten an.",
-    invoiceNumber: "Rechnung",
-    date: "Datum",
-    status: "Status",
-    amount: "Betrag",
-    paid: "Bezahlt",
-    open: "Offen",
-
-    ordersText:
-      "Hier findest du deine bisherigen und aktuellen Bestellungen übersichtlich an einem Ort.",
-    orderNumber: "Bestellung",
-    orderType: "Typ",
-    reorderTitle: "Erneut bestellen",
-    reorderText:
-      "Starte schnell eine neue Bestellung auf Basis deiner bisherigen Catering-Anfragen.",
-    positions: "Positionen",
-
-    loginFieldsMissing: "Bitte gib Benutzername und Passwort ein.",
-    userNotFound: "Benutzer nicht gefunden.",
-    accessDisabled: "Zugang ist deaktiviert.",
-    passwordWrong: "Falsches Passwort.",
-
-    save: "Speichern",
-    saving: "Wird gespeichert...",
-    delete: "Löschen",
-    edit: "Bearbeiten",
-    cancel: "Abbrechen",
-    saveChanges: "Änderungen speichern",
 
     defaultAddress: "Standardadresse",
     setAsDefault: "Als Standard setzen",
@@ -147,8 +139,6 @@ export const dict = {
     vatId: "USt-IdNr.",
     addDeliveryTitle: "Neue Lieferadresse",
     editDeliveryTitle: "Lieferadresse bearbeiten",
-    editDeliveryText:
-      "Passe hier eine bestehende Lieferadresse an und speichere die Änderungen direkt im Kundenkonto.",
     existingDeliveryAddresses: "Gespeicherte Lieferadressen",
     noDeliverySaved:
       "Sobald du eine Lieferadresse anlegst, erscheint sie hier.",
@@ -156,56 +146,51 @@ export const dict = {
     contactPerson: "Ansprechpartner",
     contactPersonPlaceholder: "z. B. Max Mustermann",
 
-    forgotPasswordTitle: "Passwort zurücksetzen",
-    forgotPasswordText:
-      "Gib die E-Mail-Adresse deines Kontos ein. Den Mailversand bauen wir im nächsten Schritt vollständig an.",
-    forgotPasswordLiveText:
-      "Gib die E-Mail-Adresse deines Kontos ein. Wenn ein Konto existiert, senden wir dir einen Link zum Zurücksetzen deines Passworts.",
-    requestResetLink: "Link anfordern",
-    resetEmailLabel: "E-Mail-Adresse",
-    sendInstructions: "Anleitung senden",
-    sendingInstructions: "Wird gesendet...",
-    backToLogin: "Zurück zum Login",
-    forgotPasswordInfoTitle: "Aktueller Status",
-    forgotPasswordInfoText:
-      "Die Oberfläche ist bereit. Der echte Mailversand wird als Nächstes mit Token und E-Mail-Logik angebunden.",
-    forgotPasswordInvalidEmail:
-      "Bitte gib eine gültige E-Mail-Adresse ein.",
-    forgotPasswordNotLive:
-      "Die Anfrage wurde erfasst. Der echte E-Mail-Versand ist aktuell noch nicht aktiv.",
-    forgotPasswordMailSent:
-      "Wenn ein Konto mit dieser E-Mail existiert, wurde ein Reset-Link versendet.",
-    resetPasswordFormTitle: "Neues Passwort setzen",
-    resetPasswordFormText:
-      "Vergib hier ein neues Passwort für dein Konto.",
-    resetPasswordButton: "Neues Passwort speichern",
-    resetTokenInvalid:
-      "Der Reset-Link ist ungültig oder abgelaufen.",
+    // ORDERS
+    ordersText:
+      "Hier findest du deine bisherigen und aktuellen Bestellungen.",
+    orderNumber: "Bestellung",
+    orderType: "Typ",
+    reorderTitle: "Erneut bestellen",
+    reorderText:
+      "Starte schnell eine neue Bestellung auf Basis deiner bisherigen Anfragen.",
+    positions: "Positionen",
 
+    // INVOICES
+    invoiceText:
+      "Hier findest du alle Rechnungen und den aktuellen Zahlungsstatus.",
+    statusNow: "Aktueller Stand",
+    invoiceNumber: "Rechnung",
+    date: "Datum",
+    status: "Status",
+    amount: "Betrag",
+    paid: "Bezahlt",
+    open: "Offen",
+
+    // COST CENTERS
     costCentersTitle: "Kostenstellen",
-    costCentersNav: "Kostenstellen",
     costCentersText:
-      "Verwalte hier Kostenstellen für interne Zuordnung, Referenzen und zukünftige Bestellungen.",
+      "Verwalte Kostenstellen für interne Zuordnung und Bestellungen.",
     addCostCenter: "Kostenstelle hinzufügen",
-    costCentersIntro:
-      "Lege hier interne Kostenstellen für Teams, Abteilungen oder Projekte an. Diese können später für Bestellungen, Referenzen und Auswertungen genutzt werden.",
-    existingCostCenters: "Gespeicherte Kostenstellen",
-    costCentersListText:
-      "Hier siehst du alle bisher angelegten Kostenstellen deines Kontos.",
     noCostCenters: "Noch keine Kostenstellen vorhanden.",
     costCenterName: "Name",
-    costCenterNamePlaceholder: "z. B. Marketing, Office Berlin, Eventteam",
+    costCenterNamePlaceholder: "z. B. Marketing, Office Berlin",
     costCenterCode: "Code",
     costCenterCodePlaceholder: "z. B. MKT-01",
-    costCenterNameRequired: "Name ist erforderlich",
-    costCenterDescriptionPlaceholder:
-      "Optionale Beschreibung oder interne Hinweise",
-    costCenterCreated: "Kostenstelle wurde gespeichert.",
-    costCenterDeleted: "Kostenstelle wurde gelöscht.",
-    confirmDeleteCostCenter:
-      "Möchtest du diese Kostenstelle wirklich löschen?",
-    createdAtLabel: "Erstellt am",
-    description: "Beschreibung",
+
+    // AUTH ERRORS
+    loginFieldsMissing: "Bitte gib Benutzername und Passwort ein.",
+    userNotFound: "Benutzer nicht gefunden.",
+    accessDisabled: "Zugang ist deaktiviert.",
+    passwordWrong: "Falsches Passwort.",
+
+    // COMMON
+    save: "Speichern",
+    saving: "Wird gespeichert...",
+    delete: "Löschen",
+    edit: "Bearbeiten",
+    cancel: "Abbrechen",
+    saveChanges: "Änderungen speichern",
 
     generalError: "Etwas ist schiefgelaufen.",
   },
@@ -225,6 +210,7 @@ export const dict = {
     logout: "Logout",
     homepage: "Website",
 
+    // LOGIN
     loginTitle: "Login",
     loginText: "Access your business account",
     loginField: "Email or username",
@@ -237,15 +223,38 @@ export const dict = {
     noAccountYet: "No account yet?",
     registerNow: "Register now",
 
-    registerTitle: "Create account",
+    // REGISTER
+    registerTitle: "Create company account",
     registerText:
-      "Create your business account for orders, invoices and addresses.",
+      "Create the first access for your company and manage orders, invoices, delivery addresses and team members in one place.",
     registerSubmitting: "Creating...",
     alreadyRegistered: "Already registered?",
     loginNow: "Sign in now",
 
+    registerBadgeBusiness: "For business customers",
+    registerIntroTitle: "First company access",
+    registerIntroText:
+      "Create the first admin access for your company. Additional team members can be added later.",
+
+    registerSectionCompany: "Company",
+    registerSectionContact: "Contact person",
+    registerSectionAccess: "Access",
+
+    registerBenefits1:
+      "Central company access for team orders",
+    registerBenefits2:
+      "Manage delivery and billing addresses clearly",
+    registerBenefits3:
+      "Prepared for invoices and order history",
+
+    registerPanelText:
+      "Set up your company access in just a few steps.",
+
+    usernameHelp:
+      "Each team member can later receive their own username.",
+
     registerFillRequired: "Please fill in all required fields.",
-    registerEmailInvalid: "Please enter a valid email address.",
+    registerEmailInvalid: "Please enter a valid email.",
     registerUsernameShort: "Username must be at least 3 characters.",
     registerPasswordShort: "Password must be at least 8 characters.",
     registerPasswordMismatch: "Passwords do not match.",
@@ -254,160 +263,13 @@ export const dict = {
     company: "Company",
     companyPlaceholder: "e.g. Example Ltd.",
     firstName: "First name",
-    firstNamePlaceholder: "First name",
     lastName: "Last name",
-    lastNamePlaceholder: "Last name",
     username: "Username",
-    usernamePlaceholder: "e.g. company-berlin",
+    usernamePlaceholder: "e.g. maria-office or company-berlin",
     email: "Email",
-    emailPlaceholder: "name@company.com",
     phone: "Phone",
-    phonePlaceholder: "+49 ...",
     passwordRegisterPlaceholder: "At least 8 characters",
     confirmPassword: "Confirm password",
-    confirmPasswordPlaceholder: "Repeat password",
-
-    accountText:
-      "Manage your account, invoices, orders and delivery addresses in one place.",
-    addressesText: "Manage your delivery and billing addresses.",
-    invoicesText: "Overview of all invoices and payments.",
-    orderNowText: "Start a new order directly.",
-    openAddresses: "Open addresses",
-    openInvoices: "Open invoices",
-    startOrder: "Start order",
-
-    billingAddressTitle: "Billing address",
-    billingAddressText:
-      "Manage your billing details for quotes, invoicing and future orders.",
-    shippingAddressesTitle: "Delivery addresses",
-    shippingAddressesText:
-      "Manage your saved delivery locations for future catering orders.",
-    shippingAddressesFormText:
-      "Manage your delivery locations for future catering orders and internal company sites.",
-    billingAddress: "Billing address",
-    shippingAddresses: "Delivery addresses",
-    noShippingAddress: "No delivery address yet.",
-
-    invoiceText:
-      "Here you will find all invoices and their current payment status.",
-    statusNow: "Current status",
-    invoiceStatusTextStart: "For",
-    invoiceStatusTextEnd:
-      "the invoice overview is prepared. Next we will connect real invoice data.",
-    invoiceNumber: "Invoice",
-    date: "Date",
-    status: "Status",
-    amount: "Amount",
-    paid: "Paid",
-    open: "Open",
-
-    ordersText:
-      "Here you can find your past and current orders in one clear overview.",
-    orderNumber: "Order",
-    orderType: "Type",
-    reorderTitle: "Reorder",
-    reorderText:
-      "Start a new order quickly based on your previous catering requests.",
-    positions: "Items",
-
-    loginFieldsMissing: "Please enter username and password.",
-    userNotFound: "User not found.",
-    accessDisabled: "Access is disabled.",
-    passwordWrong: "Wrong password.",
-
-    save: "Save",
-    saving: "Saving...",
-    delete: "Delete",
-    edit: "Edit",
-    cancel: "Cancel",
-    saveChanges: "Save changes",
-
-    defaultAddress: "Default address",
-    setAsDefault: "Set as default",
-    billingUpdated: "Billing address has been saved.",
-    deliveryCreated: "Delivery address has been saved.",
-    deliveryUpdated: "Delivery address has been updated.",
-    deliveryDeleted: "Delivery address has been deleted.",
-    deliveryDefaultUpdated: "Default delivery address has been updated.",
-    addressFormError: "Please fill in all required fields.",
-
-    street: "Street",
-    streetPlaceholder: "Street name",
-    houseNumber: "House number",
-    houseNumberPlaceholder: "e.g. 12A",
-    postalCode: "Postal code",
-    postalCodePlaceholder: "e.g. 12345",
-    city: "City",
-    cityPlaceholder: "Berlin",
-    country: "Country",
-    countryPlaceholder: "Germany",
-    notes: "Notes",
-    notesPlaceholder: "e.g. 3rd floor, reception on ground floor",
-    label: "Label",
-    labelPlaceholder: "e.g. Office, HQ, Warehouse",
-    invoiceEmail: "Invoice email",
-    vatId: "VAT ID",
-    addDeliveryTitle: "New delivery address",
-    editDeliveryTitle: "Edit delivery address",
-    editDeliveryText:
-      "Update an existing delivery address here and save the changes directly in your account.",
-    existingDeliveryAddresses: "Saved delivery addresses",
-    noDeliverySaved:
-      "As soon as you add a delivery address, it will appear here.",
-    addShipping: "Save delivery address",
-    contactPerson: "Contact person",
-    contactPersonPlaceholder: "e.g. Max Mustermann",
-
-    forgotPasswordTitle: "Reset password",
-    forgotPasswordText:
-      "Enter the email address of your account. The real email delivery will be connected in the next step.",
-    forgotPasswordLiveText:
-      "Enter the email address of your account. If an account exists, we will send you a link to reset your password.",
-    requestResetLink: "Request link",
-    resetEmailLabel: "Email address",
-    sendInstructions: "Send instructions",
-    sendingInstructions: "Sending...",
-    backToLogin: "Back to login",
-    forgotPasswordInfoTitle: "Current status",
-    forgotPasswordInfoText:
-      "The interface is ready. Real email delivery will be connected next with token and mail logic.",
-    forgotPasswordInvalidEmail:
-      "Please enter a valid email address.",
-    forgotPasswordNotLive:
-      "Your request was recorded. Real email delivery is not active yet.",
-    forgotPasswordMailSent:
-      "If an account with this email exists, a reset link has been sent.",
-    resetPasswordFormTitle: "Set new password",
-    resetPasswordFormText:
-      "Create a new password for your account here.",
-    resetPasswordButton: "Save new password",
-    resetTokenInvalid:
-      "The reset link is invalid or has expired.",
-
-    costCentersTitle: "Cost centers",
-    costCentersNav: "Cost centers",
-    costCentersText:
-      "Manage cost centers for internal allocation, references and future orders.",
-    addCostCenter: "Add cost center",
-    costCentersIntro:
-      "Create internal cost centers for teams, departments or projects. These can later be used for orders, references and reporting.",
-    existingCostCenters: "Saved cost centers",
-    costCentersListText:
-      "Here you can see all cost centers created for your account.",
-    noCostCenters: "No cost centers yet.",
-    costCenterName: "Name",
-    costCenterNamePlaceholder: "e.g. Marketing, Office Berlin, Event Team",
-    costCenterCode: "Code",
-    costCenterCodePlaceholder: "e.g. MKT-01",
-    costCenterNameRequired: "Name is required",
-    costCenterDescriptionPlaceholder:
-      "Optional description or internal notes",
-    costCenterCreated: "Cost center has been saved.",
-    costCenterDeleted: "Cost center has been deleted.",
-    confirmDeleteCostCenter:
-      "Do you really want to delete this cost center?",
-    createdAtLabel: "Created on",
-    description: "Description",
 
     generalError: "Something went wrong.",
   },

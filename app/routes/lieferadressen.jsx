@@ -27,9 +27,8 @@ export async function loader({ request }) {
     orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
   });
 
-  const editAddress = editId
-    ? addresses.find((item) => item.id === editId) || null
-    : null;
+  const editAddress =
+    editId ? addresses.find((item) => item.id === editId) || null : null;
 
   return { user, locale, addresses, editAddress };
 }
@@ -201,47 +200,172 @@ export default function LieferadressenPage() {
       title={t.shippingAddressesTitle}
       subtitle={t.shippingAddressesText}
     >
+      <style>{`
+        .delivery-shell {
+          display: grid;
+          gap: 18px;
+          max-width: 1080px;
+        }
+
+        .delivery-card {
+          padding: 28px;
+          border-radius: 24px;
+        }
+
+        .delivery-grid {
+          display: grid;
+          gap: 16px;
+        }
+
+        .delivery-list {
+          display: grid;
+          gap: 14px;
+        }
+
+        .address-card {
+          position: relative;
+          border: 1px solid ${colors.border};
+          border-radius: 22px;
+          padding: 20px;
+          background: #fff;
+          transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+        }
+
+        .address-card:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 14px 36px rgba(24,24,24,0.05);
+          border-color: #d8c49a;
+        }
+
+        .address-card.active {
+          background: linear-gradient(180deg, #fffdf8 0%, #fcf8ef 100%);
+          border-color: #d8b46a;
+          box-shadow: 0 18px 42px rgba(200,169,106,0.12);
+        }
+
+        .address-card-top {
+          display: flex;
+          justify-content: space-between;
+          gap: 14px;
+          flex-wrap: wrap;
+          margin-bottom: 12px;
+        }
+
+        .address-meta {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          align-items: center;
+        }
+
+        .address-title {
+          font-size: 19px;
+          font-weight: 800;
+          color: ${colors.text};
+          letter-spacing: -0.01em;
+        }
+
+        .default-badge {
+          display: inline-flex;
+          align-items: center;
+          padding: 6px 10px;
+          border-radius: 999px;
+          background: #f3e8d4;
+          color: #8d6a2f;
+          font-size: 12px;
+          font-weight: 800;
+        }
+
+        .address-select-form {
+          margin: 0;
+        }
+
+        .address-select-button {
+          border: none;
+          background: transparent;
+          padding: 0;
+          margin: 0;
+          width: 100%;
+          text-align: left;
+          cursor: pointer;
+          font: inherit;
+        }
+
+        .address-actions {
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+          margin-top: 14px;
+          padding-top: 14px;
+          border-top: 1px solid rgba(0,0,0,0.06);
+        }
+
+        .address-use-hint {
+          margin-top: 10px;
+          font-size: 13px;
+          color: ${colors.muted};
+          line-height: 1.6;
+        }
+
+        .section-head {
+          display: flex;
+          justify-content: space-between;
+          gap: 16px;
+          flex-wrap: wrap;
+          align-items: flex-start;
+          margin-bottom: 20px;
+        }
+
+        .section-title {
+          margin: 0 0 10px;
+          font-size: 28px;
+          color: ${colors.text};
+          letter-spacing: -0.02em;
+        }
+
+        .section-text {
+          margin: 0;
+          color: ${colors.muted};
+          line-height: 1.65;
+          font-size: 15px;
+          max-width: 760px;
+        }
+
+        @media (max-width: 700px) {
+          .delivery-card {
+            padding: 20px 16px;
+            border-radius: 18px;
+          }
+
+          .section-title {
+            font-size: 24px;
+          }
+
+          .address-card {
+            padding: 16px;
+            border-radius: 18px;
+          }
+        }
+      `}</style>
+
       {actionData?.message ? (
         <FeedbackBox success={actionData?.ok}>{actionData.message}</FeedbackBox>
       ) : null}
 
-      <div style={{ display: "grid", gap: "18px", maxWidth: "980px" }}>
+      <div className="delivery-shell">
         <section
+          className="delivery-card"
           style={{
             ...card.base,
-            padding: "28px",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: "16px",
-              flexWrap: "wrap",
-              alignItems: "flex-start",
-              marginBottom: "20px",
-            }}
-          >
+          <div className="section-head">
             <div>
-              <h3
-                style={{
-                  margin: "0 0 10px",
-                  fontSize: "28px",
-                  color: colors.text,
-                }}
-              >
+              <h3 className="section-title">
                 {isEditMode ? t.editDeliveryTitle : t.addDeliveryTitle}
               </h3>
 
-              <p
-                style={{
-                  margin: 0,
-                  color: colors.muted,
-                  lineHeight: 1.6,
-                  fontSize: "15px",
-                  maxWidth: "760px",
-                }}
-              >
+              <p className="section-text">
                 {isEditMode ? t.editDeliveryText : t.shippingAddressesFormText}
               </p>
             </div>
@@ -385,20 +509,21 @@ export default function LieferadressenPage() {
         </section>
 
         <section
+          className="delivery-card"
           style={{
             ...card.base,
-            padding: "28px",
           }}
         >
-          <h3
-            style={{
-              margin: "0 0 18px",
-              fontSize: "28px",
-              color: colors.text,
-            }}
-          >
-            {t.existingDeliveryAddresses}
-          </h3>
+          <div className="section-head" style={{ marginBottom: "18px" }}>
+            <div>
+              <h3 className="section-title">{t.existingDeliveryAddresses}</h3>
+              <p className="section-text">
+                {locale === "en"
+                  ? "Click a saved address to use it as the active address for future orders."
+                  : "Klicke eine gespeicherte Adresse an, um sie als aktive Adresse für künftige Bestellungen zu verwenden."}
+              </p>
+            </div>
+          </div>
 
           {addresses.length === 0 ? (
             <p
@@ -412,63 +537,83 @@ export default function LieferadressenPage() {
               {t.noDeliverySaved}
             </p>
           ) : (
-            <div style={{ display: "grid", gap: "14px" }}>
+            <div className="delivery-list">
               {addresses.map((address) => (
                 <div
                   key={address.id}
-                  style={{
-                    border: `1px solid ${colors.border}`,
-                    borderRadius: "18px",
-                    padding: "18px",
-                    background: address.isDefault ? "#fcf9f3" : "#fff",
-                  }}
+                  className={`address-card ${address.isDefault ? "active" : ""}`}
                 >
-                  <div style={styles.addressHeader}>
-                    <div>
-                      <div style={styles.addressTitle}>
-                        {address.label || t.shippingAddresses}
+                  <Form method="post" className="address-select-form">
+                    <input type="hidden" name="intent" value="setDefaultDelivery" />
+                    <input type="hidden" name="addressId" value={address.id} />
+
+                    <button type="submit" className="address-select-button">
+                      <div className="address-card-top">
+                        <div>
+                          <div className="address-meta">
+                            <div className="address-title">
+                              {address.label || t.shippingAddresses}
+                            </div>
+
+                            {address.isDefault ? (
+                              <span className="default-badge">
+                                {t.defaultAddress}
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
                       </div>
 
-                      {address.isDefault ? (
-                        <div style={styles.defaultBadge}>{t.defaultAddress}</div>
-                      ) : null}
-                    </div>
+                      <AddressLine value={address.companyName} />
+                      <AddressLine value={address.contactName} />
+                      <AddressLine
+                        value={[address.street, address.houseNumber].filter(Boolean).join(" ")}
+                      />
+                      <AddressLine
+                        value={[address.postalCode, address.city].filter(Boolean).join(" ")}
+                      />
+                      <AddressLine value={address.country} />
+                      <AddressLine value={address.phone} />
+                      {address.notes ? <AddressLine value={address.notes} muted /> : null}
 
-                    <div style={styles.addressActions}>
-                      <a
-                        href={`?lang=${locale}&edit=${address.id}`}
-                        style={secondaryLinkStyle}
-                      >
-                        {t.edit}
-                      </a>
+                      <div className="address-use-hint">
+                        {address.isDefault
+                          ? locale === "en"
+                            ? "This address is currently used for future orders."
+                            : "Diese Adresse wird aktuell für künftige Bestellungen verwendet."
+                          : locale === "en"
+                          ? "Click to use this address for future orders."
+                          : "Klicke, um diese Adresse für künftige Bestellungen zu verwenden."}
+                      </div>
+                    </button>
+                  </Form>
 
-                      {!address.isDefault ? (
-                        <Form method="post">
-                          <input type="hidden" name="intent" value="setDefaultDelivery" />
-                          <input type="hidden" name="addressId" value={address.id} />
-                          <button type="submit" style={button.secondary}>
-                            {t.setAsDefault}
-                          </button>
-                        </Form>
-                      ) : null}
+                  <div className="address-actions">
+                    <a
+                      href={`?lang=${locale}&edit=${address.id}`}
+                      style={secondaryLinkStyle}
+                    >
+                      {t.edit}
+                    </a>
 
+                    {!address.isDefault ? (
                       <Form method="post">
-                        <input type="hidden" name="intent" value="deleteDelivery" />
+                        <input type="hidden" name="intent" value="setDefaultDelivery" />
                         <input type="hidden" name="addressId" value={address.id} />
-                        <button type="submit" style={styles.deleteButton}>
-                          {t.delete}
+                        <button type="submit" style={button.secondary}>
+                          {locale === "en" ? "Use this address" : "Diese Adresse nutzen"}
                         </button>
                       </Form>
-                    </div>
-                  </div>
+                    ) : null}
 
-                  <AddressLine value={address.companyName} />
-                  <AddressLine value={address.contactName} />
-                  <AddressLine value={[address.street, address.houseNumber].filter(Boolean).join(" ")} />
-                  <AddressLine value={[address.postalCode, address.city].filter(Boolean).join(" ")} />
-                  <AddressLine value={address.country} />
-                  <AddressLine value={address.phone} />
-                  {address.notes ? <AddressLine value={address.notes} muted /> : null}
+                    <Form method="post">
+                      <input type="hidden" name="intent" value="deleteDelivery" />
+                      <input type="hidden" name="addressId" value={address.id} />
+                      <button type="submit" style={styles.deleteButton}>
+                        {t.delete}
+                      </button>
+                    </Form>
+                  </div>
                 </div>
               ))}
             </div>
@@ -511,7 +656,7 @@ function FeedbackBox({ children, success = true }) {
         color: success ? "#1f6b36" : "#8b2222",
         border: success ? "1px solid #cfe8d4" : "1px solid #efcaca",
         fontWeight: 700,
-        maxWidth: "980px",
+        maxWidth: "1080px",
       }}
     >
       {children}
@@ -610,37 +755,6 @@ const styles = {
     color: colors.text,
     fontWeight: 600,
     fontSize: "14px",
-  },
-
-  addressHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "12px",
-    flexWrap: "wrap",
-    marginBottom: "10px",
-  },
-
-  addressTitle: {
-    fontSize: "18px",
-    fontWeight: 800,
-    color: colors.text,
-  },
-
-  defaultBadge: {
-    display: "inline-flex",
-    marginTop: "6px",
-    padding: "5px 10px",
-    borderRadius: "999px",
-    background: "#f2eadb",
-    color: "#8d6a2f",
-    fontSize: "12px",
-    fontWeight: 800,
-  },
-
-  addressActions: {
-    display: "flex",
-    gap: "10px",
-    flexWrap: "wrap",
   },
 
   deleteButton: {

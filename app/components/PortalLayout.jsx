@@ -40,13 +40,21 @@ function SidebarLink({ href, label, active = false }) {
   );
 }
 
-export default function PortalLayout({ children, title, subtitle }) {
+export default function PortalLayout({
+  children,
+  title,
+  subtitle,
+  orderNowHref,
+  orderNowOnClick,
+}) {
   const location = useLocation();
   const data = useLoaderData?.() || {};
   const locale =
     data?.locale || new URLSearchParams(location.search).get("lang") || "de";
   const user = data?.user || null;
   const t = dict[locale] || dict.de;
+
+  const sidebarOrderHref = orderNowHref || withLang("/dashboard", locale);
 
   return (
     <div
@@ -225,12 +233,23 @@ export default function PortalLayout({ children, title, subtitle }) {
               {t.homepage}
             </a>
 
-            <a
-              href="https://letmebowl-catering.de"
-              style={sidebarPrimaryLink}
-            >
-              {t.orderNow}
-            </a>
+            {orderNowOnClick ? (
+              <button
+                type="button"
+                onClick={orderNowOnClick}
+                style={{
+                  ...sidebarPrimaryLink,
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                {t.orderNow}
+              </button>
+            ) : (
+              <a href={sidebarOrderHref} style={sidebarPrimaryLink}>
+                {t.orderNow}
+              </a>
+            )}
 
             <a
               href={withLang("/logout", locale)}

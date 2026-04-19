@@ -1,4 +1,10 @@
-import { redirect, useLoaderData } from "react-router";
+import {
+  Form,
+  redirect,
+  useActionData,
+  useLoaderData,
+  useNavigation,
+} from "react-router";
 import { prisma } from "../lib/prisma.server.js";
 import { getUserFromRequest } from "../lib/auth.server.js";
 import { getLocaleFromRequest, dict, withLang } from "../lib/i18n.js";
@@ -40,12 +46,101 @@ export async function loader({ request, params }) {
   return { user, locale, order };
 }
 
+export async function action({ request, params }) {
+  const locale = getLocaleFromRequest(request);
+  const t = dict[locale] || dict.de;
+  const user = await getUserFromRequest(request);
+
+  if (!user) {
+    throw redirect(`/login?lang=${locale}`);
+  }
+
+  const orderId = String(params.id || "");
+  if (!orderId) {
+    throw redirect(`/bestellungen?lang=${locale}`);
+  }
+
+  const formData = await request.formData();
+  const intent = String(formData.get("intent") || "");
+
+  if (intent !== "cancel") {
+    return {
+      ok: false,
+      message: locale === "de" ? "Ungültige Aktion." : "Invalid action.",
+    };
+  }
+
+  const existingOrder = await prisma.portalOrder.findFirst({
+    where: {
+      id: orderId,
+      userId: user.id,
+    },
+  });
+
+  if (!existingOrder) {
+    throw redirect(`/bestellungen?lang=${locale}`);
+  }
+
+  if (existingOrder.status === "CANCELLED") {
+    return {
+      ok: false,
+      message:
+        locale === "de"
+          ? "Diese Bestellung wurde bereits storniert."
+          : "This order has already been cancelled.",
+    };
+  }
+
+  if (existingOrder.status === "DELIVERED") {
+    return {
+      ok: false,
+      message:
+        locale === "de"
+          ? "Gelieferte Bestellungen können nicht mehr storniert werden."
+          : "Delivered orders can no longer be cancelled.",
+    };
+  }
+
+  await prisma.portalOrder.update({
+    where: { id: existingOrder.id },
+    data: {
+      status: "CANCELLED",
+    },
+  });
+
+  return {
+    ok: true,
+    message:
+      locale === "de"
+        ? "Die Bestellung wurde storniert."
+        : "The order has been cancelled.",
+  };
+}
+
 export default function BestellungDetailPage() {
   const { locale, order } = useLoaderData();
+  const actionData = useActionData();
+  const navigation = useNavigation();
   const t = dict[locale] || dict.de;
 
   const statusLabel = getStatusLabel(order.status, locale);
   const statusStyle = getStatusStyle(order.status);
+
+  const reorderableItems = (order.items || []).filter(
+    (item) => item.shopifyVariantId && Number(item.quantity || 0) > 0
+  );
+
+  const hasReorderableItems = reorderableItems.length > 0;
+  const reorderUrl = hasReorderableItems
+    ? buildShopifyCartPermalink(reorderableItems)
+    : null;
+
+  const canCancel =
+    order.status !== "CANCELLED" && order.status !== "DELIVERED";
+
+  const isCancelling =
+    navigation.state === "submitting" &&
+    navigation.formData?.get("intent") === "cancel";
 
   return (
     <PortalLayout
@@ -57,6 +152,23 @@ export default function BestellungDetailPage() {
       }
     >
       <div style={{ display: "grid", gap: "18px" }}>
+        {actionData?.message ? (
+          <div
+            style={{
+              padding: "14px 16px",
+              borderRadius: "14px",
+              background: actionData.ok ? "#edf7ee" : "#fff1f1",
+              color: actionData.ok ? "#1f6b36" : "#8b2222",
+              border: actionData.ok
+                ? "1px solid #cfe8d4"
+                : "1px solid #efcaca",
+              fontWeight: 700,
+            }}
+          >
+            {actionData.message}
+          </div>
+        ) : null}
+
         <section
           style={{
             ...card.base,
@@ -194,96 +306,140 @@ export default function BestellungDetailPage() {
 
             {order.items?.length ? (
               <div style={{ display: "grid", gap: "12px" }}>
-                {order.items.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      border: `1px solid ${colors.border}`,
-                      borderRadius: "18px",
-                      padding: "18px",
-                      background: "#fff",
-                    }}
-                  >
+                {order.items.map((item) => {
+                  const isReorderable = Boolean(item.shopifyVariantId);
+
+                  return (
                     <div
+                      key={item.id}
                       style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: "14px",
-                        flexWrap: "wrap",
-                        alignItems: "flex-start",
+                        border: `1px solid ${colors.border}`,
+                        borderRadius: "18px",
+                        padding: "18px",
+                        background: "#fff",
                       }}
                     >
-                      <div style={{ minWidth: 0 }}>
-                        <div
-                          style={{
-                            fontSize: "18px",
-                            fontWeight: 800,
-                            color: colors.text,
-                            marginBottom: "8px",
-                          }}
-                        >
-                          {item.title}
-                        </div>
-
-                        <div
-                          style={{
-                            color: colors.muted,
-                            fontSize: "14px",
-                            lineHeight: 1.6,
-                          }}
-                        >
-                          {locale === "de" ? "Menge" : "Quantity"}: {item.quantity}
-                          {item.unit ? ` ${item.unit}` : ""}
-                        </div>
-
-                        {item.notes ? (
-                          <div
-                            style={{
-                              marginTop: "8px",
-                              color: colors.muted,
-                              fontSize: "14px",
-                              lineHeight: 1.6,
-                              whiteSpace: "pre-wrap",
-                            }}
-                          >
-                            {item.notes}
-                          </div>
-                        ) : null}
-                      </div>
-
                       <div
                         style={{
-                          textAlign: "right",
-                          minWidth: "140px",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          gap: "14px",
+                          flexWrap: "wrap",
+                          alignItems: "flex-start",
                         }}
                       >
-                        {item.unitPrice != null ? (
-                          <div
-                            style={{
-                              fontSize: "14px",
-                              color: colors.muted,
-                              marginBottom: "6px",
-                            }}
-                          >
-                            {formatMoney(item.unitPrice, order.currency || "EUR", locale)}
-                          </div>
-                        ) : null}
-
-                        {item.totalPrice != null ? (
+                        <div style={{ minWidth: 0, flex: "1 1 360px" }}>
                           <div
                             style={{
                               fontSize: "18px",
                               fontWeight: 800,
                               color: colors.text,
+                              marginBottom: "8px",
                             }}
                           >
-                            {formatMoney(item.totalPrice, order.currency || "EUR", locale)}
+                            {item.title}
                           </div>
-                        ) : null}
+
+                          <div
+                            style={{
+                              color: colors.muted,
+                              fontSize: "14px",
+                              lineHeight: 1.6,
+                            }}
+                          >
+                            {locale === "de" ? "Menge" : "Quantity"}: {item.quantity}
+                            {item.unit ? ` ${item.unit}` : ""}
+                          </div>
+
+                          {item.variantTitle ? (
+                            <div
+                              style={{
+                                marginTop: "6px",
+                                color: colors.muted,
+                                fontSize: "14px",
+                                lineHeight: 1.6,
+                              }}
+                            >
+                              {locale === "de" ? "Variante" : "Variant"}: {item.variantTitle}
+                            </div>
+                          ) : null}
+
+                          {item.notes ? (
+                            <div
+                              style={{
+                                marginTop: "8px",
+                                color: colors.muted,
+                                fontSize: "14px",
+                                lineHeight: 1.6,
+                                whiteSpace: "pre-wrap",
+                              }}
+                            >
+                              {item.notes}
+                            </div>
+                          ) : null}
+
+                          <div
+                            style={{
+                              marginTop: "10px",
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: "8px",
+                            }}
+                          >
+                            {isReorderable ? (
+                              <span style={okBadgeStyle}>
+                                {locale === "de"
+                                  ? "Für Reorder verfügbar"
+                                  : "Available for reorder"}
+                              </span>
+                            ) : (
+                              <span style={mutedBadgeStyle}>
+                                {locale === "de"
+                                  ? "Nicht für Reorder verfügbar"
+                                  : "Not available for reorder"}
+                              </span>
+                            )}
+
+                            {item.sku ? (
+                              <span style={mutedBadgeStyle}>SKU: {item.sku}</span>
+                            ) : null}
+                          </div>
+                        </div>
+
+                        <div
+                          style={{
+                            textAlign: "right",
+                            minWidth: "140px",
+                          }}
+                        >
+                          {item.unitPrice != null ? (
+                            <div
+                              style={{
+                                fontSize: "14px",
+                                color: colors.muted,
+                                marginBottom: "6px",
+                              }}
+                            >
+                              {formatMoney(item.unitPrice, order.currency || "EUR", locale)}
+                            </div>
+                          ) : null}
+
+                          {item.totalPrice != null ? (
+                            <div
+                              style={{
+                                fontSize: "18px",
+                                fontWeight: 800,
+                                color: colors.text,
+                              }}
+                            >
+                              {formatMoney(item.totalPrice, order.currency || "EUR", locale)}
+                            </div>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <EmptyBox>
@@ -384,7 +540,7 @@ export default function BestellungDetailPage() {
                   color: colors.text,
                 }}
               >
-                {locale === "de" ? "Nächster Schritt" : "Next step"}
+                {locale === "de" ? "Aktionen" : "Actions"}
               </h3>
 
               <p
@@ -396,25 +552,108 @@ export default function BestellungDetailPage() {
                 }}
               >
                 {locale === "de"
-                  ? "Als Nächstes können wir hier einen echten Reorder-Button und PDF-Download anbinden."
-                  : "Next, we can connect a real reorder button and PDF download here."}
+                  ? "Du kannst diese Bestellung erneut in den Warenkorb legen oder im Portal stornieren."
+                  : "You can add this order to the cart again or cancel it in the portal."}
               </p>
 
-              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                <a
-                  href="#"
+              <div style={{ display: "grid", gap: "10px" }}>
+                {hasReorderableItems ? (
+                  <a
+                    href={reorderUrl}
+                    style={{
+                      ...button.primary,
+                      textDecoration: "none",
+                      color: "#fff",
+                      background: "linear-gradient(135deg, #c8a96a, #b8934f)",
+                      textAlign: "center",
+                    }}
+                  >
+                    {locale === "de" ? "Erneut bestellen" : "Reorder"}
+                  </a>
+                ) : (
+                  <span
+                    style={{
+                      ...button.primary,
+                      color: "#fff",
+                      background: "#c9c1b0",
+                      cursor: "not-allowed",
+                      opacity: 0.8,
+                      textAlign: "center",
+                    }}
+                  >
+                    {locale === "de" ? "Erneut bestellen" : "Reorder"}
+                  </span>
+                )}
+
+                {canCancel ? (
+                  <Form method="post">
+                    <input type="hidden" name="intent" value="cancel" />
+                    <button
+                      type="submit"
+                      style={dangerButton}
+                      disabled={isCancelling}
+                      onClick={(event) => {
+                        const ok = window.confirm(
+                          locale === "de"
+                            ? "Möchtest du diese Bestellung wirklich stornieren?"
+                            : "Do you really want to cancel this order?"
+                        );
+                        if (!ok) {
+                          event.preventDefault();
+                        }
+                      }}
+                    >
+                      {isCancelling
+                        ? locale === "de"
+                          ? "Wird storniert..."
+                          : "Cancelling..."
+                        : locale === "de"
+                        ? "Stornieren"
+                        : "Cancel order"}
+                    </button>
+                  </Form>
+                ) : (
+                  <span
+                    style={{
+                      ...button.secondary,
+                      textAlign: "center",
+                      opacity: 0.7,
+                      cursor: "not-allowed",
+                      color: colors.muted,
+                    }}
+                  >
+                    {locale === "de" ? "Nicht stornierbar" : "Cannot be cancelled"}
+                  </span>
+                )}
+              </div>
+
+              {hasReorderableItems ? (
+                <div
                   style={{
-                    ...button.primary,
-                    textDecoration: "none",
-                    color: "#fff",
-                    background: "linear-gradient(135deg, #c8a96a, #b8934f)",
-                    pointerEvents: "none",
-                    opacity: 0.75,
+                    marginTop: "12px",
+                    color: colors.muted,
+                    fontSize: "13px",
+                    lineHeight: 1.55,
                   }}
                 >
-                  {locale === "de" ? "Erneut bestellen" : "Reorder"}
-                </a>
-              </div>
+                  {locale === "de"
+                    ? `${reorderableItems.length} Position(en) sind für den Reorder verfügbar.`
+                    : `${reorderableItems.length} item(s) are available for reorder.`}
+                </div>
+              ) : (
+                <div
+                  style={{
+                    marginTop: "12px",
+                    color: colors.muted,
+                    fontSize: "13px",
+                    lineHeight: 1.55,
+                  }}
+                >
+                  {locale === "de"
+                    ? "Für ältere Bestellungen fehlen noch Shopify-Variant-IDs."
+                    : "Older orders do not yet contain Shopify variant IDs."}
+                </div>
+              )}
             </div>
           </div>
         </section>
@@ -471,6 +710,18 @@ export default function BestellungDetailPage() {
       </div>
     </PortalLayout>
   );
+}
+
+function buildShopifyCartPermalink(items) {
+  const lineItems = items
+    .filter((item) => item.shopifyVariantId && Number(item.quantity || 0) > 0)
+    .map((item) => {
+      const variantId = encodeURIComponent(String(item.shopifyVariantId));
+      const qty = Math.max(1, Number(item.quantity || 1));
+      return `${variantId}:${qty}`;
+    });
+
+  return `https://letmebowl-catering.de/cart/${lineItems.join(",")}`;
 }
 
 function InfoCard({ label, value }) {
@@ -570,24 +821,6 @@ function SidebarMetaCard({ title, entries }) {
   );
 }
 
-function EmptyBox({ children }) {
-  return (
-    <div
-      style={{
-        border: `1px solid ${colors.border}`,
-        borderRadius: "18px",
-        padding: "18px",
-        background: "#fff",
-        color: colors.muted,
-        fontSize: "15px",
-        lineHeight: 1.6,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
 function formatDate(value, locale) {
   const date = new Date(value);
   return new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "de-DE", {
@@ -655,3 +888,54 @@ function getStatusStyle(status) {
       };
   }
 }
+
+function EmptyBox({ children }) {
+  return (
+    <div
+      style={{
+        border: `1px solid ${colors.border}`,
+        borderRadius: "18px",
+        padding: "18px",
+        background: "#fff",
+        color: colors.muted,
+        fontSize: "15px",
+        lineHeight: 1.6,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+const okBadgeStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "6px 10px",
+  borderRadius: "999px",
+  background: "#edf7ee",
+  color: "#1f6b36",
+  border: "1px solid #cfe8d4",
+  fontSize: "12px",
+  fontWeight: 800,
+};
+
+const mutedBadgeStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "6px 10px",
+  borderRadius: "999px",
+  background: "#f3f3f3",
+  color: "#666",
+  border: "1px solid #dfdfdf",
+  fontSize: "12px",
+  fontWeight: 800,
+};
+
+const dangerButton = {
+  ...button.secondary,
+  width: "100%",
+  color: "#8b2222",
+  border: "1px solid #efcaca",
+  background: "#fff8f8",
+  fontWeight: 700,
+};

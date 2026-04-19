@@ -31,6 +31,7 @@ export default function BestellungenPage() {
   const t = dict[locale] || dict.de;
 
   const deliveredCount = orders.filter((order) => order.status === "DELIVERED").length;
+  const cancelledCount = orders.filter((order) => order.status === "CANCELLED").length;
   const openCount = orders.filter((order) =>
     ["OPEN", "CONFIRMED", "IN_PREPARATION"].includes(order.status)
   ).length;
@@ -83,6 +84,16 @@ export default function BestellungenPage() {
                   : "Orders that have already been delivered successfully."
               }
             />
+
+            <SummaryCard
+              eyebrow={locale === "de" ? "Storniert" : "Cancelled"}
+              value={String(cancelledCount)}
+              text={
+                locale === "de"
+                  ? "Bestellungen, die im Portal storniert wurden."
+                  : "Orders that were cancelled in the portal."
+              }
+            />
           </div>
         </section>
 
@@ -115,18 +126,14 @@ export default function BestellungenPage() {
                 }}
               >
                 {locale === "de"
-                  ? "Hier findest du alle verknüpften Bestellungen inklusive Status, Betrag und Positionen."
-                  : "Here you can find all linked orders including status, amount and items."}
+                  ? "Hier findest du alle verknüpften Bestellungen inklusive Status, Betrag, Positionen und Reorder."
+                  : "Here you can find all linked orders including status, amount, items and reorder."}
               </p>
             </div>
 
             <div style={{ display: "grid", gap: "14px" }}>
               {orders.map((order) => (
-                <OrderCard
-                  key={order.id}
-                  order={order}
-                  locale={locale}
-                />
+                <OrderCard key={order.id} order={order} locale={locale} />
               ))}
             </div>
           </section>
@@ -178,7 +185,7 @@ function EmptyOrders({ locale }) {
       </p>
 
       <a
-        href="https://letmebowl-catering.de"
+        href="https://letmebowl-catering.de/pages/bestellen"
         style={{
           ...button.primary,
           textDecoration: "none",
@@ -200,15 +207,29 @@ function OrderCard({ order, locale }) {
   const statusLabel = getStatusLabel(order.status, locale);
   const statusStyle = getStatusStyle(order.status);
 
+  const reorderableItems = (order.items || []).filter(
+    (item) => item.shopifyVariantId && Number(item.quantity || 0) > 0
+  );
+
+  const hasReorderableItems = reorderableItems.length > 0;
+
+  const reorderUrl = hasReorderableItems
+    ? buildShopifyCartPermalink(reorderableItems)
+    : null;
+
+  const isCancelled = order.status === "CANCELLED";
+  const isDelivered = order.status === "DELIVERED";
+
   return (
     <div
       style={{
         border: `1px solid ${colors.border}`,
         borderRadius: "20px",
-        background: "#fff",
+        background: isCancelled ? "#fcfcfc" : "#fff",
         padding: "20px",
         display: "grid",
         gap: "16px",
+        opacity: isCancelled ? 0.9 : 1,
       }}
     >
       <div
@@ -246,19 +267,31 @@ function OrderCard({ order, locale }) {
           </div>
         </div>
 
-        <span
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            padding: "8px 12px",
-            borderRadius: "999px",
-            fontSize: "13px",
-            fontWeight: 800,
-            ...statusStyle,
-          }}
-        >
-          {statusLabel}
-        </span>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              padding: "8px 12px",
+              borderRadius: "999px",
+              fontSize: "13px",
+              fontWeight: 800,
+              ...statusStyle,
+            }}
+          >
+            {statusLabel}
+          </span>
+
+          {hasReorderableItems ? (
+            <span style={okBadgeStyle}>
+              {locale === "de" ? "Reorder möglich" : "Reorder available"}
+            </span>
+          ) : (
+            <span style={mutedBadgeStyle}>
+              {locale === "de" ? "Kein Reorder" : "No reorder"}
+            </span>
+          )}
+        </div>
       </div>
 
       <div
@@ -333,9 +366,17 @@ function OrderCard({ order, locale }) {
             lineHeight: 1.5,
           }}
         >
-          {locale === "de"
-            ? "Als Nächstes können wir hier Detailansicht und Reorder anbinden."
-            : "Next, we can connect order detail view and reorder here."}
+          {isCancelled
+            ? locale === "de"
+              ? "Diese Bestellung wurde im Portal storniert."
+              : "This order was cancelled in the portal."
+            : isDelivered
+            ? locale === "de"
+              ? "Geliefert. Reorder ist weiterhin möglich, falls Variant-IDs gespeichert sind."
+              : "Delivered. Reorder is still possible if variant IDs were saved."
+            : locale === "de"
+            ? "Details öffnen, Reorder starten oder Bestellung im Detail stornieren."
+            : "Open details, start reorder or cancel the order in detail view."}
         </div>
 
         <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
@@ -350,23 +391,47 @@ function OrderCard({ order, locale }) {
             {locale === "de" ? "Details" : "Details"}
           </a>
 
-          <a
-            href="#"
-            style={{
-              ...button.primary,
-              textDecoration: "none",
-              color: "#fff",
-              background: "linear-gradient(135deg, #c8a96a, #b8934f)",
-              pointerEvents: "none",
-              opacity: 0.75,
-            }}
-          >
-            {locale === "de" ? "Erneut bestellen" : "Reorder"}
-          </a>
+          {hasReorderableItems ? (
+            <a
+              href={reorderUrl}
+              style={{
+                ...button.primary,
+                textDecoration: "none",
+                color: "#fff",
+                background: "linear-gradient(135deg, #c8a96a, #b8934f)",
+              }}
+            >
+              {locale === "de" ? "Erneut bestellen" : "Reorder"}
+            </a>
+          ) : (
+            <span
+              style={{
+                ...button.primary,
+                color: "#fff",
+                background: "#c9c1b0",
+                cursor: "not-allowed",
+                opacity: 0.8,
+              }}
+            >
+              {locale === "de" ? "Erneut bestellen" : "Reorder"}
+            </span>
+          )}
         </div>
       </div>
     </div>
   );
+}
+
+function buildShopifyCartPermalink(items) {
+  const lineItems = items
+    .filter((item) => item.shopifyVariantId && Number(item.quantity || 0) > 0)
+    .map((item) => {
+      const variantId = encodeURIComponent(String(item.shopifyVariantId));
+      const qty = Math.max(1, Number(item.quantity || 1));
+      return `${variantId}:${qty}`;
+    });
+
+  return `https://letmebowl-catering.de/cart/${lineItems.join(",")}`;
 }
 
 function SummaryCard({ eyebrow, value, text }) {
@@ -559,3 +624,27 @@ function getStatusStyle(status) {
       };
   }
 }
+
+const okBadgeStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "6px 10px",
+  borderRadius: "999px",
+  background: "#edf7ee",
+  color: "#1f6b36",
+  border: "1px solid #cfe8d4",
+  fontSize: "12px",
+  fontWeight: 800,
+};
+
+const mutedBadgeStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "6px 10px",
+  borderRadius: "999px",
+  background: "#f3f3f3",
+  color: "#666",
+  border: "1px solid #dfdfdf",
+  fontSize: "12px",
+  fontWeight: 800,
+};

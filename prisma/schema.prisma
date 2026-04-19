@@ -28,10 +28,10 @@ enum RecurringInterval {
 }
 
 model Session {
-  id                  String   @id
+  id                  String    @id
   shop                String
   state               String
-  isOnline            Boolean  @default(false)
+  isOnline            Boolean   @default(false)
   scope               String?
   expires             DateTime?
   accessToken         String
@@ -39,40 +39,40 @@ model Session {
   firstName           String?
   lastName            String?
   email               String?
-  accountOwner        Boolean  @default(false)
+  accountOwner        Boolean   @default(false)
   locale              String?
-  collaborator        Boolean? @default(false)
-  emailVerified       Boolean? @default(false)
+  collaborator        Boolean?  @default(false)
+  emailVerified       Boolean?  @default(false)
   refreshToken        String?
   refreshTokenExpires DateTime?
 }
 
 model PortalUser {
-  id                String               @id @default(cuid())
+  id                String         @id @default(cuid())
   companyName       String
   firstName         String
   lastName          String
-  username          String               @unique
-  email             String               @unique
+  username          String         @unique
+  email             String         @unique
   phone             String?
   passwordHash      String
-  isActive          Boolean              @default(true)
-  isAdmin           Boolean              @default(false)
-  role              PortalUserRole       @default(ADMIN)
-  mustResetPassword Boolean              @default(false)
-  createdAt         DateTime             @default(now())
-  updatedAt         DateTime             @updatedAt
+  isActive          Boolean        @default(true)
+  isAdmin           Boolean        @default(false)
+  role              PortalUserRole @default(ADMIN)
+  mustResetPassword Boolean        @default(false)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 
-  billing           BillingProfile?
-  addresses         DeliveryAddress[]
-  authSessions      PortalSession[]
-  resetTokens       PasswordResetToken[]
-  costCenters       CostCenter[]
-  contacts          PortalContact[]
-  locations         PortalLocation[]
-  orders            PortalOrder[]
-  orderTemplates    OrderTemplate[]
-  recurringPlans    RecurringOrderPlan[]
+  billing        BillingProfile?
+  addresses      DeliveryAddress[]
+  authSessions   PortalSession[]
+  resetTokens    PasswordResetToken[]
+  costCenters    CostCenter[]
+  contacts       PortalContact[]
+  locations      PortalLocation[]
+  orders         PortalOrder[]
+  orderTemplates OrderTemplate[]
+  recurringPlans RecurringOrderPlan[]
 }
 
 model BillingProfile {
@@ -96,21 +96,21 @@ model BillingProfile {
 }
 
 model PortalLocation {
-  id           String   @id @default(cuid())
-  userId       String
-  name         String
-  companyName  String?
-  contactName  String?
-  phone        String?
-  street       String?
-  houseNumber  String?
-  postalCode   String?
-  city         String?
-  country      String?
-  notes        String?
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  companyName String?
+  contactName String?
+  phone       String?
+  street      String?
+  houseNumber String?
+  postalCode  String?
+  city        String?
+  country     String?
+  notes       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   user      PortalUser        @relation(fields: [userId], references: [id], onDelete: Cascade)
   addresses DeliveryAddress[]
@@ -121,49 +121,49 @@ model PortalLocation {
 }
 
 model DeliveryAddress {
-  id           String   @id @default(cuid())
-  userId       String
-  locationId   String?
-  label        String?
-  companyName  String?
-  contactName  String?
-  phone        String?
-  street       String
-  houseNumber  String?
-  postalCode   String
-  city         String
-  country      String
-  notes        String?
-  isDefault    Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String   @id @default(cuid())
+  userId      String
+  locationId  String?
+  label       String?
+  companyName String?
+  contactName String?
+  phone       String?
+  street      String
+  houseNumber String?
+  postalCode  String
+  city        String
+  country     String
+  notes       String?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  user      PortalUser      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  location  PortalLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
-  orders    PortalOrder[]
+  user     PortalUser      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  location PortalLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  orders   PortalOrder[]
 
   @@index([userId])
   @@index([locationId])
 }
 
 model PortalContact {
-  id           String   @id @default(cuid())
-  userId       String
-  locationId   String?
-  firstName    String
-  lastName     String?
-  email        String
-  phone        String?
-  roleLabel    String?
-  department   String?
-  isPrimary    Boolean  @default(false)
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id         String   @id @default(cuid())
+  userId     String
+  locationId String?
+  firstName  String
+  lastName   String?
+  email      String
+  phone      String?
+  roleLabel  String?
+  department String?
+  isPrimary  Boolean  @default(false)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  user      PortalUser      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  location  PortalLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
-  orders    PortalOrder[]
+  user     PortalUser      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  location PortalLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  orders   PortalOrder[]
 
   @@index([userId])
   @@index([locationId])
@@ -180,7 +180,7 @@ model CostCenter {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  user           PortalUser         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           PortalUser           @relation(fields: [userId], references: [id], onDelete: Cascade)
   orders         PortalOrder[]
   orderTemplates OrderTemplate[]
   recurringPlans RecurringOrderPlan[]
@@ -201,12 +201,12 @@ model PortalSession {
 }
 
 model PasswordResetToken {
-  id         String   @id @default(cuid())
-  userId     String
-  tokenHash  String   @unique
-  expiresAt  DateTime
-  usedAt     DateTime?
-  createdAt  DateTime @default(now())
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
 
   user PortalUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -214,40 +214,40 @@ model PasswordResetToken {
 }
 
 model PortalOrder {
-  id                 String            @id @default(cuid())
-  userId             String
-  orderNumber        String            @unique
-  orderType          String?
-  status             PortalOrderStatus @default(OPEN)
-  currency           String            @default("EUR")
+  id          String            @id @default(cuid())
+  userId      String
+  orderNumber String            @unique
+  orderType   String?
+  status      PortalOrderStatus @default(OPEN)
+  currency    String            @default("EUR")
 
   billingContactName String?
   billingEmail       String?
   billingPhone       String?
   billingCompanyName String?
 
-  deliveryAddressId  String?
-  locationId         String?
-  contactId          String?
-  costCenterId       String?
-  referenceNumber    String?
+  deliveryAddressId String?
+  locationId        String?
+  contactId         String?
+  costCenterId      String?
+  referenceNumber   String?
 
-  subtotalAmount     Decimal?          @db.Decimal(10, 2)
-  taxAmount          Decimal?          @db.Decimal(10, 2)
-  totalAmount        Decimal           @db.Decimal(10, 2)
+  subtotalAmount Decimal? @db.Decimal(10, 2)
+  taxAmount      Decimal? @db.Decimal(10, 2)
+  totalAmount    Decimal  @db.Decimal(10, 2)
 
-  notes              String?
-  deliveryDate       DateTime?
-  orderedAt          DateTime          @default(now())
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
+  notes        String?
+  deliveryDate DateTime?
+  orderedAt    DateTime  @default(now())
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  user             PortalUser       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  deliveryAddress  DeliveryAddress? @relation(fields: [deliveryAddressId], references: [id], onDelete: SetNull)
-  location         PortalLocation?  @relation(fields: [locationId], references: [id], onDelete: SetNull)
-  contact          PortalContact?   @relation(fields: [contactId], references: [id], onDelete: SetNull)
-  costCenter       CostCenter?      @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
-  items            PortalOrderItem[]
+  user            PortalUser        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveryAddress DeliveryAddress?  @relation(fields: [deliveryAddressId], references: [id], onDelete: SetNull)
+  location        PortalLocation?   @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  contact         PortalContact?    @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  costCenter      CostCenter?       @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
+  items           PortalOrderItem[]
 
   @@index([userId])
   @@index([deliveryAddressId])
@@ -257,35 +257,47 @@ model PortalOrder {
 }
 
 model PortalOrderItem {
-  id         String   @id @default(cuid())
-  orderId    String
+  id      String @id @default(cuid())
+  orderId String
+
   title      String
   quantity   Int      @default(1)
   unit       String?
   unitPrice  Decimal? @db.Decimal(10, 2)
   totalPrice Decimal? @db.Decimal(10, 2)
   notes      String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+
+  shopifyProductId String?
+  shopifyVariantId String?
+  shopifyHandle    String?
+  variantTitle     String?
+  sku              String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   order PortalOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
+  @@index([shopifyVariantId])
+  @@index([shopifyProductId])
+  @@index([shopifyHandle])
+  @@index([sku])
 }
 
 model OrderTemplate {
-  id             String              @id @default(cuid())
-  userId         String
-  costCenterId   String?
-  name           String
-  description    String?
-  orderType      String?
-  isActive       Boolean             @default(true)
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
+  id           String   @id @default(cuid())
+  userId       String
+  costCenterId String?
+  name         String
+  description  String?
+  orderType    String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  user           PortalUser          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  costCenter     CostCenter?         @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
+  user           PortalUser           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  costCenter     CostCenter?          @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
   items          OrderTemplateItem[]
   recurringPlans RecurringOrderPlan[]
 

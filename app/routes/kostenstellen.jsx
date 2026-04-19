@@ -1,4 +1,10 @@
-import { redirect, useActionData, useLoaderData, useNavigation } from "react-router";
+import {
+  Form,
+  redirect,
+  useActionData,
+  useLoaderData,
+  useNavigation,
+} from "react-router";
 import { getUserFromRequest } from "../lib/auth.server.js";
 import { getLocaleFromRequest, dict } from "../lib/i18n.js";
 import { prisma } from "../lib/db.server.js";
@@ -37,11 +43,24 @@ export async function action({ request }) {
     const name = String(formData.get("name") || "").trim();
     const code = String(formData.get("code") || "").trim();
     const description = String(formData.get("description") || "").trim();
+    const isActive = String(formData.get("isActive") || "") === "on";
 
     if (!name) {
       return {
         error: t.costCenterNameRequired,
       };
+    }
+
+    if (isActive) {
+      await prisma.costCenter.updateMany({
+        where: {
+          userId: user.id,
+          isActive: true,
+        },
+        data: {
+          isActive: false,
+        },
+      });
     }
 
     await prisma.costCenter.create({
@@ -50,11 +69,59 @@ export async function action({ request }) {
         name,
         code: code || null,
         description: description || null,
+        isActive,
       },
     });
 
     return {
       success: t.costCenterCreated,
+    };
+  }
+
+  if (intent === "setActive") {
+    const id = String(formData.get("id") || "");
+
+    if (!id) {
+      return {
+        error: t.generalError,
+      };
+    }
+
+    const existing = await prisma.costCenter.findFirst({
+      where: {
+        id,
+        userId: user.id,
+      },
+    });
+
+    if (!existing) {
+      return {
+        error: t.generalError,
+      };
+    }
+
+    await prisma.costCenter.updateMany({
+      where: {
+        userId: user.id,
+        isActive: true,
+      },
+      data: {
+        isActive: false,
+      },
+    });
+
+    await prisma.costCenter.update({
+      where: { id },
+      data: {
+        isActive: true,
+      },
+    });
+
+    return {
+      success:
+        locale === "en"
+          ? "Active cost center has been updated."
+          : "Aktive Kostenstelle wurde aktualisiert.",
     };
   }
 
@@ -95,7 +162,7 @@ export async function action({ request }) {
 }
 
 export default function KostenstellenPage() {
-  const { user, locale, costCenters } = useLoaderData();
+  const { locale, costCenters } = useLoaderData();
   const actionData = useActionData();
   const navigation = useNavigation();
   const t = dict[locale] || dict.de;
@@ -103,65 +170,205 @@ export default function KostenstellenPage() {
   const isSubmitting = navigation.state === "submitting";
 
   return (
-    <PortalLayout
-      title={t.costCentersTitle}
-      subtitle={t.costCentersText}
-    >
-      <div style={{ display: "grid", gap: "18px" }}>
+    <PortalLayout title={t.costCentersTitle} subtitle={t.costCentersText}>
+      <style>{`
+        .cost-shell {
+          display: grid;
+          gap: 18px;
+          max-width: 1080px;
+        }
+
+        .cost-card {
+          padding: 28px;
+          border-radius: 24px;
+        }
+
+        .cost-head {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 20px;
+          flex-wrap: wrap;
+          margin-bottom: 22px;
+        }
+
+        .cost-title {
+          margin: 0;
+          font-size: 24px;
+          color: ${colors.text};
+          letter-spacing: -0.02em;
+        }
+
+        .cost-text {
+          margin: 8px 0 0;
+          color: ${colors.muted};
+          font-size: 15px;
+          line-height: 1.7;
+          max-width: 760px;
+        }
+
+        .cost-list {
+          display: grid;
+          gap: 14px;
+        }
+
+        .cost-item {
+          position: relative;
+          border: 1px solid ${colors.border};
+          border-radius: 22px;
+          padding: 18px;
+          background: #fff;
+          transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+        }
+
+        .cost-item:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 14px 36px rgba(24,24,24,0.05);
+          border-color: #d8c49a;
+        }
+
+        .cost-item.active {
+          background: linear-gradient(180deg, #fffdf8 0%, #fcf8ef 100%);
+          border-color: #d8b46a;
+          box-shadow: 0 18px 42px rgba(200,169,106,0.12);
+        }
+
+        .cost-item-top {
+          display: flex;
+          justify-content: space-between;
+          gap: 18px;
+          align-items: flex-start;
+          flex-wrap: wrap;
+          margin-bottom: 10px;
+        }
+
+        .cost-item-title {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+          margin-bottom: 8px;
+        }
+
+        .cost-name {
+          margin: 0;
+          font-size: 19px;
+          color: ${colors.text};
+        }
+
+        .cost-badge {
+          display: inline-flex;
+          align-items: center;
+          padding: 6px 10px;
+          border-radius: 999px;
+          background: #f6f1e8;
+          border: 1px solid #eadfc8;
+          font-size: 12px;
+          font-weight: 700;
+          color: #8d6a2f;
+        }
+
+        .cost-active-badge {
+          display: inline-flex;
+          align-items: center;
+          padding: 6px 10px;
+          border-radius: 999px;
+          background: #f2eadb;
+          color: #8d6a2f;
+          font-size: 12px;
+          font-weight: 800;
+        }
+
+        .cost-meta {
+          color: ${colors.muted};
+          font-size: 13px;
+          line-height: 1.6;
+        }
+
+        .cost-desc {
+          margin: 0 0 10px;
+          color: ${colors.muted};
+          font-size: 14px;
+          line-height: 1.7;
+          white-space: pre-wrap;
+        }
+
+        .cost-actions {
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+          margin-top: 14px;
+          padding-top: 14px;
+          border-top: 1px solid rgba(0,0,0,0.06);
+        }
+
+        .cost-select-form {
+          margin: 0;
+        }
+
+        .cost-select-button {
+          width: 100%;
+          border: none;
+          background: transparent;
+          padding: 0;
+          margin: 0;
+          text-align: left;
+          cursor: pointer;
+          font: inherit;
+        }
+
+        .cost-hint {
+          margin-top: 10px;
+          color: ${colors.muted};
+          font-size: 13px;
+          line-height: 1.6;
+        }
+
+        .checkbox-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-top: 16px;
+          color: ${colors.text};
+          font-weight: 600;
+          font-size: 14px;
+        }
+
+        @media (max-width: 700px) {
+          .cost-card {
+            padding: 20px 16px;
+            border-radius: 18px;
+          }
+
+          .cost-title {
+            font-size: 22px;
+          }
+
+          .cost-item {
+            padding: 16px;
+            border-radius: 18px;
+          }
+        }
+      `}</style>
+
+      <div className="cost-shell">
         <section
+          className="cost-card"
           style={{
             ...card.base,
-            padding: "28px",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-start",
-              justifyContent: "space-between",
-              gap: "20px",
-              flexWrap: "wrap",
-              marginBottom: "22px",
-            }}
-          >
+          <div className="cost-head">
             <div>
-              <h2
-                style={{
-                  margin: 0,
-                  fontSize: "22px",
-                  color: colors.text,
-                }}
-              >
-                {t.addCostCenter}
-              </h2>
-
-              <p
-                style={{
-                  margin: "8px 0 0",
-                  color: colors.muted,
-                  fontSize: "14px",
-                  lineHeight: 1.6,
-                  maxWidth: "720px",
-                }}
-              >
-                {t.costCentersIntro}
-              </p>
+              <h2 className="cost-title">{t.addCostCenter}</h2>
+              <p className="cost-text">{t.costCentersIntro}</p>
             </div>
           </div>
 
-          {actionData?.error ? (
-            <div style={messageError}>
-              {actionData.error}
-            </div>
-          ) : null}
+          {actionData?.error ? <div style={messageError}>{actionData.error}</div> : null}
+          {actionData?.success ? <div style={messageSuccess}>{actionData.success}</div> : null}
 
-          {actionData?.success ? (
-            <div style={messageSuccess}>
-              {actionData.success}
-            </div>
-          ) : null}
-
-          <form method="post">
+          <Form method="post">
             <input type="hidden" name="intent" value="create" />
 
             <div
@@ -203,45 +410,37 @@ export default function KostenstellenPage() {
               </label>
             </div>
 
+            <label className="checkbox-row">
+              <input type="checkbox" name="isActive" />
+              {locale === "en"
+                ? "Use as active cost center"
+                : "Als aktive Kostenstelle verwenden"}
+            </label>
+
             <div style={{ marginTop: "18px" }}>
               <button
                 type="submit"
-                style={button.primary}
+                style={{
+                  ...button.primary,
+                  background: "linear-gradient(135deg, #c8a96a, #b8934f)",
+                }}
                 disabled={isSubmitting}
               >
                 {isSubmitting ? t.saving : t.addCostCenter}
               </button>
             </div>
-          </form>
+          </Form>
         </section>
 
         <section
+          className="cost-card"
           style={{
             ...card.base,
-            padding: "28px",
           }}
         >
           <div style={{ marginBottom: "20px" }}>
-            <h2
-              style={{
-                margin: 0,
-                fontSize: "22px",
-                color: colors.text,
-              }}
-            >
-              {t.existingCostCenters}
-            </h2>
-
-            <p
-              style={{
-                margin: "8px 0 0",
-                color: colors.muted,
-                fontSize: "14px",
-                lineHeight: 1.6,
-              }}
-            >
-              {t.costCentersListText}
-            </p>
+            <h2 className="cost-title">{t.existingCostCenters}</h2>
+            <p className="cost-text">{t.costCentersListText}</p>
           </div>
 
           {costCenters.length === 0 ? (
@@ -258,90 +457,90 @@ export default function KostenstellenPage() {
               {t.noCostCenters}
             </div>
           ) : (
-            <div style={{ display: "grid", gap: "14px" }}>
+            <div className="cost-list">
               {costCenters.map((item) => (
                 <div
                   key={item.id}
-                  style={{
-                    border: `1px solid ${colors.border}`,
-                    borderRadius: "18px",
-                    padding: "18px",
-                    background: "#fff",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: "18px",
-                    alignItems: "flex-start",
-                    flexWrap: "wrap",
-                  }}
+                  className={`cost-item ${item.isActive ? "active" : ""}`}
                 >
-                  <div style={{ minWidth: 0, flex: "1 1 320px" }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                        flexWrap: "wrap",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      <h3
-                        style={{
-                          margin: 0,
-                          fontSize: "18px",
-                          color: colors.text,
-                        }}
-                      >
-                        {item.name}
-                      </h3>
-
-                      {item.code ? (
-                        <span style={badgeStyle}>
-                          {t.costCenterCode}: {item.code}
-                        </span>
-                      ) : null}
-                    </div>
-
-                    {item.description ? (
-                      <p
-                        style={{
-                          margin: "0 0 10px",
-                          color: colors.muted,
-                          fontSize: "14px",
-                          lineHeight: 1.6,
-                          whiteSpace: "pre-wrap",
-                        }}
-                      >
-                        {item.description}
-                      </p>
-                    ) : null}
-
-                    <div
-                      style={{
-                        color: colors.muted,
-                        fontSize: "13px",
-                      }}
-                    >
-                      {t.createdAtLabel}: {formatDate(item.createdAt, locale)}
-                    </div>
-                  </div>
-
-                  <form method="post">
-                    <input type="hidden" name="intent" value="delete" />
+                  <Form method="post" className="cost-select-form">
+                    <input type="hidden" name="intent" value="setActive" />
                     <input type="hidden" name="id" value={item.id} />
 
-                    <button
-                      type="submit"
-                      style={dangerButton}
-                      onClick={(event) => {
-                        const ok = window.confirm(t.confirmDeleteCostCenter);
-                        if (!ok) {
-                          event.preventDefault();
-                        }
-                      }}
-                    >
-                      {t.delete}
+                    <button type="submit" className="cost-select-button">
+                      <div className="cost-item-top">
+                        <div style={{ minWidth: 0, flex: "1 1 320px" }}>
+                          <div className="cost-item-title">
+                            <h3 className="cost-name">{item.name}</h3>
+
+                            {item.code ? (
+                              <span className="cost-badge">
+                                {t.costCenterCode}: {item.code}
+                              </span>
+                            ) : null}
+
+                            {item.isActive ? (
+                              <span className="cost-active-badge">
+                                {locale === "en"
+                                  ? "Active cost center"
+                                  : "Aktive Kostenstelle"}
+                              </span>
+                            ) : null}
+                          </div>
+
+                          {item.description ? (
+                            <p className="cost-desc">{item.description}</p>
+                          ) : null}
+
+                          <div className="cost-meta">
+                            {t.createdAtLabel}: {formatDate(item.createdAt, locale)}
+                          </div>
+
+                          <div className="cost-hint">
+                            {item.isActive
+                              ? locale === "en"
+                                ? "This cost center is currently used for future orders."
+                                : "Diese Kostenstelle wird aktuell für künftige Bestellungen verwendet."
+                              : locale === "en"
+                              ? "Click to use this cost center for future orders."
+                              : "Klicke, um diese Kostenstelle für künftige Bestellungen zu verwenden."}
+                          </div>
+                        </div>
+                      </div>
                     </button>
-                  </form>
+                  </Form>
+
+                  <div className="cost-actions">
+                    {!item.isActive ? (
+                      <Form method="post">
+                        <input type="hidden" name="intent" value="setActive" />
+                        <input type="hidden" name="id" value={item.id} />
+                        <button type="submit" style={button.secondary}>
+                          {locale === "en"
+                            ? "Use this cost center"
+                            : "Diese Kostenstelle nutzen"}
+                        </button>
+                      </Form>
+                    ) : null}
+
+                    <Form method="post">
+                      <input type="hidden" name="intent" value="delete" />
+                      <input type="hidden" name="id" value={item.id} />
+
+                      <button
+                        type="submit"
+                        style={dangerButton}
+                        onClick={(event) => {
+                          const ok = window.confirm(t.confirmDeleteCostCenter);
+                          if (!ok) {
+                            event.preventDefault();
+                          }
+                        }}
+                      >
+                        {t.delete}
+                      </button>
+                    </Form>
+                  </div>
                 </div>
               ))}
             </div>
@@ -420,18 +619,6 @@ const textareaStyle = {
   resize: "vertical",
   fontFamily:
     'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-};
-
-const badgeStyle = {
-  display: "inline-flex",
-  alignItems: "center",
-  padding: "6px 10px",
-  borderRadius: "999px",
-  background: "#f6f1e8",
-  border: "1px solid #eadfc8",
-  fontSize: "12px",
-  fontWeight: 700,
-  color: "#8d6a2f",
 };
 
 const messageSuccess = {
