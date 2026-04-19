@@ -12,46 +12,9 @@ export async function loader({ request }) {
     throw redirect(`/login?lang=${locale}`);
   }
 
-  // Noch Platzhalterdaten, aber jetzt strukturiert und systemisch eingebunden
-  // Später hier durch echte DB-Rechnungen ersetzen
-  const invoices = [
-    {
-      id: "inv_1",
-      number: "RE-2026-001",
-      date: "2026-04-12",
-      status: "paid",
-      amountCents: 18950,
-      currency: "EUR",
-      note:
-        locale === "de"
-          ? "Zahlung eingegangen"
-          : "Payment received",
-    },
-    {
-      id: "inv_2",
-      number: "RE-2026-002",
-      date: "2026-04-02",
-      status: "open",
-      amountCents: 8640,
-      currency: "EUR",
-      note:
-        locale === "de"
-          ? "Noch offen"
-          : "Still open",
-    },
-    {
-      id: "inv_3",
-      number: "RE-2026-003",
-      date: "2026-03-21",
-      status: "paid",
-      amountCents: 42000,
-      currency: "EUR",
-      note:
-        locale === "de"
-          ? "Zahlung eingegangen"
-          : "Payment received",
-    },
-  ];
+  // Noch keine echten Rechnungen angebunden:
+  // Hier später DB-Daten aus deiner Admin-/Upload-Oberfläche laden
+  const invoices = [];
 
   const paidInvoices = invoices.filter((invoice) => invoice.status === "paid");
   const openInvoices = invoices.filter((invoice) => invoice.status === "open");
@@ -247,70 +210,19 @@ export default function RechnungenPage() {
           line-height: 1.6;
         }
 
-        .invoice-table {
-          display: grid;
-          gap: 10px;
-        }
-
-        .invoice-row {
-          display: grid;
-          grid-template-columns: minmax(160px, 1.1fr) minmax(120px, 0.8fr) minmax(120px, 0.8fr) minmax(120px, 0.8fr) minmax(180px, 1fr);
-          gap: 10px;
-          align-items: center;
-          padding: 16px;
-          border: 1px solid ${colors.border};
-          border-radius: 18px;
-          background: #fff;
-        }
-
-        .invoice-number {
-          font-size: 18px;
-          font-weight: 800;
-          color: ${colors.text};
-          line-height: 1.3;
-          word-break: break-word;
-        }
-
-        .invoice-note {
-          font-size: 13px;
-          line-height: 1.5;
-          color: ${colors.muted};
-          margin-top: 4px;
-        }
-
-        .cell-label {
-          font-size: 11px;
-          font-weight: 800;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          color: ${colors.muted};
-          margin-bottom: 4px;
-        }
-
-        .cell-value {
-          font-size: 14px;
-          font-weight: 700;
-          color: ${colors.text};
-          line-height: 1.45;
-          word-break: break-word;
-        }
-
-        .status-badge {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          padding: 8px 12px;
-          border-radius: 999px;
-          font-size: 12px;
-          font-weight: 800;
-          white-space: nowrap;
-        }
-
         .empty-state {
           border: 1px dashed ${colors.border};
-          border-radius: 18px;
-          padding: 20px;
+          border-radius: 20px;
+          padding: 26px;
           background: #fff;
+        }
+
+        .empty-title {
+          margin: 0 0 10px;
+          font-size: 24px;
+          line-height: 1.1;
+          color: ${colors.text};
+          letter-spacing: -0.02em;
         }
 
         .empty-text {
@@ -318,16 +230,41 @@ export default function RechnungenPage() {
           color: ${colors.muted};
           font-size: 15px;
           line-height: 1.7;
+          max-width: 760px;
+        }
+
+        .future-box {
+          margin-top: 18px;
+          display: grid;
+          gap: 10px;
+        }
+
+        .future-item {
+          padding: 14px 16px;
+          border-radius: 16px;
+          border: 1px solid ${colors.border};
+          background: #fcfbf8;
+        }
+
+        .future-label {
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: ${colors.muted};
+          margin-bottom: 6px;
+        }
+
+        .future-value {
+          font-size: 14px;
+          line-height: 1.6;
+          font-weight: 600;
+          color: ${colors.text};
         }
 
         @media (max-width: 1100px) {
           .invoice-top {
             grid-template-columns: 1fr;
-          }
-
-          .invoice-row {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            align-items: flex-start;
           }
         }
 
@@ -342,10 +279,6 @@ export default function RechnungenPage() {
           .account-row {
             grid-template-columns: 1fr;
             gap: 4px;
-          }
-
-          .invoice-row {
-            grid-template-columns: 1fr;
           }
 
           .top-title {
@@ -363,19 +296,19 @@ export default function RechnungenPage() {
             }}
           >
             <div className="eyebrow">
-              {locale === "de" ? "Rechnungsstatus" : "Invoice status"}
+              {locale === "de" ? "Rechnungsbereich" : "Invoice area"}
             </div>
 
             <h2 className="top-title">
               {locale === "de"
-                ? "Zahlungsstände klar und übersichtlich verwalten."
-                : "Manage payment statuses clearly and efficiently."}
+                ? "Rechnungen später sauber pro Firma bereitstellen."
+                : "Provide invoices cleanly per company later on."}
             </h2>
 
             <p className="top-text">
               {locale === "de"
-                ? "Hier findest du alle aktuellen Rechnungen deines Firmenkontos. Die Liste ist so vorbereitet, dass später echte PDF-Belege und Detailansichten sauber ergänzt werden können."
-                : "Here you can find all current invoices for your business account. The structure is prepared so real PDF documents and detailed views can be added later."}
+                ? "Aktuell sind noch keine echten Rechnungen im Portal hinterlegt. Diese Seite ist bewusst leer vorbereitet, damit du später über deine Admin-Oberfläche PDF-Rechnungen hochladen und einzelnen Firmenkonten sauber zuordnen kannst."
+                : "There are currently no real invoices stored in the portal. This page is intentionally prepared as an empty base so you can later upload PDF invoices through your admin interface and assign them cleanly to specific company accounts."}
             </p>
 
             <div className="account-grid">
@@ -414,8 +347,8 @@ export default function RechnungenPage() {
                 value={String(summary.totalCount)}
                 sub={
                   locale === "de"
-                    ? "Alle aktuell gelisteten Rechnungen."
-                    : "All currently listed invoices."
+                    ? "Aktuell sichtbare Rechnungen."
+                    : "Currently visible invoices."
                 }
               />
 
@@ -465,32 +398,49 @@ export default function RechnungenPage() {
               <h3 className="list-title">{t.invoices}</h3>
               <p className="list-subtitle">
                 {locale === "de"
-                  ? "Rechnungsnummer, Datum, Betrag und Zahlungsstatus auf einen Blick."
-                  : "Invoice number, date, amount and payment status at a glance."}
+                  ? "Hier erscheinen später nur echte, hochgeladene PDF-Rechnungen."
+                  : "Only real uploaded PDF invoices will appear here later."}
               </p>
             </div>
           </div>
 
-          {invoices.length > 0 ? (
-            <div className="invoice-table">
-              {invoices.map((invoice) => (
-                <InvoiceRow
-                  key={invoice.id}
-                  invoice={invoice}
-                  locale={locale}
-                  t={t}
-                />
-              ))}
+          <div className="empty-state">
+            <h4 className="empty-title">
+              {locale === "de"
+                ? "Noch keine Rechnungen hinterlegt"
+                : "No invoices uploaded yet"}
+            </h4>
+
+            <p className="empty-text">
+              {locale === "de"
+                ? "Sobald du in deiner späteren Admin-Oberfläche Rechnungen als PDF hochlädst und dieser Firma zuweist, erscheinen sie genau hier."
+                : "As soon as you upload PDF invoices in your future admin interface and assign them to this company, they will appear here."}
+            </p>
+
+            <div className="future-box">
+              <div className="future-item">
+                <div className="future-label">
+                  {locale === "de" ? "Späterer Ablauf" : "Later workflow"}
+                </div>
+                <div className="future-value">
+                  {locale === "de"
+                    ? "Admin lädt PDF hoch → Rechnung wird einer Firma zugeordnet → Kunde sieht nur seine eigenen Rechnungen im Portal."
+                    : "Admin uploads PDF → invoice is assigned to one company → customer only sees their own invoices in the portal."}
+                </div>
+              </div>
+
+              <div className="future-item">
+                <div className="future-label">
+                  {locale === "de" ? "Wichtiger Vorteil" : "Key benefit"}
+                </div>
+                <div className="future-value">
+                  {locale === "de"
+                    ? "Du vermeidest Fake-Daten im Frontend und baust direkt auf einer sauberen echten Struktur auf."
+                    : "You avoid fake frontend data and build directly on a clean real structure."}
+                </div>
+              </div>
             </div>
-          ) : (
-            <div className="empty-state">
-              <p className="empty-text">
-                {locale === "de"
-                  ? "Diesem Konto sind aktuell noch keine Rechnungen zugeordnet."
-                  : "No invoices are currently assigned to this account."}
-              </p>
-            </div>
-          )}
+          </div>
         </section>
       </div>
     </PortalLayout>
@@ -505,80 +455,6 @@ function StatBox({ label, value, sub, className = "" }) {
       <div className="stat-sub">{sub}</div>
     </div>
   );
-}
-
-function InvoiceRow({ invoice, locale, t }) {
-  const paid = invoice.status === "paid";
-
-  return (
-    <div className="invoice-row">
-      <div>
-        <div className="invoice-number">{invoice.number}</div>
-        <div className="invoice-note">{invoice.note || ""}</div>
-      </div>
-
-      <div>
-        <div className="cell-label">{t.date}</div>
-        <div className="cell-value">{formatDate(invoice.date, locale)}</div>
-      </div>
-
-      <div>
-        <div className="cell-label">{t.amount}</div>
-        <div className="cell-value">
-          {formatMoney(invoice.amountCents, invoice.currency || "EUR", locale)}
-        </div>
-      </div>
-
-      <div>
-        <div className="cell-label">{t.status}</div>
-        <div className="cell-value">
-          <StatusBadge label={paid ? t.paid : t.open} paid={paid} />
-        </div>
-      </div>
-
-      <div>
-        <div className="cell-label">
-          {locale === "de" ? "Hinweis" : "Note"}
-        </div>
-        <div className="cell-value">
-          {paid
-            ? locale === "de"
-              ? "Abgeschlossen"
-              : "Completed"
-            : locale === "de"
-            ? "Zahlung ausstehend"
-            : "Payment pending"}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function StatusBadge({ label, paid }) {
-  return (
-    <span
-      className="status-badge"
-      style={{
-        background: paid ? "#edf7ee" : "#fff6e9",
-        color: paid ? "#1f6b36" : "#8a5a00",
-        border: paid ? "1px solid #cfe8d4" : "1px solid #f0dfbf",
-      }}
-    >
-      {label}
-    </span>
-  );
-}
-
-function formatDate(value, locale) {
-  try {
-    return new Intl.DateTimeFormat(locale === "de" ? "de-DE" : "en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    }).format(new Date(value));
-  } catch {
-    return value;
-  }
 }
 
 function formatMoney(valueInCents, currency = "EUR", locale) {
