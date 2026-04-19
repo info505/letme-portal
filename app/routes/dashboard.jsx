@@ -33,17 +33,37 @@ export async function loader({ request }) {
     },
   });
 
+  const deliveryAddressCount = await prisma.deliveryAddress.count({
+    where: {
+      userId: user.id,
+    },
+  });
+
+  const costCenterCount = await prisma.costCenter.count({
+    where: {
+      userId: user.id,
+    },
+  });
+
   return {
     user,
     locale,
     defaultDeliveryAddress,
     activeCostCenter,
+    deliveryAddressCount,
+    costCenterCount,
   };
 }
 
 export default function DashboardPage() {
-  const { user, locale, defaultDeliveryAddress, activeCostCenter } =
-    useLoaderData();
+  const {
+    user,
+    locale,
+    defaultDeliveryAddress,
+    activeCostCenter,
+    deliveryAddressCount,
+    costCenterCount,
+  } = useLoaderData();
 
   const t = dict[locale] || dict.de;
 
@@ -51,6 +71,8 @@ export default function DashboardPage() {
     const form = document.createElement("form");
     form.method = "POST";
     form.action = "https://letmebowl-catering.de/cart/update";
+
+    const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim();
 
     const attrs = {
       "attributes[Lieferadresse_ID]": defaultDeliveryAddress?.id || "",
@@ -68,9 +90,17 @@ export default function DashboardPage() {
             .filter(Boolean)
             .join(", ")
         : "",
+
       "attributes[Kostenstelle_ID]": activeCostCenter?.id || "",
       "attributes[Kostenstelle_Name]": activeCostCenter?.name || "",
       "attributes[Kostenstelle_Code]": activeCostCenter?.code || "",
+
+      "attributes[Kontaktname]": fullName || "",
+      "attributes[Kontakt Vorname]": user?.firstName || "",
+      "attributes[Kontakt Nachname]": user?.lastName || "",
+      "attributes[Telefon]": user?.phone || "",
+      "attributes[E-Mail]": user?.email || "",
+
       return_to: "/pages/bestellen",
     };
 
@@ -88,12 +118,9 @@ export default function DashboardPage() {
 
   return (
     <PortalLayout
-      title={locale === "en" ? "Dashboard" : "Dashboard"}
-      subtitle={
-        locale === "en"
-          ? "Your central business account for orders, delivery addresses and internal order setup."
-          : "Dein zentrales Firmenkonto für Bestellungen, Lieferadressen und interne Bestellstruktur."
-      }
+      title={`${t.welcome}, ${user.firstName || user.companyName || "User"}`}
+      subtitle={t.accountText}
+      orderNowOnClick={handleOrderNow}
     >
       <style>{`
         .dashboard-shell {
@@ -102,36 +129,36 @@ export default function DashboardPage() {
           max-width: 1120px;
         }
 
-        .dashboard-hero {
+        .hero-card {
           position: relative;
           overflow: hidden;
-          padding: 34px;
+          padding: 30px;
           border-radius: 28px;
           background:
-            radial-gradient(circle at top left, rgba(200,169,106,0.12), transparent 30%),
+            radial-gradient(circle at top left, rgba(200,169,106,0.12), transparent 28%),
             linear-gradient(180deg, #fcfaf6 0%, #f7f2e8 100%);
           border: 1px solid rgba(226, 218, 203, 0.95);
           box-shadow: 0 18px 50px rgba(24,24,24,0.05);
         }
 
-        .dashboard-hero::before {
+        .hero-card::before {
           content: "";
           position: absolute;
           inset: 0;
           pointer-events: none;
-          background: linear-gradient(180deg, rgba(255,255,255,0.35), transparent 30%);
+          background: linear-gradient(180deg, rgba(255,255,255,0.32), transparent 30%);
         }
 
-        .dashboard-hero-grid {
+        .hero-grid {
           position: relative;
           z-index: 1;
           display: grid;
-          grid-template-columns: minmax(0, 1.2fr) minmax(280px, 360px);
-          gap: 22px;
+          grid-template-columns: minmax(0, 1.3fr) minmax(280px, 380px);
+          gap: 20px;
           align-items: stretch;
         }
 
-        .dashboard-eyebrow {
+        .hero-eyebrow {
           display: inline-flex;
           align-items: center;
           padding: 8px 12px;
@@ -146,53 +173,70 @@ export default function DashboardPage() {
           margin-bottom: 16px;
         }
 
-        .dashboard-copy {
+        .hero-copy {
           margin: 16px 0 0;
-          max-width: 700px;
+          max-width: 640px;
           color: ${colors.muted};
           line-height: 1.75;
           font-size: 16px;
         }
 
-        .dashboard-actions {
+        .hero-actions {
           display: flex;
           flex-wrap: wrap;
           gap: 12px;
           margin-top: 24px;
         }
 
-        .dashboard-user-card {
+        .hero-side {
           display: grid;
           gap: 12px;
         }
 
-        .dashboard-user-box {
-          padding: 20px;
-          border-radius: 22px;
-          background: rgba(255,255,255,0.82);
+        .mini-stat {
+          padding: 18px;
+          border-radius: 20px;
+          background: rgba(255,255,255,0.8);
           border: 1px solid rgba(227, 219, 204, 0.95);
           box-shadow: 0 10px 28px rgba(24,24,24,0.03);
         }
 
-        .dashboard-main-grid {
+        .quick-grid {
           display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 18px;
+          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+          gap: 16px;
         }
 
-        .dashboard-card {
+        .info-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          gap: 16px;
+        }
+
+        .section-card {
           padding: 26px;
           border-radius: 24px;
         }
 
-        .dashboard-card-title {
+        .section-title {
           margin: 0 0 18px;
-          font-size: 24px;
+          font-size: 26px;
           color: ${colors.text};
           letter-spacing: -0.02em;
         }
 
-        .dashboard-badge {
+        .address-box {
+          border: 1px solid ${colors.border};
+          border-radius: 20px;
+          padding: 18px;
+          background: #fff;
+        }
+
+        .address-box--active {
+          background: #fcf8ef;
+        }
+
+        .address-badge {
           display: inline-flex;
           align-items: center;
           padding: 6px 10px;
@@ -201,59 +245,44 @@ export default function DashboardPage() {
           color: #8d6a2f;
           font-size: 12px;
           font-weight: 800;
-          margin-bottom: 12px;
+          margin-bottom: 10px;
         }
 
-        .dashboard-empty-note {
-          margin: 0;
+        .empty-note {
           color: ${colors.muted};
           font-size: 15px;
           line-height: 1.7;
+          margin: 0;
         }
 
-        .dashboard-soft-link {
+        .soft-link {
           text-decoration: none;
           color: ${colors.text};
           font-weight: 700;
         }
 
-        .dashboard-overview-grid {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 14px;
-        }
-
-        .dashboard-overview-box {
-          border: 1px solid ${colors.border};
-          border-radius: 18px;
-          padding: 18px;
-          background: #fff;
-        }
-
         @media (max-width: 980px) {
-          .dashboard-hero-grid,
-          .dashboard-main-grid,
-          .dashboard-overview-grid {
+          .hero-grid {
             grid-template-columns: 1fr;
           }
 
-          .dashboard-hero,
-          .dashboard-card {
+          .hero-card,
+          .section-card {
             padding: 20px 16px;
             border-radius: 20px;
           }
 
-          .dashboard-card-title {
+          .section-title {
             font-size: 22px;
           }
         }
       `}</style>
 
       <div className="dashboard-shell">
-        <section className="dashboard-hero">
-          <div className="dashboard-hero-grid">
+        <section className="hero-card">
+          <div className="hero-grid">
             <div>
-              <div className="dashboard-eyebrow">
+              <div className="hero-eyebrow">
                 {locale === "en" ? "Business account" : "Firmenkonto"}
               </div>
 
@@ -268,17 +297,17 @@ export default function DashboardPage() {
                 }}
               >
                 {locale === "en"
-                  ? "Manage your business orders centrally."
-                  : "Verwalte deine Firmenbestellungen zentral an einem Ort."}
+                  ? "Manage orders, addresses and internal ordering workflows centrally."
+                  : "Verwalte Bestellungen, Adressen und interne Bestellabläufe zentral an einem Ort."}
               </h1>
 
-              <p className="dashboard-copy">
+              <p className="hero-copy">
                 {locale === "en"
-                  ? "Use your saved delivery address and cost center directly for the next catering order."
-                  : "Nutze deine gespeicherte Lieferadresse und Kostenstelle direkt für die nächste Catering-Bestellung."}
+                  ? "Use your saved company data for future catering orders and keep delivery addresses, billing details and internal structures clearly organized."
+                  : "Nutze deine hinterlegten Firmendaten für künftige Catering-Bestellungen und halte Lieferadressen, Rechnungsdaten und interne Strukturen übersichtlich an einem Ort."}
               </p>
 
-              <div className="dashboard-actions">
+              <div className="hero-actions">
                 <button
                   type="button"
                   onClick={handleOrderNow}
@@ -289,7 +318,7 @@ export default function DashboardPage() {
                     alignItems: "center",
                     justifyContent: "center",
                     fontWeight: 800,
-                    minHeight: "52px",
+                    minHeight: "50px",
                     background: "linear-gradient(135deg, #c8a96a, #b8934f)",
                     boxShadow: "0 14px 30px rgba(200,169,106,0.2)",
                     border: "none",
@@ -309,7 +338,7 @@ export default function DashboardPage() {
                     alignItems: "center",
                     justifyContent: "center",
                     fontWeight: 700,
-                    minHeight: "52px",
+                    minHeight: "50px",
                     background: "#fff",
                   }}
                 >
@@ -318,112 +347,46 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="dashboard-user-card">
-              <div className="dashboard-user-box">
-                <div
-                  style={{
-                    fontSize: "12px",
-                    fontWeight: 800,
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                    color: colors.muted,
-                    marginBottom: "8px",
-                  }}
-                >
-                  {locale === "en" ? "Company" : "Firma"}
-                </div>
-
-                <div
-                  style={{
-                    fontSize: "22px",
-                    fontWeight: 800,
-                    color: colors.text,
-                    lineHeight: 1.3,
-                    wordBreak: "break-word",
-                  }}
-                >
-                  {user.companyName || "—"}
-                </div>
-
-                <div
-                  style={{
-                    marginTop: "10px",
-                    color: colors.muted,
-                    fontSize: "14px",
-                    lineHeight: 1.6,
-                    wordBreak: "break-word",
-                  }}
-                >
-                  {user.email || "—"}
-                </div>
-              </div>
-
-              <div className="dashboard-user-box">
-                <div
-                  style={{
-                    fontSize: "12px",
-                    fontWeight: 800,
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                    color: colors.muted,
-                    marginBottom: "8px",
-                  }}
-                >
-                  {locale === "en" ? "User" : "Benutzer"}
-                </div>
-
-                <div
-                  style={{
-                    fontSize: "18px",
-                    fontWeight: 800,
-                    color: colors.text,
-                    lineHeight: 1.4,
-                    wordBreak: "break-word",
-                  }}
-                >
-                  {[user.firstName, user.lastName].filter(Boolean).join(" ") ||
-                    user.username ||
-                    "—"}
-                </div>
-
-                <div
-                  style={{
-                    marginTop: "10px",
-                    color: colors.muted,
-                    fontSize: "14px",
-                    lineHeight: 1.6,
-                    wordBreak: "break-word",
-                  }}
-                >
-                  {user.phone || "—"}
-                </div>
-              </div>
+            <div className="hero-side">
+              <MiniStat
+                label={locale === "en" ? "Company" : "Firma"}
+                value={user.companyName || "—"}
+              />
+              <MiniStat
+                label={locale === "en" ? "User" : "Benutzer"}
+                value={[user.firstName, user.lastName].filter(Boolean).join(" ") || "—"}
+              />
+              <MiniStat
+                label={locale === "en" ? "Email" : "E-Mail"}
+                value={user.email || "—"}
+              />
+              <MiniStat
+                label={locale === "en" ? "Phone" : "Telefon"}
+                value={user.phone || "—"}
+              />
             </div>
           </div>
         </section>
 
         <section
-          className="dashboard-card"
+          className="section-card"
           style={{
             ...card.base,
           }}
         >
-          <h2 className="dashboard-card-title">
+          <h2 className="section-title">
             {locale === "en"
               ? "Current order setup"
               : "Aktuelle Bestellgrundlage"}
           </h2>
 
-          <div className="dashboard-main-grid">
+          <div className="quick-grid">
             <div
-              style={{
-                border: `1px solid ${colors.border}`,
-                borderRadius: "20px",
-                padding: "20px",
-                background: defaultDeliveryAddress ? "#fcf8ef" : "#fff",
-              }}
+              className={`address-box ${
+                defaultDeliveryAddress ? "address-box--active" : ""
+              }`}
             >
-              <div className="dashboard-badge">
+              <div className="address-badge">
                 {locale === "en"
                   ? "Active delivery address"
                   : "Aktive Lieferadresse"}
@@ -433,10 +396,7 @@ export default function DashboardPage() {
                 <>
                   <AddressLine
                     strong
-                    value={
-                      defaultDeliveryAddress.label ||
-                      (locale === "en" ? "Delivery address" : "Lieferadresse")
-                    }
+                    value={defaultDeliveryAddress.label || t.shippingAddressesNav}
                   />
                   <AddressLine value={defaultDeliveryAddress.companyName} />
                   <AddressLine value={defaultDeliveryAddress.contactName} />
@@ -464,17 +424,17 @@ export default function DashboardPage() {
                   <div style={{ marginTop: "14px" }}>
                     <a
                       href={withLang("/lieferadressen", locale)}
-                      className="dashboard-soft-link"
+                      className="soft-link"
                     >
                       {locale === "en"
-                        ? "Manage delivery addresses"
-                        : "Lieferadressen verwalten"}
+                        ? "Change delivery address"
+                        : "Lieferadresse ändern"}
                     </a>
                   </div>
                 </>
               ) : (
                 <>
-                  <p className="dashboard-empty-note">
+                  <p className="empty-note">
                     {locale === "en"
                       ? "No active delivery address has been selected yet."
                       : "Es wurde noch keine aktive Lieferadresse ausgewählt."}
@@ -483,7 +443,7 @@ export default function DashboardPage() {
                   <div style={{ marginTop: "14px" }}>
                     <a
                       href={withLang("/lieferadressen", locale)}
-                      className="dashboard-soft-link"
+                      className="soft-link"
                     >
                       {locale === "en"
                         ? "Add delivery address"
@@ -495,14 +455,11 @@ export default function DashboardPage() {
             </div>
 
             <div
-              style={{
-                border: `1px solid ${colors.border}`,
-                borderRadius: "20px",
-                padding: "20px",
-                background: activeCostCenter ? "#fcf8ef" : "#fff",
-              }}
+              className={`address-box ${
+                activeCostCenter ? "address-box--active" : ""
+              }`}
             >
-              <div className="dashboard-badge">
+              <div className="address-badge">
                 {locale === "en"
                   ? "Active cost center"
                   : "Aktive Kostenstelle"}
@@ -521,17 +478,17 @@ export default function DashboardPage() {
                   <div style={{ marginTop: "14px" }}>
                     <a
                       href={withLang("/kostenstellen", locale)}
-                      className="dashboard-soft-link"
+                      className="soft-link"
                     >
                       {locale === "en"
-                        ? "Manage cost centers"
-                        : "Kostenstellen verwalten"}
+                        ? "Change cost center"
+                        : "Kostenstelle ändern"}
                     </a>
                   </div>
                 </>
               ) : (
                 <>
-                  <p className="dashboard-empty-note">
+                  <p className="empty-note">
                     {locale === "en"
                       ? "No active cost center has been selected yet."
                       : "Es wurde noch keine aktive Kostenstelle ausgewählt."}
@@ -540,7 +497,7 @@ export default function DashboardPage() {
                   <div style={{ marginTop: "14px" }}>
                     <a
                       href={withLang("/kostenstellen", locale)}
-                      className="dashboard-soft-link"
+                      className="soft-link"
                     >
                       {locale === "en"
                         ? "Add cost center"
@@ -554,32 +511,23 @@ export default function DashboardPage() {
         </section>
 
         <section
-          className="dashboard-card"
+          className="section-card"
           style={{
             ...card.base,
           }}
         >
-          <h2 className="dashboard-card-title">
+          <h2 className="section-title">
             {locale === "en" ? "Account overview" : "Kontoübersicht"}
           </h2>
 
-          <div className="dashboard-overview-grid">
+          <div className="info-grid">
+            <OverviewCard title={t.company} value={user.companyName || "—"} />
             <OverviewCard
-              title={locale === "en" ? "Company" : "Firma"}
-              value={user.companyName || "—"}
+              title={locale === "en" ? "Full name" : "Name"}
+              value={[user.firstName, user.lastName].filter(Boolean).join(" ") || "—"}
             />
-            <OverviewCard
-              title={locale === "en" ? "Username" : "Benutzername"}
-              value={user.username || "—"}
-            />
-            <OverviewCard
-              title={locale === "en" ? "E-mail" : "E-Mail"}
-              value={user.email || "—"}
-            />
-            <OverviewCard
-              title={locale === "en" ? "Phone" : "Telefon"}
-              value={user.phone || "—"}
-            />
+            <OverviewCard title={t.email} value={user.email || "—"} />
+            <OverviewCard title={t.phone} value={user.phone || "—"} />
           </div>
         </section>
       </div>
@@ -587,12 +535,50 @@ export default function DashboardPage() {
   );
 }
 
-function OverviewCard({ title, value }) {
+function MiniStat({ label, value }) {
   return (
-    <div className="dashboard-overview-box">
+    <div className="mini-stat">
       <div
         style={{
           fontSize: "12px",
+          fontWeight: 800,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          color: colors.muted,
+          marginBottom: "8px",
+        }}
+      >
+        {label}
+      </div>
+
+      <div
+        style={{
+          fontSize: "18px",
+          fontWeight: 800,
+          color: colors.text,
+          lineHeight: 1.45,
+          wordBreak: "break-word",
+        }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function OverviewCard({ title, value }) {
+  return (
+    <div
+      style={{
+        border: `1px solid ${colors.border}`,
+        borderRadius: "18px",
+        padding: "20px",
+        background: "#fff",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "13px",
           fontWeight: 800,
           letterSpacing: "0.08em",
           textTransform: "uppercase",
