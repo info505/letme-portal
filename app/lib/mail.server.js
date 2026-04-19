@@ -15,7 +15,7 @@ export async function sendMail({ to, subject, html, text }) {
     const resend = getResendClient();
 
     const response = await resend.emails.send({
-      from: "onboarding@resend.dev",
+      from: "Let Me Bowl <info@letmebowl-catering.de>",
       to,
       subject,
       html,
