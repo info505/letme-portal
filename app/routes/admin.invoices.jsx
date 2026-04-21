@@ -1,6 +1,5 @@
 import { redirect, useLoaderData } from "react-router";
 import { getUserFromRequest } from "../lib/auth.server.js";
-import { prisma } from "../lib/db.server.js";
 
 export async function loader({ request }) {
   const user = await getUserFromRequest(request);
@@ -9,36 +8,14 @@ export async function loader({ request }) {
     throw redirect("/login");
   }
 
-  if (!user.isAdmin) {
-    throw redirect("/");
-  }
-
-  let invoices = [];
-
-  try {
-    invoices = await prisma.portalInvoice.findMany({
-      orderBy: { createdAt: "desc" },
-      include: {
-        user: {
-          select: {
-            companyName: true,
-            email: true,
-          },
-        },
-      },
-    });
-  } catch (e) {
-    console.log("DB ERROR:", e);
-  }
-
   return {
-    user,
-    invoices,
+    email: user.email || null,
+    isAdmin: user.isAdmin || false,
   };
 }
 
-export default function AdminInvoicesPage() {
-  const { invoices } = useLoaderData();
+export default function AdminInvoicesDebugPage() {
+  const data = useLoaderData();
 
   return (
     <div
@@ -59,19 +36,14 @@ export default function AdminInvoicesPage() {
           padding: "30px",
         }}
       >
-        <h1>Rechnungen</h1>
-
-        {invoices.length === 0 ? (
-          <p>Keine Rechnungen vorhanden.</p>
-        ) : (
-          <ul>
-            {invoices.map((inv) => (
-              <li key={inv.id}>
-                {inv.invoiceNumber} – {inv.user?.companyName || "-"}
-              </li>
-            ))}
-          </ul>
-        )}
+        <h1>Admin Invoices Debug</h1>
+        <p>
+          <strong>Email:</strong> {String(data.email)}
+        </p>
+        <p>
+          <strong>isAdmin:</strong> {String(data.isAdmin)}
+        </p>
+        <p>Wenn du diese Seite siehst, funktioniert der Loader.</p>
       </div>
     </div>
   );
