@@ -1,5 +1,3 @@
-import { Link, useLocation } from "react-router";
-
 const styles = {
   page: {
     minHeight: "100vh",
@@ -38,11 +36,11 @@ const styles = {
     borderRadius: "14px",
     fontSize: "14px",
     fontWeight: 600,
-  },
-  linkActive: {
-    background: "#f3ede3",
-    color: "#111",
-    border: "1px solid #e1d5bf",
+    border: "none",
+    background: "transparent",
+    textAlign: "left",
+    cursor: "pointer",
+    width: "100%",
   },
   contentWrap: {
     padding: "28px",
@@ -81,27 +79,21 @@ const styles = {
     flexDirection: "column",
     gap: "20px",
   },
+  active: {
+    background: "#f3ede3",
+    color: "#111",
+    border: "1px solid #e1d5bf",
+  },
 };
 
-function NavItem({ to, label }) {
-  const location = useLocation();
-  const isActive =
-    location.pathname === to || location.pathname.startsWith(`${to}/`);
-
-  return (
-    <Link
-      to={to}
-      style={{
-        ...styles.link,
-        ...(isActive ? styles.linkActive : {}),
-      }}
-    >
-      {label}
-    </Link>
-  );
+function go(to) {
+  window.location.href = to;
 }
 
 export default function AdminLayout({ title, subtitle, user, children }) {
+  const pathname =
+    typeof window !== "undefined" ? window.location.pathname : "";
+
   return (
     <div style={styles.page}>
       <aside style={styles.sidebar}>
@@ -111,9 +103,38 @@ export default function AdminLayout({ title, subtitle, user, children }) {
         </div>
 
         <nav style={styles.nav}>
-          <NavItem to="/admin" label="Dashboard" />
-          <NavItem to="/admin/customers" label="Firmenkunden" />
-          <NavItem to="/admin/invoices" label="Rechnungen" />
+          <button
+            type="button"
+            onClick={() => go("/admin")}
+            style={{
+              ...styles.link,
+              ...(pathname === "/admin" ? styles.active : {}),
+            }}
+          >
+            Dashboard
+          </button>
+
+          <button
+            type="button"
+            onClick={() => go("/admin/customers")}
+            style={{
+              ...styles.link,
+              ...(pathname.startsWith("/admin/customers") ? styles.active : {}),
+            }}
+          >
+            Firmenkunden
+          </button>
+
+          <button
+            type="button"
+            onClick={() => go("/admin/invoices")}
+            style={{
+              ...styles.link,
+              ...(pathname.startsWith("/admin/invoices") ? styles.active : {}),
+            }}
+          >
+            Rechnungen
+          </button>
         </nav>
       </aside>
 
@@ -124,9 +145,7 @@ export default function AdminLayout({ title, subtitle, user, children }) {
             <p style={styles.topbarText}>{subtitle}</p>
           </div>
 
-          <div style={styles.userBox}>
-            {user?.email || "Admin"}
-          </div>
+          <div style={styles.userBox}>{user?.email || "Admin"}</div>
         </div>
 
         <div style={styles.content}>{children}</div>
