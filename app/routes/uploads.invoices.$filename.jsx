@@ -34,7 +34,7 @@ export async function loader({ params }) {
   return new Response(file, {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="${safeFilename}"`,
+      "Content-Disposition": `attachment; filename="${safeFilename}"`,
       "Cache-Control": "private, max-age=0, must-revalidate",
     },
   });
