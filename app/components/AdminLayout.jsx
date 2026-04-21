@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router";
+import { useLocation } from "react-router";
 
 const styles = {
   page: {
@@ -89,24 +89,19 @@ function NavItem({ to, label }) {
     location.pathname === to || location.pathname.startsWith(`${to}/`);
 
   return (
-    <Link
-      to={to}
+    <a
+      href={to}
       style={{
         ...styles.link,
         ...(isActive ? styles.linkActive : {}),
       }}
     >
       {label}
-    </Link>
+    </a>
   );
 }
 
-export default function AdminLayout({
-  title,
-  subtitle,
-  user,
-  children,
-}) {
+export default function AdminLayout({ title, subtitle, user, children }) {
   return (
     <div style={styles.page}>
       <aside style={styles.sidebar}>
@@ -130,7 +125,7 @@ export default function AdminLayout({
           </div>
 
           <div style={styles.userBox}>
-            {user?.name || user?.email || "Admin"}
+            {user?.email || "Admin"}
           </div>
         </div>
 
