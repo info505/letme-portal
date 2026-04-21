@@ -1,5 +1,6 @@
 import { redirect, useLoaderData, Form, useNavigation } from "react-router";
 import { useState } from "react";
+import bcrypt from "bcryptjs";
 import { getUserFromRequest } from "../lib/auth.server.js";
 import { prisma } from "../lib/db.server.js";
 
@@ -18,8 +19,11 @@ export async function loader({ request }) {
       lastName: true,
       email: true,
       phone: true,
+      username: true,
       isActive: true,
       role: true,
+      mustResetPassword: true,
+      isAdmin: true,
       createdAt: true,
     },
   });
@@ -40,39 +44,120 @@ export async function action({ request }) {
   if (!user.isAdmin) throw redirect("/");
 
   const formData = await request.formData();
+  const intent = formData.get("intent");
 
-  const companyName = formData.get("companyName");
-  const firstName = formData.get("firstName");
-  const lastName = formData.get("lastName");
-  const email = formData.get("email");
-  const phone = formData.get("phone");
-  const username = formData.get("username");
-  const passwordHash = formData.get("passwordHash");
-  const role = formData.get("role");
+  if (intent === "create") {
+    const companyName = formData.get("companyName");
+    const firstName = formData.get("firstName");
+    const lastName = formData.get("lastName");
+    const email = formData.get("email");
+    const phone = formData.get("phone");
+    const username = formData.get("username");
+    const password = formData.get("password");
+    const role = formData.get("role");
 
-  if (!companyName || !firstName || !email || !username || !passwordHash) {
-    return Response.json(
-      { error: "Bitte Firma, Vorname, E-Mail, Benutzername und Passwort angeben." },
-      { status: 400 }
-    );
+    if (!companyName || !firstName || !email || !username || !password) {
+      return Response.json(
+        { error: "Bitte Firma, Vorname, E-Mail, Benutzername und Passwort angeben." },
+        { status: 400 }
+      );
+    }
+
+    const passwordHash = await bcrypt.hash(String(password), 12);
+
+    await prisma.portalUser.create({
+      data: {
+        companyName: String(companyName),
+        firstName: String(firstName),
+        lastName: lastName ? String(lastName) : "",
+        email: String(email),
+        phone: phone ? String(phone) : null,
+        username: String(username),
+        passwordHash,
+        isActive: true,
+        isAdmin: false,
+        role: role ? String(role) : "ORDERER",
+        mustResetPassword: false,
+      },
+    });
+
+    return redirect("/admin/customers");
   }
 
-  await prisma.portalUser.create({
-    data: {
-      companyName: String(companyName),
-      firstName: String(firstName),
-      lastName: lastName ? String(lastName) : "",
-      email: String(email),
-      phone: phone ? String(phone) : null,
-      username: String(username),
-      passwordHash: String(passwordHash),
-      isActive: true,
-      isAdmin: false,
-      role: role ? String(role) : "ORDERER",
-    },
-  });
+  if (intent === "updateCustomer") {
+    const customerId = formData.get("customerId");
+    const companyName = formData.get("companyName");
+    const firstName = formData.get("firstName");
+    const lastName = formData.get("lastName");
+    const email = formData.get("email");
+    const phone = formData.get("phone");
+    const role = formData.get("role");
 
-  return redirect("/admin/customers");
+    if (!customerId || !companyName || !firstName || !email || !role) {
+      return Response.json(
+        { error: "Pflichtfelder fehlen." },
+        { status: 400 }
+      );
+    }
+
+    await prisma.portalUser.update({
+      where: { id: String(customerId) },
+      data: {
+        companyName: String(companyName),
+        firstName: String(firstName),
+        lastName: lastName ? String(lastName) : "",
+        email: String(email),
+        phone: phone ? String(phone) : null,
+        role: String(role),
+      },
+    });
+
+    return redirect("/admin/customers");
+  }
+
+  if (intent === "toggleActive") {
+    const customerId = formData.get("customerId");
+    const currentValue = formData.get("currentValue");
+
+    if (!customerId) {
+      return Response.json({ error: "Konto nicht gefunden." }, { status: 400 });
+    }
+
+    await prisma.portalUser.update({
+      where: { id: String(customerId) },
+      data: {
+        isActive: String(currentValue) !== "true",
+      },
+    });
+
+    return redirect("/admin/customers");
+  }
+
+  if (intent === "resetPassword") {
+    const customerId = formData.get("customerId");
+    const newPassword = formData.get("newPassword");
+
+    if (!customerId || !newPassword) {
+      return Response.json(
+        { error: "Neue Passwortangabe fehlt." },
+        { status: 400 }
+      );
+    }
+
+    const passwordHash = await bcrypt.hash(String(newPassword), 12);
+
+    await prisma.portalUser.update({
+      where: { id: String(customerId) },
+      data: {
+        passwordHash,
+        mustResetPassword: true,
+      },
+    });
+
+    return redirect("/admin/customers");
+  }
+
+  return Response.json({ error: "Unbekannte Aktion." }, { status: 400 });
 }
 
 function formatDate(date) {
@@ -200,25 +285,6 @@ const styles = {
     fontSize: "18px",
     color: "#666055",
   },
-  langWrap: {
-    display: "flex",
-    gap: "10px",
-    background: "#f4efe6",
-    border: "1px solid #eadfcd",
-    padding: "6px",
-    borderRadius: "999px",
-  },
-  lang: {
-    padding: "12px 18px",
-    borderRadius: "999px",
-    fontWeight: 700,
-    color: "#5f574d",
-  },
-  langActive: {
-    background: "#fff",
-    color: "#171717",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-  },
   contentGrid: {
     display: "grid",
     gridTemplateColumns: "1.15fr 0.95fr",
@@ -282,6 +348,12 @@ const styles = {
     flexDirection: "column",
     gap: "8px",
   },
+  fieldFull: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+    gridColumn: "1 / -1",
+  },
   label: {
     fontSize: "13px",
     letterSpacing: "0.04em",
@@ -297,6 +369,16 @@ const styles = {
     background: "#fff",
     fontSize: "15px",
     boxSizing: "border-box",
+  },
+  inputDisabled: {
+    width: "100%",
+    padding: "14px 16px",
+    borderRadius: "16px",
+    border: "1px solid #e7dfd1",
+    background: "#f5f2ec",
+    fontSize: "15px",
+    boxSizing: "border-box",
+    color: "#666055",
   },
   formActions: {
     display: "flex",
@@ -387,9 +469,13 @@ const styles = {
     padding: "22px",
     background: "#fbf8f2",
     display: "grid",
-    gridTemplateColumns: "1.3fr 1fr auto",
     gap: "18px",
-    alignItems: "center",
+  },
+  customerTop: {
+    display: "grid",
+    gridTemplateColumns: "1.25fr 0.85fr auto",
+    gap: "18px",
+    alignItems: "start",
   },
   customerMain: {
     display: "grid",
@@ -423,7 +509,7 @@ const styles = {
     border: "1px solid #efc9c9",
   },
   roleBox: {
-    fontSize: "26px",
+    fontSize: "24px",
     fontWeight: 800,
     textAlign: "right",
   },
@@ -433,22 +519,35 @@ const styles = {
     textAlign: "right",
     lineHeight: 1.5,
   },
-  emptyBox: {
-    border: "1px dashed #e1d8ca",
-    borderRadius: "22px",
-    padding: "26px",
-    background: "#fffdfa",
+  customerActions: {
+    display: "flex",
+    gap: "10px",
+    flexWrap: "wrap",
   },
-  emptyTitle: {
-    margin: "0 0 12px 0",
-    fontSize: "24px",
-    fontWeight: 800,
+  smallBtn: {
+    border: "1px solid #dfd3bf",
+    background: "#fff",
+    color: "#171717",
+    padding: "12px 14px",
+    borderRadius: "14px",
+    fontWeight: 700,
+    cursor: "pointer",
   },
-  emptyText: {
-    margin: 0,
-    fontSize: "18px",
-    lineHeight: 1.7,
-    color: "#666055",
+  strongBtn: {
+    border: 0,
+    background: "#111",
+    color: "#fff",
+    padding: "12px 14px",
+    borderRadius: "14px",
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+  resetBox: {
+    marginTop: "14px",
+    padding: "18px",
+    borderRadius: "18px",
+    background: "#fff",
+    border: "1px solid #e7dfd1",
   },
 };
 
@@ -457,6 +556,200 @@ function activeStyle(isActive) {
     return { ...styles.badge, ...styles.badgeActive };
   }
   return { ...styles.badge, ...styles.badgeInactive };
+}
+
+function CustomerCard({ customer, navigation }) {
+  const [showEdit, setShowEdit] = useState(false);
+  const [showReset, setShowReset] = useState(false);
+
+  return (
+    <div style={styles.customerItem}>
+      <div style={styles.customerTop}>
+        <div style={styles.customerMain}>
+          <div style={styles.customerCompany}>{customer.companyName}</div>
+          <div style={styles.customerMeta}>
+            Kontakt: {customer.firstName} {customer.lastName}
+            <br />
+            E-Mail: {customer.email}
+            <br />
+            Telefon: {customer.phone || "-"}
+            <br />
+            Benutzername: {customer.username}
+            <br />
+            Passwort-Reset offen: {customer.mustResetPassword ? "Ja" : "Nein"}
+            <br />
+            Status:{" "}
+            <span style={activeStyle(customer.isActive)}>
+              {customer.isActive ? "Aktiv" : "Inaktiv"}
+            </span>
+          </div>
+        </div>
+
+        <div style={styles.roleBox}>{customer.role}</div>
+
+        <div style={styles.createdBox}>
+          Angelegt am
+          <br />
+          {formatDate(customer.createdAt)}
+        </div>
+      </div>
+
+      <div style={styles.customerActions}>
+        <button
+          type="button"
+          style={styles.strongBtn}
+          onClick={() => setShowEdit((prev) => !prev)}
+        >
+          {showEdit ? "Bearbeiten schließen" : "Bearbeiten"}
+        </button>
+
+        <Form method="post">
+          <input type="hidden" name="intent" value="toggleActive" />
+          <input type="hidden" name="customerId" value={customer.id} />
+          <input type="hidden" name="currentValue" value={String(customer.isActive)} />
+          <button type="submit" style={styles.smallBtn}>
+            {customer.isActive ? "Deaktivieren" : "Aktivieren"}
+          </button>
+        </Form>
+
+        <button
+          type="button"
+          style={styles.smallBtn}
+          onClick={() => setShowReset((prev) => !prev)}
+        >
+          {showReset ? "Reset schließen" : "Passwort zurücksetzen"}
+        </button>
+      </div>
+
+      {showEdit && (
+        <div style={styles.resetBox}>
+          <Form method="post">
+            <input type="hidden" name="intent" value="updateCustomer" />
+            <input type="hidden" name="customerId" value={customer.id} />
+
+            <div style={styles.formGrid}>
+              <div style={styles.field}>
+                <label style={styles.label}>Firma</label>
+                <input
+                  name="companyName"
+                  defaultValue={customer.companyName}
+                  style={styles.input}
+                  required
+                />
+              </div>
+
+              <div style={styles.field}>
+                <label style={styles.label}>Vorname</label>
+                <input
+                  name="firstName"
+                  defaultValue={customer.firstName}
+                  style={styles.input}
+                  required
+                />
+              </div>
+
+              <div style={styles.field}>
+                <label style={styles.label}>Nachname</label>
+                <input
+                  name="lastName"
+                  defaultValue={customer.lastName}
+                  style={styles.input}
+                />
+              </div>
+
+              <div style={styles.field}>
+                <label style={styles.label}>E-Mail</label>
+                <input
+                  name="email"
+                  type="email"
+                  defaultValue={customer.email}
+                  style={styles.input}
+                  required
+                />
+              </div>
+
+              <div style={styles.field}>
+                <label style={styles.label}>Telefon</label>
+                <input
+                  name="phone"
+                  defaultValue={customer.phone || ""}
+                  style={styles.input}
+                />
+              </div>
+
+              <div style={styles.field}>
+                <label style={styles.label}>Benutzername</label>
+                <input
+                  value={customer.username}
+                  style={styles.inputDisabled}
+                  disabled
+                  readOnly
+                />
+              </div>
+
+              <div style={styles.field}>
+                <label style={styles.label}>Rolle</label>
+                <select
+                  name="role"
+                  defaultValue={customer.role}
+                  style={styles.input}
+                >
+                  <option value="ORDERER">ORDERER</option>
+                  <option value="FINANCE">FINANCE</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={styles.formActions}>
+              <button type="submit" style={styles.strongBtn}>
+                {navigation.state === "submitting" ? "Speichert..." : "Änderungen speichern"}
+              </button>
+              <button
+                type="button"
+                style={styles.cancelBtn}
+                onClick={() => setShowEdit(false)}
+              >
+                Abbrechen
+              </button>
+            </div>
+          </Form>
+        </div>
+      )}
+
+      {showReset && (
+        <div style={styles.resetBox}>
+          <Form method="post">
+            <input type="hidden" name="intent" value="resetPassword" />
+            <input type="hidden" name="customerId" value={customer.id} />
+
+            <div style={styles.fieldFull}>
+              <label style={styles.label}>Neues Passwort</label>
+              <input
+                name="newPassword"
+                type="text"
+                placeholder="Neues temporäres Passwort eingeben"
+                style={styles.input}
+                required
+              />
+            </div>
+
+            <div style={styles.formActions}>
+              <button type="submit" style={styles.strongBtn}>
+                Passwort speichern
+              </button>
+              <button
+                type="button"
+                style={styles.cancelBtn}
+                onClick={() => setShowReset(false)}
+              >
+                Abbrechen
+              </button>
+            </div>
+          </Form>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function AdminCustomersPage() {
@@ -483,6 +776,7 @@ export default function AdminCustomersPage() {
         </div>
 
         <nav style={styles.nav}>
+          <a href="/admin" style={styles.navItem}>Dashboard</a>
           <a href="/admin/customers" style={{ ...styles.navItem, ...styles.navItemActive }}>
             Firmenkunden
           </a>
@@ -504,13 +798,8 @@ export default function AdminCustomersPage() {
           <div style={styles.titleWrap}>
             <h1 style={styles.title}>Firmenkunden</h1>
             <p style={styles.subtitle}>
-              Firmenkonten anlegen und strukturiert für das LMB-Portal verwalten.
+              Firmenkonten anlegen, bearbeiten und sauber administrieren.
             </p>
-          </div>
-
-          <div style={styles.langWrap}>
-            <div style={{ ...styles.lang, ...styles.langActive }}>DE</div>
-            <div style={styles.lang}>EN</div>
           </div>
         </div>
 
@@ -518,12 +807,11 @@ export default function AdminCustomersPage() {
           <div style={styles.card}>
             <div style={styles.eyebrow}>Kundenverwaltung</div>
             <h2 style={styles.heroTitle}>
-              Neue Firmenkonten sauber anlegen und direkt im Portal verwalten.
+              Firmenkonten sauber anlegen und vollständig verwalten.
             </h2>
             <p style={styles.heroText}>
-              Hier erstellst du neue Kundenkonten für Firmen. Diese Konten können
-              später Rechnungen, Lieferadressen, Kostenstellen und Bestellungen
-              verwalten.
+              Benutzername bleibt fest sichtbar, kann aber nicht verändert werden.
+              Passwörter werden nicht angezeigt, sondern nur sicher zurückgesetzt.
             </p>
 
             <button
@@ -537,6 +825,8 @@ export default function AdminCustomersPage() {
             {showCreate && (
               <div style={styles.formBox}>
                 <Form method="post">
+                  <input type="hidden" name="intent" value="create" />
+
                   <div style={styles.formGrid}>
                     <div style={styles.field}>
                       <label style={styles.label}>Firma</label>
@@ -569,8 +859,8 @@ export default function AdminCustomersPage() {
                     </div>
 
                     <div style={styles.field}>
-                      <label style={styles.label}>Passwort</label>
-                      <input name="passwordHash" style={styles.input} required />
+                      <label style={styles.label}>Start-Passwort</label>
+                      <input name="password" type="text" style={styles.input} required />
                     </div>
 
                     <div style={styles.field}>
@@ -618,7 +908,7 @@ export default function AdminCustomersPage() {
             <div style={{ ...styles.statBox, ...styles.statBoxGold }}>
               <div style={styles.statLabel}>Inaktiv</div>
               <div style={styles.statValue}>{inactiveCount}</div>
-              <div style={styles.statText}>Derzeit nicht aktive Kundenkonten.</div>
+              <div style={styles.statText}>Derzeit deaktivierte Kundenkonten.</div>
             </div>
           </div>
         </div>
@@ -626,48 +916,18 @@ export default function AdminCustomersPage() {
         <section style={styles.sectionCard}>
           <h2 style={styles.sectionTitle}>Firmenliste</h2>
           <p style={styles.sectionText}>
-            Hier siehst du alle angelegten Firmenkonten mit Kontaktinformationen,
-            Status und Rolle.
+            Hier verwaltest du Firmenkonten, Rollen, Aktivstatus und Passwort-Resets.
           </p>
 
-          {customers.length === 0 ? (
-            <div style={styles.emptyBox}>
-              <h3 style={styles.emptyTitle}>Noch keine Firmenkunden vorhanden</h3>
-              <p style={styles.emptyText}>
-                Sobald du Firmenkonten anlegst, erscheinen sie hier automatisch.
-              </p>
-            </div>
-          ) : (
-            <div style={styles.customerList}>
-              {customers.map((customer) => (
-                <div key={customer.id} style={styles.customerItem}>
-                  <div style={styles.customerMain}>
-                    <div style={styles.customerCompany}>{customer.companyName}</div>
-                    <div style={styles.customerMeta}>
-                      Kontakt: {customer.firstName} {customer.lastName}
-                      <br />
-                      E-Mail: {customer.email}
-                      <br />
-                      Telefon: {customer.phone || "-"}
-                      <br />
-                      Status:{" "}
-                      <span style={activeStyle(customer.isActive)}>
-                        {customer.isActive ? "Aktiv" : "Inaktiv"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div style={styles.roleBox}>{customer.role}</div>
-
-                  <div style={styles.createdBox}>
-                    Angelegt am
-                    <br />
-                    {formatDate(customer.createdAt)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <div style={styles.customerList}>
+            {customers.map((customer) => (
+              <CustomerCard
+                key={customer.id}
+                customer={customer}
+                navigation={navigation}
+              />
+            ))}
+          </div>
         </section>
       </main>
     </div>
