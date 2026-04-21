@@ -1,467 +1,575 @@
 import { redirect, useLoaderData } from "react-router";
 import { getUserFromRequest } from "../lib/auth.server.js";
-import { getLocaleFromRequest, dict } from "../lib/i18n.js";
-import { card, colors } from "../lib/ui.js";
-import PortalLayout from "../components/PortalLayout.jsx";
+import { prisma } from "../lib/db.server.js";
+
+function formatDate(date) {
+  if (!date) return "-";
+  return new Date(date).toLocaleDateString("de-DE");
+}
+
+function euro(value) {
+  if (value === null || value === undefined) return "0,00 €";
+  const num = Number(value);
+  if (Number.isNaN(num)) return "0,00 €";
+  return num.toLocaleString("de-DE", {
+    style: "currency",
+    currency: "EUR",
+  });
+}
 
 export async function loader({ request }) {
-  const locale = getLocaleFromRequest(request);
   const user = await getUserFromRequest(request);
 
   if (!user) {
-    throw redirect(`/login?lang=${locale}`);
+    throw redirect("/login");
   }
 
-  // Noch keine echten Rechnungen angebunden:
-  // Hier später DB-Daten aus deiner Admin-/Upload-Oberfläche laden
-  const invoices = [];
+  const invoices = await prisma.portalInvoice.findMany({
+    where: {
+      userId: user.id,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
 
-  const paidInvoices = invoices.filter((invoice) => invoice.status === "paid");
-  const openInvoices = invoices.filter((invoice) => invoice.status === "open");
+  const totalCount = invoices.length;
+  const paidCount = invoices.filter((inv) => inv.status === "BEZAHLT").length;
+  const openInvoices = invoices.filter((inv) => inv.status !== "BEZAHLT");
 
-  const totalAmountCents = invoices.reduce(
-    (sum, invoice) => sum + Number(invoice.amountCents || 0),
-    0
-  );
-
-  const openAmountCents = openInvoices.reduce(
-    (sum, invoice) => sum + Number(invoice.amountCents || 0),
-    0
-  );
+  const openAmount = openInvoices.reduce((sum, inv) => {
+    const value = inv.amountGross ? Number(inv.amountGross) : 0;
+    return sum + value;
+  }, 0);
 
   return {
     user,
-    locale,
-    invoices,
-    summary: {
-      totalCount: invoices.length,
-      paidCount: paidInvoices.length,
+    invoices: invoices.map((inv) => ({
+      ...inv,
+      createdAt: inv.createdAt.toISOString(),
+      issueDate: inv.issueDate ? inv.issueDate.toISOString() : null,
+      dueDate: inv.dueDate ? inv.dueDate.toISOString() : null,
+      amountGross: inv.amountGross ? inv.amountGross.toString() : null,
+    })),
+    stats: {
+      totalCount,
+      paidCount,
       openCount: openInvoices.length,
-      totalAmountCents,
-      openAmountCents,
+      openAmount,
     },
   };
 }
 
+const styles = {
+  page: {
+    minHeight: "100vh",
+    background: "#f7f4ee",
+    display: "grid",
+    gridTemplateColumns: "320px 1fr",
+    fontFamily: "Arial, sans-serif",
+    color: "#171717",
+  },
+  sidebar: {
+    background: "#fff",
+    borderRight: "1px solid #e7dfd1",
+    padding: "30px 22px",
+  },
+  logo: {
+    fontSize: "18px",
+    fontWeight: 800,
+    letterSpacing: "0.04em",
+    marginBottom: "24px",
+  },
+  profileCard: {
+    border: "1px solid #eadfcd",
+    borderRadius: "22px",
+    padding: "18px",
+    background: "#fbf8f2",
+    marginBottom: "28px",
+  },
+  avatar: {
+    width: "52px",
+    height: "52px",
+    borderRadius: "999px",
+    border: "1px solid #eadfcd",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontWeight: 800,
+    fontSize: "18px",
+    marginBottom: "14px",
+    color: "#7d6231",
+    background: "#fff",
+  },
+  profileName: {
+    fontSize: "16px",
+    fontWeight: 700,
+    marginBottom: "6px",
+  },
+  profileRole: {
+    fontSize: "14px",
+    color: "#6b655d",
+  },
+  nav: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+    marginBottom: "26px",
+  },
+  navItem: {
+    display: "block",
+    padding: "16px 18px",
+    borderRadius: "18px",
+    textDecoration: "none",
+    color: "#2b2b2b",
+    fontSize: "16px",
+    fontWeight: 600,
+  },
+  navItemActive: {
+    background: "#f5efe3",
+    border: "1px solid #e5d6bd",
+  },
+  actions: {
+    marginTop: "30px",
+    display: "grid",
+    gap: "14px",
+  },
+  primaryBtn: {
+    display: "block",
+    textAlign: "center",
+    textDecoration: "none",
+    background: "#111",
+    color: "#fff",
+    padding: "16px 20px",
+    borderRadius: "18px",
+    fontWeight: 700,
+  },
+  secondaryBtn: {
+    display: "block",
+    textAlign: "center",
+    textDecoration: "none",
+    background: "#fff",
+    color: "#8f2f1d",
+    padding: "16px 20px",
+    borderRadius: "18px",
+    fontWeight: 700,
+    border: "1px solid #eadfcd",
+  },
+  main: {
+    padding: "28px 30px",
+  },
+  topbar: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "26px",
+  },
+  titleWrap: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+  },
+  title: {
+    margin: 0,
+    fontSize: "52px",
+    lineHeight: 1.05,
+    fontWeight: 800,
+  },
+  subtitle: {
+    margin: 0,
+    fontSize: "18px",
+    color: "#666055",
+  },
+  langWrap: {
+    display: "flex",
+    gap: "10px",
+    background: "#f4efe6",
+    border: "1px solid #eadfcd",
+    padding: "6px",
+    borderRadius: "999px",
+  },
+  lang: {
+    padding: "12px 18px",
+    borderRadius: "999px",
+    fontWeight: 700,
+    color: "#5f574d",
+  },
+  langActive: {
+    background: "#fff",
+    color: "#171717",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+  },
+  contentGrid: {
+    display: "grid",
+    gridTemplateColumns: "1.2fr 0.95fr",
+    gap: "22px",
+    alignItems: "start",
+  },
+  card: {
+    background: "#fff",
+    border: "1px solid #e7dfd1",
+    borderRadius: "24px",
+    padding: "34px",
+  },
+  eyebrow: {
+    display: "inline-block",
+    fontSize: "14px",
+    letterSpacing: "0.12em",
+    textTransform: "uppercase",
+    color: "#b08b4f",
+    border: "1px solid #eadfcd",
+    borderRadius: "999px",
+    padding: "10px 16px",
+    marginBottom: "22px",
+    fontWeight: 700,
+    background: "#fbf8f2",
+  },
+  heroTitle: {
+    margin: "0 0 18px 0",
+    fontSize: "34px",
+    lineHeight: 1.15,
+    fontWeight: 800,
+  },
+  heroText: {
+    margin: "0 0 28px 0",
+    fontSize: "18px",
+    lineHeight: 1.7,
+    color: "#575247",
+  },
+  infoGrid: {
+    display: "grid",
+    gridTemplateColumns: "200px 1fr",
+    rowGap: "0",
+    columnGap: "0",
+    borderTop: "1px solid #ece5d8",
+    marginTop: "10px",
+  },
+  infoLabel: {
+    padding: "18px 0",
+    borderBottom: "1px solid #ece5d8",
+    color: "#696258",
+    fontWeight: 700,
+    fontSize: "14px",
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+  },
+  infoValue: {
+    padding: "18px 0",
+    borderBottom: "1px solid #ece5d8",
+    fontWeight: 700,
+    fontSize: "18px",
+  },
+  statCol: {
+    display: "grid",
+    gap: "18px",
+  },
+  statBox: {
+    border: "1px solid #e7dfd1",
+    borderRadius: "24px",
+    padding: "26px 24px",
+    background: "#fff",
+  },
+  statBoxGreen: {
+    background: "#edf6ed",
+    border: "1px solid #cfe7cf",
+  },
+  statBoxGold: {
+    background: "#fbf3e3",
+    border: "1px solid #efdcae",
+  },
+  statLabel: {
+    fontSize: "14px",
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: "#666055",
+    fontWeight: 800,
+    marginBottom: "10px",
+  },
+  statValue: {
+    fontSize: "42px",
+    fontWeight: 800,
+    lineHeight: 1,
+    marginBottom: "10px",
+  },
+  statText: {
+    fontSize: "16px",
+    color: "#666055",
+    lineHeight: 1.5,
+  },
+  sectionCard: {
+    marginTop: "24px",
+    background: "#fff",
+    border: "1px solid #e7dfd1",
+    borderRadius: "24px",
+    padding: "34px",
+  },
+  sectionTitle: {
+    margin: "0 0 14px 0",
+    fontSize: "34px",
+    fontWeight: 800,
+  },
+  sectionText: {
+    margin: "0 0 26px 0",
+    fontSize: "18px",
+    lineHeight: 1.7,
+    color: "#666055",
+  },
+  invoiceList: {
+    display: "grid",
+    gap: "16px",
+  },
+  invoiceItem: {
+    border: "1px solid #ece5d8",
+    borderRadius: "20px",
+    padding: "22px",
+    background: "#fbf8f2",
+    display: "grid",
+    gridTemplateColumns: "1.3fr 1fr auto",
+    gap: "18px",
+    alignItems: "center",
+  },
+  invoiceMain: {
+    display: "grid",
+    gap: "8px",
+  },
+  invoiceNumber: {
+    fontSize: "22px",
+    fontWeight: 800,
+  },
+  invoiceMeta: {
+    fontSize: "15px",
+    color: "#666055",
+    lineHeight: 1.6,
+  },
+  badge: {
+    display: "inline-block",
+    padding: "8px 12px",
+    borderRadius: "999px",
+    fontSize: "13px",
+    fontWeight: 800,
+    letterSpacing: "0.04em",
+  },
+  badgeOpen: {
+    background: "#fbf3e3",
+    color: "#7a5a18",
+    border: "1px solid #efdcae",
+  },
+  badgePaid: {
+    background: "#edf6ed",
+    color: "#2f6b35",
+    border: "1px solid #cfe7cf",
+  },
+  badgeOverdue: {
+    background: "#fbeaea",
+    color: "#8a2d2d",
+    border: "1px solid #efc9c9",
+  },
+  invoiceAmount: {
+    fontSize: "26px",
+    fontWeight: 800,
+    textAlign: "right",
+  },
+  openLink: {
+    display: "inline-block",
+    textDecoration: "none",
+    background: "#111",
+    color: "#fff",
+    padding: "14px 18px",
+    borderRadius: "16px",
+    fontWeight: 700,
+    whiteSpace: "nowrap",
+  },
+  emptyBox: {
+    border: "1px dashed #e1d8ca",
+    borderRadius: "22px",
+    padding: "26px",
+    background: "#fffdfa",
+  },
+  emptyTitle: {
+    margin: "0 0 12px 0",
+    fontSize: "24px",
+    fontWeight: 800,
+  },
+  emptyText: {
+    margin: 0,
+    fontSize: "18px",
+    lineHeight: 1.7,
+    color: "#666055",
+  },
+};
+
+function statusLabel(status) {
+  if (status === "BEZAHLT") return "Bezahlt";
+  if (status === "UEBERFAELLIG") return "Überfällig";
+  return "Offen";
+}
+
+function statusStyle(status) {
+  if (status === "BEZAHLT") {
+    return { ...styles.badge, ...styles.badgePaid };
+  }
+  if (status === "UEBERFAELLIG") {
+    return { ...styles.badge, ...styles.badgeOverdue };
+  }
+  return { ...styles.badge, ...styles.badgeOpen };
+}
+
 export default function RechnungenPage() {
-  const { user, locale, invoices, summary } = useLoaderData();
-  const t = dict[locale] || dict.de;
+  const { user, invoices, stats } = useLoaderData();
 
   return (
-    <PortalLayout
-      title={t.invoices}
-      subtitle={
-        locale === "de"
-          ? "Alle Rechnungen und Zahlungsstände deines Firmenkontos."
-          : "All invoices and payment statuses for your business account."
-      }
-    >
-      <style>{`
-        .invoice-shell {
-          display: grid;
-          gap: 18px;
-          max-width: 1180px;
-        }
+    <div style={styles.page}>
+      <aside style={styles.sidebar}>
+        <div style={styles.logo}>LET ME BOWL</div>
 
-        .invoice-top {
-          display: grid;
-          grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
-          gap: 18px;
-        }
+        <div style={styles.profileCard}>
+          <div style={styles.avatar}>
+            {(user.firstName?.[0] || user.companyName?.[0] || "A").toUpperCase()}
+          </div>
+          <div style={styles.profileName}>
+            {user.firstName} {user.lastName}
+          </div>
+          <div style={styles.profileRole}>{user.companyName}</div>
+        </div>
 
-        .invoice-top-card,
-        .invoice-stats-card,
-        .invoice-list-card {
-          padding: 22px;
-          border-radius: 24px;
-        }
+        <nav style={styles.nav}>
+          <a href="/konto?lang=de" style={styles.navItem}>Konto</a>
+          <a href="/bestellungen?lang=de" style={styles.navItem}>Bestellungen</a>
+          <a href="/rechnungsadresse?lang=de" style={styles.navItem}>Rechnungsadresse</a>
+          <a href="/lieferadressen?lang=de" style={styles.navItem}>Lieferadressen</a>
+          <a href="/kostenstellen?lang=de" style={styles.navItem}>Kostenstellen</a>
+          <a href="/rechnungen?lang=de" style={{ ...styles.navItem, ...styles.navItemActive }}>
+            Rechnungen
+          </a>
+        </nav>
 
-        .eyebrow {
-          display: inline-flex;
-          align-items: center;
-          padding: 7px 11px;
-          border-radius: 999px;
-          border: 1px solid rgba(200,169,106,0.28);
-          background: rgba(255,255,255,0.72);
-          color: #b8934f;
-          font-size: 12px;
-          font-weight: 800;
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
-          margin-bottom: 14px;
-        }
+        <div style={styles.actions}>
+          <a href="https://letmebowl-catering.de" style={styles.primaryBtn}>
+            Jetzt bestellen
+          </a>
+          <a href="/logout" style={styles.secondaryBtn}>
+            Abmelden
+          </a>
+        </div>
+      </aside>
 
-        .top-title {
-          margin: 0;
-          font-size: 30px;
-          line-height: 1.08;
-          letter-spacing: -0.03em;
-          color: ${colors.text};
-        }
+      <main style={styles.main}>
+        <div style={styles.topbar}>
+          <div style={styles.titleWrap}>
+            <h1 style={styles.title}>Rechnungen</h1>
+            <p style={styles.subtitle}>
+              Alle Rechnungen und Zahlungsstände deines Firmenkontos.
+            </p>
+          </div>
 
-        .top-text {
-          margin: 12px 0 0;
-          color: ${colors.muted};
-          font-size: 15px;
-          line-height: 1.7;
-          max-width: 760px;
-        }
+          <div style={styles.langWrap}>
+            <div style={{ ...styles.lang, ...styles.langActive }}>DE</div>
+            <div style={styles.lang}>EN</div>
+          </div>
+        </div>
 
-        .account-grid {
-          display: grid;
-          gap: 10px;
-          margin-top: 18px;
-        }
-
-        .account-row {
-          display: grid;
-          grid-template-columns: 150px 1fr;
-          gap: 10px;
-          padding: 10px 0;
-          border-bottom: 1px solid rgba(0,0,0,0.05);
-        }
-
-        .account-row:last-child {
-          border-bottom: none;
-        }
-
-        .account-label {
-          font-size: 12px;
-          font-weight: 800;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          color: ${colors.muted};
-        }
-
-        .account-value {
-          font-size: 15px;
-          line-height: 1.6;
-          font-weight: 700;
-          color: ${colors.text};
-          word-break: break-word;
-        }
-
-        .stats-grid {
-          display: grid;
-          gap: 12px;
-        }
-
-        .stat-box {
-          border: 1px solid ${colors.border};
-          border-radius: 18px;
-          padding: 16px;
-          background: #fff;
-        }
-
-        .stat-box.is-success {
-          background: #edf7ee;
-          border-color: #cfe8d4;
-        }
-
-        .stat-box.is-warning {
-          background: #fff6e9;
-          border-color: #f0dfbf;
-        }
-
-        .stat-label {
-          font-size: 12px;
-          font-weight: 800;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          color: ${colors.muted};
-          margin-bottom: 8px;
-        }
-
-        .stat-value {
-          font-size: 30px;
-          line-height: 1.05;
-          font-weight: 800;
-          color: ${colors.text};
-          margin-bottom: 6px;
-        }
-
-        .stat-sub {
-          font-size: 14px;
-          line-height: 1.6;
-          color: ${colors.muted};
-        }
-
-        .list-head {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 14px;
-          flex-wrap: wrap;
-          margin-bottom: 18px;
-        }
-
-        .list-title {
-          margin: 0 0 8px;
-          font-size: 24px;
-          line-height: 1.1;
-          color: ${colors.text};
-          letter-spacing: -0.02em;
-        }
-
-        .list-subtitle {
-          margin: 0;
-          color: ${colors.muted};
-          font-size: 14px;
-          line-height: 1.6;
-        }
-
-        .empty-state {
-          border: 1px dashed ${colors.border};
-          border-radius: 20px;
-          padding: 26px;
-          background: #fff;
-        }
-
-        .empty-title {
-          margin: 0 0 10px;
-          font-size: 24px;
-          line-height: 1.1;
-          color: ${colors.text};
-          letter-spacing: -0.02em;
-        }
-
-        .empty-text {
-          margin: 0;
-          color: ${colors.muted};
-          font-size: 15px;
-          line-height: 1.7;
-          max-width: 760px;
-        }
-
-        .future-box {
-          margin-top: 18px;
-          display: grid;
-          gap: 10px;
-        }
-
-        .future-item {
-          padding: 14px 16px;
-          border-radius: 16px;
-          border: 1px solid ${colors.border};
-          background: #fcfbf8;
-        }
-
-        .future-label {
-          font-size: 12px;
-          font-weight: 800;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          color: ${colors.muted};
-          margin-bottom: 6px;
-        }
-
-        .future-value {
-          font-size: 14px;
-          line-height: 1.6;
-          font-weight: 600;
-          color: ${colors.text};
-        }
-
-        @media (max-width: 1100px) {
-          .invoice-top {
-            grid-template-columns: 1fr;
-          }
-        }
-
-        @media (max-width: 700px) {
-          .invoice-top-card,
-          .invoice-stats-card,
-          .invoice-list-card {
-            padding: 18px 16px;
-            border-radius: 20px;
-          }
-
-          .account-row {
-            grid-template-columns: 1fr;
-            gap: 4px;
-          }
-
-          .top-title {
-            font-size: 24px;
-          }
-        }
-      `}</style>
-
-      <div className="invoice-shell">
-        <section className="invoice-top">
-          <div
-            className="invoice-top-card"
-            style={{
-              ...card.base,
-            }}
-          >
-            <div className="eyebrow">
-              {locale === "de" ? "Rechnungsbereich" : "Invoice area"}
-            </div>
-
-            <h2 className="top-title">
-              {locale === "de"
-                ? "Rechnungen später sauber pro Firma bereitstellen."
-                : "Provide invoices cleanly per company later on."}
+        <div style={styles.contentGrid}>
+          <div style={styles.card}>
+            <div style={styles.eyebrow}>Rechnungsbereich</div>
+            <h2 style={styles.heroTitle}>
+              Rechnungen sauber pro Firmenkonto bereitstellen.
             </h2>
-
-            <p className="top-text">
-              {locale === "de"
-                ? "Aktuell sind noch keine echten Rechnungen im Portal hinterlegt. Diese Seite ist bewusst leer vorbereitet, damit du später über deine Admin-Oberfläche PDF-Rechnungen hochladen und einzelnen Firmenkonten sauber zuordnen kannst."
-                : "There are currently no real invoices stored in the portal. This page is intentionally prepared as an empty base so you can later upload PDF invoices through your admin interface and assign them cleanly to specific company accounts."}
+            <p style={styles.heroText}>
+              Hier erscheinen ausschließlich Rechnungen, die deinem aktuellen
+              Kundenkonto direkt zugeordnet wurden.
             </p>
 
-            <div className="account-grid">
-              <div className="account-row">
-                <div className="account-label">
-                  {locale === "de" ? "Firma" : "Company"}
-                </div>
-                <div className="account-value">{user.companyName || "—"}</div>
+            <div style={styles.infoGrid}>
+              <div style={styles.infoLabel}>Firma</div>
+              <div style={styles.infoValue}>{user.companyName}</div>
+
+              <div style={styles.infoLabel}>Kontakt</div>
+              <div style={styles.infoValue}>
+                {user.firstName} {user.lastName}
               </div>
 
-              <div className="account-row">
-                <div className="account-label">
-                  {locale === "de" ? "Kontakt" : "Contact"}
-                </div>
-                <div className="account-value">
-                  {[user.firstName, user.lastName].filter(Boolean).join(" ") || "—"}
-                </div>
-              </div>
-
-              <div className="account-row">
-                <div className="account-label">E-Mail</div>
-                <div className="account-value">{user.email || "—"}</div>
-              </div>
+              <div style={styles.infoLabel}>E-Mail</div>
+              <div style={styles.infoValue}>{user.email}</div>
             </div>
           </div>
 
-          <div
-            className="invoice-stats-card"
-            style={{
-              ...card.base,
-            }}
-          >
-            <div className="stats-grid">
-              <StatBox
-                label={locale === "de" ? "Gesamt" : "Total"}
-                value={String(summary.totalCount)}
-                sub={
-                  locale === "de"
-                    ? "Aktuell sichtbare Rechnungen."
-                    : "Currently visible invoices."
-                }
-              />
+          <div style={styles.statCol}>
+            <div style={styles.statBox}>
+              <div style={styles.statLabel}>Gesamt</div>
+              <div style={styles.statValue}>{stats.totalCount}</div>
+              <div style={styles.statText}>Aktuell sichtbare Rechnungen.</div>
+            </div>
 
-              <StatBox
-                label={locale === "de" ? "Bezahlt" : "Paid"}
-                value={String(summary.paidCount)}
-                sub={
-                  locale === "de"
-                    ? "Bereits beglichene Rechnungen."
-                    : "Invoices already settled."
-                }
-                className="is-success"
-              />
+            <div style={{ ...styles.statBox, ...styles.statBoxGreen }}>
+              <div style={styles.statLabel}>Bezahlt</div>
+              <div style={styles.statValue}>{stats.paidCount}</div>
+              <div style={styles.statText}>Bereits beglichene Rechnungen.</div>
+            </div>
 
-              <StatBox
-                label={locale === "de" ? "Offen" : "Open"}
-                value={String(summary.openCount)}
-                sub={
-                  locale === "de"
-                    ? "Noch nicht bezahlte Rechnungen."
-                    : "Invoices not yet paid."
-                }
-                className="is-warning"
-              />
+            <div style={{ ...styles.statBox, ...styles.statBoxGold }}>
+              <div style={styles.statLabel}>Offen</div>
+              <div style={styles.statValue}>{stats.openCount}</div>
+              <div style={styles.statText}>Noch nicht bezahlte Rechnungen.</div>
+            </div>
 
-              <StatBox
-                label={locale === "de" ? "Offener Betrag" : "Open amount"}
-                value={formatMoney(summary.openAmountCents, "EUR", locale)}
-                sub={
-                  locale === "de"
-                    ? "Noch ausstehender Gesamtbetrag."
-                    : "Outstanding total amount."
-                }
-              />
+            <div style={styles.statBox}>
+              <div style={styles.statLabel}>Offener Betrag</div>
+              <div style={styles.statValue}>{euro(stats.openAmount)}</div>
+              <div style={styles.statText}>Noch ausstehender Gesamtbetrag.</div>
             </div>
           </div>
-        </section>
+        </div>
 
-        <section
-          className="invoice-list-card"
-          style={{
-            ...card.base,
-          }}
-        >
-          <div className="list-head">
-            <div>
-              <h3 className="list-title">{t.invoices}</h3>
-              <p className="list-subtitle">
-                {locale === "de"
-                  ? "Hier erscheinen später nur echte, hochgeladene PDF-Rechnungen."
-                  : "Only real uploaded PDF invoices will appear here later."}
+        <section style={styles.sectionCard}>
+          <h2 style={styles.sectionTitle}>Rechnungen</h2>
+          <p style={styles.sectionText}>
+            Hier findest du alle deinem Firmenkonto zugeordneten PDF-Rechnungen.
+          </p>
+
+          {invoices.length === 0 ? (
+            <div style={styles.emptyBox}>
+              <h3 style={styles.emptyTitle}>Noch keine Rechnungen hinterlegt</h3>
+              <p style={styles.emptyText}>
+                Sobald deinem Konto Rechnungen zugeordnet wurden, erscheinen sie
+                genau hier.
               </p>
             </div>
-          </div>
+          ) : (
+            <div style={styles.invoiceList}>
+              {invoices.map((inv) => (
+                <div key={inv.id} style={styles.invoiceItem}>
+                  <div style={styles.invoiceMain}>
+                    <div style={styles.invoiceNumber}>{inv.invoiceNumber}</div>
+                    <div style={styles.invoiceMeta}>
+                      Rechnungsdatum: {formatDate(inv.issueDate || inv.createdAt)}
+                      <br />
+                      Fällig am: {formatDate(inv.dueDate)}
+                      <br />
+                      Status:{" "}
+                      <span style={statusStyle(inv.status)}>
+                        {statusLabel(inv.status)}
+                      </span>
+                    </div>
+                  </div>
 
-          <div className="empty-state">
-            <h4 className="empty-title">
-              {locale === "de"
-                ? "Noch keine Rechnungen hinterlegt"
-                : "No invoices uploaded yet"}
-            </h4>
+                  <div style={styles.invoiceAmount}>
+                    {inv.amountGross ? euro(inv.amountGross) : "—"}
+                  </div>
 
-            <p className="empty-text">
-              {locale === "de"
-                ? "Sobald du in deiner späteren Admin-Oberfläche Rechnungen als PDF hochlädst und dieser Firma zuweist, erscheinen sie genau hier."
-                : "As soon as you upload PDF invoices in your future admin interface and assign them to this company, they will appear here."}
-            </p>
-
-            <div className="future-box">
-              <div className="future-item">
-                <div className="future-label">
-                  {locale === "de" ? "Späterer Ablauf" : "Later workflow"}
+                  <a
+                    href={inv.pdfUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={styles.openLink}
+                  >
+                    PDF öffnen
+                  </a>
                 </div>
-                <div className="future-value">
-                  {locale === "de"
-                    ? "Admin lädt PDF hoch → Rechnung wird einer Firma zugeordnet → Kunde sieht nur seine eigenen Rechnungen im Portal."
-                    : "Admin uploads PDF → invoice is assigned to one company → customer only sees their own invoices in the portal."}
-                </div>
-              </div>
-
-              <div className="future-item">
-                <div className="future-label">
-                  {locale === "de" ? "Wichtiger Vorteil" : "Key benefit"}
-                </div>
-                <div className="future-value">
-                  {locale === "de"
-                    ? "Du vermeidest Fake-Daten im Frontend und baust direkt auf einer sauberen echten Struktur auf."
-                    : "You avoid fake frontend data and build directly on a clean real structure."}
-                </div>
-              </div>
+              ))}
             </div>
-          </div>
+          )}
         </section>
-      </div>
-    </PortalLayout>
-  );
-}
-
-function StatBox({ label, value, sub, className = "" }) {
-  return (
-    <div className={`stat-box ${className}`}>
-      <div className="stat-label">{label}</div>
-      <div className="stat-value">{value}</div>
-      <div className="stat-sub">{sub}</div>
+      </main>
     </div>
   );
-}
-
-function formatMoney(valueInCents, currency = "EUR", locale) {
-  const value = Number(valueInCents || 0) / 100;
-
-  return new Intl.NumberFormat(locale === "de" ? "de-DE" : "en-GB", {
-    style: "currency",
-    currency,
-  }).format(value);
 }
