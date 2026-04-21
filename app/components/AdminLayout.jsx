@@ -1,4 +1,4 @@
-import { useLocation } from "react-router";
+import { Link, useLocation } from "react-router";
 
 const styles = {
   page: {
@@ -89,15 +89,15 @@ function NavItem({ to, label }) {
     location.pathname === to || location.pathname.startsWith(`${to}/`);
 
   return (
-    <a
-      href={to}
+    <Link
+      to={to}
       style={{
         ...styles.link,
         ...(isActive ? styles.linkActive : {}),
       }}
     >
       {label}
-    </a>
+    </Link>
   );
 }
 
