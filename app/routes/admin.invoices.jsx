@@ -115,17 +115,17 @@ export async function action({ request }) {
     return Response.json({ error: "Fehlende Daten" }, { status: 400 });
   }
 
-  const uploadDir = path.join(process.cwd(), "public/uploads/invoices");
-  await fs.mkdir(uploadDir, { recursive: true });
+    const uploadDir = path.join(process.cwd(), "uploads", "invoices");
+    await fs.mkdir(uploadDir, { recursive: true });
 
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const filename = `${Date.now()}-${safeName}`;
-  const filepath = path.join(uploadDir, filename);
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const filename = `${Date.now()}-${safeName}`;
+    const filepath = path.join(uploadDir, filename);
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  await fs.writeFile(filepath, buffer);
+    const buffer = Buffer.from(await file.arrayBuffer());
+    await fs.writeFile(filepath, buffer);
 
-  const pdfUrl = `/uploads/invoices/${filename}`;
+    const pdfUrl = `/uploads/invoices/${filename}`;
 
   await prisma.portalInvoice.create({
     data: {
