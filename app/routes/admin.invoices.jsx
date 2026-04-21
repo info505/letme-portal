@@ -1,4 +1,45 @@
-export default function AdminInvoicesTestPage() {
+import { redirect, useLoaderData } from "react-router";
+import { getUserFromRequest } from "../lib/auth.server.js";
+import { prisma } from "../lib/db.server.js";
+
+export async function loader({ request }) {
+  const user = await getUserFromRequest(request);
+
+  if (!user) {
+    throw redirect("/login");
+  }
+
+  if (!user.isAdmin) {
+    throw redirect("/");
+  }
+
+  let invoices = [];
+
+  try {
+    invoices = await prisma.portalInvoice.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        user: {
+          select: {
+            companyName: true,
+            email: true,
+          },
+        },
+      },
+    });
+  } catch (e) {
+    console.log("DB ERROR:", e);
+  }
+
+  return {
+    user,
+    invoices,
+  };
+}
+
+export default function AdminInvoicesPage() {
+  const { invoices } = useLoaderData();
+
   return (
     <div
       style={{
@@ -18,8 +59,19 @@ export default function AdminInvoicesTestPage() {
           padding: "30px",
         }}
       >
-        <h1 style={{ marginTop: 0 }}>Admin Invoices Test</h1>
-        <p>Wenn du diese Seite siehst, funktioniert die Route /admin/invoices.</p>
+        <h1>Rechnungen</h1>
+
+        {invoices.length === 0 ? (
+          <p>Keine Rechnungen vorhanden.</p>
+        ) : (
+          <ul>
+            {invoices.map((inv) => (
+              <li key={inv.id}>
+                {inv.invoiceNumber} – {inv.user?.companyName || "-"}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
