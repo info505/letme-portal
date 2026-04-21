@@ -2,6 +2,8 @@ import { redirect, Link, useLoaderData } from "react-router";
 import AdminLayout from "../components/AdminLayout.jsx";
 import { getUserFromRequest } from "../lib/auth.server.js";
 
+const ADMIN_EMAIL = "info@letmebowl-catering.de";
+
 export async function loader({ request }) {
   const user = await getUserFromRequest(request);
 
@@ -9,9 +11,9 @@ export async function loader({ request }) {
     throw redirect("/login");
   }
 
-  // Später echte Admin-Prüfung
-  // Beispiel:
-  // if (user.role !== "admin") throw redirect("/");
+  if (!user.email || user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+    throw redirect("/");
+  }
 
   return { user };
 }

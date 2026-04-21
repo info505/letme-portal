@@ -2,6 +2,8 @@ import { redirect, useLoaderData } from "react-router";
 import AdminLayout from "../components/AdminLayout.jsx";
 import { getUserFromRequest } from "../lib/auth.server.js";
 
+const ADMIN_EMAIL = "info@letmebowl-catering.de";
+
 export async function loader({ request }) {
   const user = await getUserFromRequest(request);
 
@@ -9,7 +11,10 @@ export async function loader({ request }) {
     throw redirect("/login");
   }
 
-  // Später Admin-Check
+  if (!user.email || user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+    throw redirect("/");
+  }
+
   return {
     user,
     customers: [],
@@ -63,13 +68,13 @@ export default function AdminCustomersPage() {
       <div style={styles.card}>
         <div style={styles.titleRow}>
           <h2 style={styles.title}>Firmenliste</h2>
-          <button style={styles.button}>Neue Firma anlegen</button>
+          <button type="button" style={styles.button}>
+            Neue Firma anlegen
+          </button>
         </div>
 
         {customers.length === 0 ? (
-          <div style={styles.empty}>
-            Noch keine Firmenkunden vorhanden.
-          </div>
+          <div style={styles.empty}>Noch keine Firmenkunden vorhanden.</div>
         ) : null}
       </div>
     </AdminLayout>

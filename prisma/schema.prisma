@@ -27,6 +27,12 @@ enum RecurringInterval {
   MONTHLY
 }
 
+enum InvoiceStatus {
+  OFFEN
+  BEZAHLT
+  UEBERFAELLIG
+}
+
 model Session {
   id                  String    @id
   shop                String
@@ -73,6 +79,7 @@ model PortalUser {
   orders         PortalOrder[]
   orderTemplates OrderTemplate[]
   recurringPlans RecurringOrderPlan[]
+  invoices       PortalInvoice[]
 }
 
 model BillingProfile {
@@ -341,4 +348,24 @@ model RecurringOrderPlan {
   @@index([userId])
   @@index([templateId])
   @@index([costCenterId])
+}
+
+model PortalInvoice {
+  id            String        @id @default(cuid())
+  userId        String
+  invoiceNumber String
+  title         String?
+  issueDate     DateTime?
+  dueDate       DateTime?
+  amountGross   Decimal?      @db.Decimal(10, 2)
+  status        InvoiceStatus @default(OFFEN)
+  pdfUrl        String
+  originalName  String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user PortalUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([invoiceNumber])
 }
