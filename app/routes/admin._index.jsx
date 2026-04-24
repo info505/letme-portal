@@ -349,34 +349,6 @@ export default function AdminDashboardPage() {
             </div>
           )}
         </section>
-
-        <section style={styles.card}>
-          <div style={styles.eyebrow}>Nächste Ausbaustufe</div>
-          <h2 style={styles.h2}>Was als Nächstes sinnvoll ist</h2>
-
-          <div style={styles.list}>
-            <div style={styles.item}>
-              <div style={styles.itemTitle}>Rechnungen bearbeiten</div>
-              <div style={styles.itemMeta}>
-                Status, Betrag, Fälligkeit und PDF später direkt ändern oder löschen.
-              </div>
-            </div>
-
-            <div style={styles.item}>
-              <div style={styles.itemTitle}>Lieferadressen je Firma</div>
-              <div style={styles.itemMeta}>
-                Firmenstandorte direkt im Admin einsehen und pflegen.
-              </div>
-            </div>
-
-            <div style={styles.item}>
-              <div style={styles.itemTitle}>Kostenstellen</div>
-              <div style={styles.itemMeta}>
-                Kostenstellen pro Firma verwalten und später bei Bestellungen nutzen.
-              </div>
-            </div>
-          </div>
-        </section>
       </div>
     </AdminLayout>
   );
