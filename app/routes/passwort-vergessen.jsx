@@ -37,7 +37,7 @@ export async function action({ request }) {
   if (!email || !email.includes("@")) {
     return {
       ok: false,
-      message: t.forgotPasswordInvalidEmail,
+      message: t.forgotPasswordInvalidEmail || "Bitte gib eine gültige E-Mail ein.",
     };
   }
 
@@ -62,10 +62,7 @@ export async function action({ request }) {
 
       return {
         ok: false,
-        message:
-          locale === "en"
-            ? "The reset email could not be sent right now."
-            : "Die Reset-E-Mail konnte gerade nicht versendet werden.",
+        message: String(error.message || error),
       };
     }
   }
@@ -218,12 +215,7 @@ export default function ForgotPasswordPage() {
             </button>
           </Form>
 
-          <div
-            style={{
-              marginTop: "16px",
-              fontSize: "14px",
-            }}
-          >
+          <div style={{ marginTop: "16px", fontSize: "14px" }}>
             <a
               href={withLang("/login", locale)}
               style={{
