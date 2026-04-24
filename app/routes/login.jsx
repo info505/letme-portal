@@ -18,7 +18,11 @@ export async function loader({ request }) {
   const locale = getLocaleFromRequest(request);
   const user = await getUserFromRequest(request);
 
+  // 🔥 WICHTIG: Direkt weiterleiten je nach Rolle
   if (user) {
+    if (user.isAdmin) {
+      throw redirect(`/admin?lang=${locale}`);
+    }
     throw redirect(`/dashboard?lang=${locale}`);
   }
 
@@ -59,7 +63,12 @@ export async function action({ request }) {
 
   const { sessionToken, expiresAt } = await createPortalSession(user.id);
 
-  return redirect(`/dashboard?lang=${locale}`, {
+  // 🔥 HIER ENTSCHEIDUNG ADMIN / USER
+  const redirectTo = user.isAdmin
+    ? `/admin?lang=${locale}`
+    : `/dashboard?lang=${locale}`;
+
+  return redirect(redirectTo, {
     headers: {
       "Set-Cookie": createSessionCookie(sessionToken, expiresAt),
     },
