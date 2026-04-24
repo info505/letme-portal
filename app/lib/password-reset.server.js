@@ -101,11 +101,22 @@ export async function sendPasswordResetEmail({ user, locale, rawToken }) {
       </div>
     `;
 
-  await resend.emails.send({
+  console.log("SENDING PASSWORD RESET MAIL TO:", user.email);
+  console.log("MAIL_FROM:", process.env.MAIL_FROM || "Let Me Bowl Catering <onboarding@resend.dev>");
+
+  const result = await resend.emails.send({
     from: process.env.MAIL_FROM || "Let Me Bowl Catering <onboarding@resend.dev>",
     to: user.email,
     bcc: process.env.MAIL_BCC || undefined,
     subject,
     html,
   });
+
+  console.log("RESEND PASSWORD RESET RESULT:", JSON.stringify(result));
+
+  if (result?.error) {
+    throw new Error(result.error.message || "Resend mail error");
+  }
+
+  return result;
 }
