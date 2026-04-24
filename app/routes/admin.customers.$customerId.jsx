@@ -5,7 +5,6 @@ import AdminLayout from "../components/AdminLayout.jsx";
 
 export async function loader({ request, params }) {
   const user = await getUserFromRequest(request);
-
   if (!user) throw redirect("/login");
   if (!user.isAdmin) throw redirect("/dashboard");
 
@@ -25,8 +24,12 @@ export async function loader({ request, params }) {
 
   if (!customer) throw redirect("/admin/customers");
 
+  const url = new URL(request.url);
+  const success = url.searchParams.get("success");
+
   return {
     user,
+    success,
     customer: {
       ...customer,
       createdAt: customer.createdAt.toISOString(),
@@ -51,7 +54,6 @@ export async function loader({ request, params }) {
 
 export async function action({ request, params }) {
   const user = await getUserFromRequest(request);
-
   if (!user) throw redirect("/login");
   if (!user.isAdmin) throw redirect("/dashboard");
 
@@ -60,37 +62,25 @@ export async function action({ request, params }) {
   const intent = String(formData.get("intent") || "");
 
   if (intent === "saveBilling") {
-    const existing = await prisma.billingProfile.findUnique({
-      where: { userId: customerId },
-    });
-
     const data = {
-      companyName: String(formData.get("companyName") || "").trim() || null,
-      contactName: String(formData.get("contactName") || "").trim() || null,
-      email: String(formData.get("email") || "").trim() || null,
-      phone: String(formData.get("phone") || "").trim() || null,
-      street: String(formData.get("street") || "").trim() || null,
-      houseNumber: String(formData.get("houseNumber") || "").trim() || null,
-      postalCode: String(formData.get("postalCode") || "").trim() || null,
-      city: String(formData.get("city") || "").trim() || null,
-      country: String(formData.get("country") || "").trim() || "Deutschland",
-      vatId: String(formData.get("vatId") || "").trim() || null,
-      invoiceEmail: String(formData.get("invoiceEmail") || "").trim() || null,
+      companyName: val(formData, "companyName") || null,
+      contactName: val(formData, "contactName") || null,
+      email: val(formData, "email") || null,
+      phone: val(formData, "phone") || null,
+      street: val(formData, "street") || null,
+      houseNumber: val(formData, "houseNumber") || null,
+      postalCode: val(formData, "postalCode") || null,
+      city: val(formData, "city") || null,
+      country: val(formData, "country") || "Deutschland",
+      vatId: val(formData, "vatId") || null,
+      invoiceEmail: val(formData, "invoiceEmail") || null,
     };
 
-    if (existing) {
-      await prisma.billingProfile.update({
-        where: { userId: customerId },
-        data,
-      });
-    } else {
-      await prisma.billingProfile.create({
-        data: {
-          userId: customerId,
-          ...data,
-        },
-      });
-    }
+    await prisma.billingProfile.upsert({
+      where: { userId: customerId },
+      update: data,
+      create: { userId: customerId, ...data },
+    });
 
     return redirect(`/admin/customers/${customerId}?success=billing`);
   }
@@ -99,16 +89,16 @@ export async function action({ request, params }) {
     await prisma.deliveryAddress.create({
       data: {
         userId: customerId,
-        label: String(formData.get("label") || "").trim() || null,
-        companyName: String(formData.get("companyName") || "").trim() || null,
-        contactName: String(formData.get("contactName") || "").trim() || null,
-        phone: String(formData.get("phone") || "").trim() || null,
-        street: String(formData.get("street") || "").trim(),
-        houseNumber: String(formData.get("houseNumber") || "").trim() || null,
-        postalCode: String(formData.get("postalCode") || "").trim(),
-        city: String(formData.get("city") || "").trim(),
-        country: String(formData.get("country") || "").trim() || "Deutschland",
-        notes: String(formData.get("notes") || "").trim() || null,
+        label: val(formData, "label") || null,
+        companyName: val(formData, "companyName") || null,
+        contactName: val(formData, "contactName") || null,
+        phone: val(formData, "phone") || null,
+        street: val(formData, "street"),
+        houseNumber: val(formData, "houseNumber") || null,
+        postalCode: val(formData, "postalCode"),
+        city: val(formData, "city"),
+        country: val(formData, "country") || "Deutschland",
+        notes: val(formData, "notes") || null,
       },
     });
 
@@ -116,10 +106,8 @@ export async function action({ request, params }) {
   }
 
   if (intent === "deleteAddress") {
-    const id = String(formData.get("id") || "");
-    if (id) {
-      await prisma.deliveryAddress.delete({ where: { id } });
-    }
+    const id = val(formData, "id");
+    if (id) await prisma.deliveryAddress.delete({ where: { id } });
     return redirect(`/admin/customers/${customerId}?success=deleted`);
   }
 
@@ -127,12 +115,12 @@ export async function action({ request, params }) {
     await prisma.portalContact.create({
       data: {
         userId: customerId,
-        firstName: String(formData.get("firstName") || "").trim(),
-        lastName: String(formData.get("lastName") || "").trim() || null,
-        email: String(formData.get("email") || "").trim(),
-        phone: String(formData.get("phone") || "").trim() || null,
-        roleLabel: String(formData.get("roleLabel") || "").trim() || null,
-        department: String(formData.get("department") || "").trim() || null,
+        firstName: val(formData, "firstName"),
+        lastName: val(formData, "lastName") || null,
+        email: val(formData, "email"),
+        phone: val(formData, "phone") || null,
+        roleLabel: val(formData, "roleLabel") || null,
+        department: val(formData, "department") || null,
       },
     });
 
@@ -140,10 +128,8 @@ export async function action({ request, params }) {
   }
 
   if (intent === "deleteContact") {
-    const id = String(formData.get("id") || "");
-    if (id) {
-      await prisma.portalContact.delete({ where: { id } });
-    }
+    const id = val(formData, "id");
+    if (id) await prisma.portalContact.delete({ where: { id } });
     return redirect(`/admin/customers/${customerId}?success=deleted`);
   }
 
@@ -151,9 +137,9 @@ export async function action({ request, params }) {
     await prisma.costCenter.create({
       data: {
         userId: customerId,
-        name: String(formData.get("name") || "").trim(),
-        code: String(formData.get("code") || "").trim() || null,
-        description: String(formData.get("description") || "").trim() || null,
+        name: val(formData, "name"),
+        code: val(formData, "code") || null,
+        description: val(formData, "description") || null,
       },
     });
 
@@ -161,14 +147,16 @@ export async function action({ request, params }) {
   }
 
   if (intent === "deleteCostCenter") {
-    const id = String(formData.get("id") || "");
-    if (id) {
-      await prisma.costCenter.delete({ where: { id } });
-    }
+    const id = val(formData, "id");
+    if (id) await prisma.costCenter.delete({ where: { id } });
     return redirect(`/admin/customers/${customerId}?success=deleted`);
   }
 
   return redirect(`/admin/customers/${customerId}`);
+}
+
+function val(formData, key) {
+  return String(formData.get(key) || "").trim();
 }
 
 function formatDate(date) {
@@ -202,6 +190,38 @@ const styles = {
     borderRadius: "16px",
     fontWeight: 800,
   },
+  back: {
+    width: "fit-content",
+    background: "#111",
+    color: "#fff",
+    padding: "12px 16px",
+    borderRadius: "14px",
+    textDecoration: "none",
+    fontWeight: 900,
+  },
+  stats: {
+    display: "grid",
+    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+    gap: "16px",
+  },
+  stat: {
+    background: "#fff",
+    border: "1px solid #e8decd",
+    borderRadius: "22px",
+    padding: "20px",
+  },
+  statLabel: {
+    fontSize: "12px",
+    letterSpacing: "0.1em",
+    textTransform: "uppercase",
+    color: "#756b5f",
+    fontWeight: 900,
+    marginBottom: "8px",
+  },
+  statValue: {
+    fontSize: "28px",
+    fontWeight: 900,
+  },
   grid: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
@@ -234,7 +254,7 @@ const styles = {
   meta: {
     fontSize: "15px",
     color: "#6b6258",
-    lineHeight: 1.7,
+    lineHeight: 1.75,
   },
   list: {
     display: "grid",
@@ -317,13 +337,15 @@ const styles = {
 };
 
 export default function CustomerDetailPage() {
-  const { user, customer } = useLoaderData();
+  const { user, customer, success } = useLoaderData();
   const navigation = useNavigation();
-
-  const url =
-    typeof window !== "undefined" ? new URL(window.location.href) : null;
-  const success = url?.searchParams.get("success");
   const message = successText(success);
+
+  const openInvoices = customer.invoices.filter((i) => i.status !== "BEZAHLT");
+  const openAmount = openInvoices.reduce(
+    (sum, inv) => sum + Number(inv.amountGross || 0),
+    0
+  );
 
   return (
     <AdminLayout
@@ -333,9 +355,31 @@ export default function CustomerDetailPage() {
     >
       {message ? <div style={styles.alert}>{message}</div> : null}
 
-      <a href="/admin/customers" style={{ ...styles.btn, width: "fit-content" }}>
+      <a href="/admin/customers" style={styles.back}>
         Zurück zur Firmenliste
       </a>
+
+      <div style={styles.stats}>
+        <div style={styles.stat}>
+          <div style={styles.statLabel}>Rechnungen</div>
+          <div style={styles.statValue}>{customer.invoices.length}</div>
+        </div>
+
+        <div style={styles.stat}>
+          <div style={styles.statLabel}>Offen</div>
+          <div style={styles.statValue}>{openInvoices.length}</div>
+        </div>
+
+        <div style={styles.stat}>
+          <div style={styles.statLabel}>Offener Betrag</div>
+          <div style={styles.statValue}>{euro(openAmount)}</div>
+        </div>
+
+        <div style={styles.stat}>
+          <div style={styles.statLabel}>Bestellungen</div>
+          <div style={styles.statValue}>{customer.orders.length}</div>
+        </div>
+      </div>
 
       <div style={styles.grid}>
         <section style={styles.card}>
@@ -395,152 +439,89 @@ export default function CustomerDetailPage() {
             <input type="hidden" name="intent" value="saveBilling" />
 
             <div style={styles.formGrid}>
-              <div style={styles.field}>
-                <label style={styles.label}>Firma</label>
-                <input name="companyName" defaultValue={customer.billing?.companyName || customer.companyName || ""} style={styles.input} />
-              </div>
-
-              <div style={styles.field}>
-                <label style={styles.label}>Kontakt</label>
-                <input name="contactName" defaultValue={customer.billing?.contactName || `${customer.firstName} ${customer.lastName || ""}`} style={styles.input} />
-              </div>
-
-              <div style={styles.field}>
-                <label style={styles.label}>E-Mail</label>
-                <input name="email" defaultValue={customer.billing?.email || customer.email || ""} style={styles.input} />
-              </div>
-
-              <div style={styles.field}>
-                <label style={styles.label}>Rechnungs-E-Mail</label>
-                <input name="invoiceEmail" defaultValue={customer.billing?.invoiceEmail || customer.email || ""} style={styles.input} />
-              </div>
-
-              <div style={styles.field}>
-                <label style={styles.label}>Telefon</label>
-                <input name="phone" defaultValue={customer.billing?.phone || customer.phone || ""} style={styles.input} />
-              </div>
-
-              <div style={styles.field}>
-                <label style={styles.label}>USt-IdNr.</label>
-                <input name="vatId" defaultValue={customer.billing?.vatId || ""} style={styles.input} />
-              </div>
-
-              <div style={styles.field}>
-                <label style={styles.label}>Straße</label>
-                <input name="street" defaultValue={customer.billing?.street || ""} style={styles.input} />
-              </div>
-
-              <div style={styles.field}>
-                <label style={styles.label}>Hausnummer</label>
-                <input name="houseNumber" defaultValue={customer.billing?.houseNumber || ""} style={styles.input} />
-              </div>
-
-              <div style={styles.field}>
-                <label style={styles.label}>PLZ</label>
-                <input name="postalCode" defaultValue={customer.billing?.postalCode || ""} style={styles.input} />
-              </div>
-
-              <div style={styles.field}>
-                <label style={styles.label}>Stadt</label>
-                <input name="city" defaultValue={customer.billing?.city || ""} style={styles.input} />
-              </div>
-
-              <div style={styles.field}>
-                <label style={styles.label}>Land</label>
-                <input name="country" defaultValue={customer.billing?.country || "Deutschland"} style={styles.input} />
-              </div>
+              <Field label="Firma" name="companyName" defaultValue={customer.billing?.companyName || customer.companyName || ""} />
+              <Field label="Kontakt" name="contactName" defaultValue={customer.billing?.contactName || `${customer.firstName} ${customer.lastName || ""}`} />
+              <Field label="E-Mail" name="email" defaultValue={customer.billing?.email || customer.email || ""} />
+              <Field label="Rechnungs-E-Mail" name="invoiceEmail" defaultValue={customer.billing?.invoiceEmail || customer.email || ""} />
+              <Field label="Telefon" name="phone" defaultValue={customer.billing?.phone || customer.phone || ""} />
+              <Field label="USt-IdNr." name="vatId" defaultValue={customer.billing?.vatId || ""} />
+              <Field label="Straße" name="street" defaultValue={customer.billing?.street || ""} />
+              <Field label="Hausnummer" name="houseNumber" defaultValue={customer.billing?.houseNumber || ""} />
+              <Field label="PLZ" name="postalCode" defaultValue={customer.billing?.postalCode || ""} />
+              <Field label="Stadt" name="city" defaultValue={customer.billing?.city || ""} />
+              <Field label="Land" name="country" defaultValue={customer.billing?.country || "Deutschland"} />
             </div>
 
             <div style={styles.actions}>
               <button type="submit" style={styles.btn}>
-                {navigation.state === "submitting" ? "Speichert..." : "Rechnungsadresse speichern"}
+                {navigation.state === "submitting"
+                  ? "Speichert..."
+                  : "Rechnungsadresse speichern"}
               </button>
             </div>
           </Form>
         </section>
 
-        <section style={styles.card}>
-          <div style={styles.eyebrow}>Lieferadressen</div>
-          <h2 style={styles.h2}>Neue Lieferadresse</h2>
+        <ListCreateSection
+          title="Lieferadressen"
+          eyebrow="Logistik"
+          empty="Keine Lieferadressen vorhanden."
+          formIntent="addAddress"
+          button="Adresse speichern"
+          items={customer.addresses}
+          renderItem={(a) => (
+            <>
+              <strong>{a.label || "Lieferadresse"}</strong>
+              <br />
+              {a.street} {a.houseNumber}
+              <br />
+              {a.postalCode} {a.city}
+              <br />
+              {a.notes || ""}
+            </>
+          )}
+          deleteIntent="deleteAddress"
+          fields={[
+            ["Label", "label"],
+            ["Kontakt", "contactName"],
+            ["Straße", "street", true],
+            ["Hausnummer", "houseNumber"],
+            ["PLZ", "postalCode", true],
+            ["Stadt", "city", true],
+            ["Notizen", "notes"],
+          ]}
+        />
 
-          <Form method="post">
-            <input type="hidden" name="intent" value="addAddress" />
-            <div style={styles.formGrid}>
-              <div style={styles.field}><label style={styles.label}>Label</label><input name="label" style={styles.input} /></div>
-              <div style={styles.field}><label style={styles.label}>Kontakt</label><input name="contactName" style={styles.input} /></div>
-              <div style={styles.field}><label style={styles.label}>Straße</label><input name="street" style={styles.input} required /></div>
-              <div style={styles.field}><label style={styles.label}>Hausnummer</label><input name="houseNumber" style={styles.input} /></div>
-              <div style={styles.field}><label style={styles.label}>PLZ</label><input name="postalCode" style={styles.input} required /></div>
-              <div style={styles.field}><label style={styles.label}>Stadt</label><input name="city" style={styles.input} required /></div>
-              <div style={styles.fieldFull}><label style={styles.label}>Notizen</label><input name="notes" style={styles.input} /></div>
-            </div>
-            <div style={styles.actions}><button type="submit" style={styles.btn}>Adresse speichern</button></div>
-          </Form>
-
-          <div style={{ ...styles.list, marginTop: "18px" }}>
-            {customer.addresses.length === 0 ? (
-              <p style={styles.meta}>Keine Lieferadressen vorhanden.</p>
-            ) : (
-              customer.addresses.map((a) => (
-                <div key={a.id} style={styles.item}>
-                  <strong>{a.label || "Lieferadresse"}</strong>
-                  <br />
-                  {a.street} {a.houseNumber}
-                  <br />
-                  {a.postalCode} {a.city}
-                  <br />
-                  {a.notes || ""}
-                  <Form method="post" style={{ marginTop: "10px" }}>
-                    <input type="hidden" name="intent" value="deleteAddress" />
-                    <input type="hidden" name="id" value={a.id} />
-                    <button type="submit" style={styles.danger}>Löschen</button>
-                  </Form>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
-
-        <section style={styles.card}>
-          <div style={styles.eyebrow}>Ansprechpartner</div>
-          <h2 style={styles.h2}>Neuen Ansprechpartner anlegen</h2>
-
-          <Form method="post">
-            <input type="hidden" name="intent" value="addContact" />
-            <div style={styles.formGrid}>
-              <div style={styles.field}><label style={styles.label}>Vorname</label><input name="firstName" style={styles.input} required /></div>
-              <div style={styles.field}><label style={styles.label}>Nachname</label><input name="lastName" style={styles.input} /></div>
-              <div style={styles.field}><label style={styles.label}>E-Mail</label><input name="email" style={styles.input} required /></div>
-              <div style={styles.field}><label style={styles.label}>Telefon</label><input name="phone" style={styles.input} /></div>
-              <div style={styles.field}><label style={styles.label}>Rolle</label><input name="roleLabel" style={styles.input} /></div>
-              <div style={styles.field}><label style={styles.label}>Abteilung</label><input name="department" style={styles.input} /></div>
-            </div>
-            <div style={styles.actions}><button type="submit" style={styles.btn}>Ansprechpartner speichern</button></div>
-          </Form>
-
-          <div style={{ ...styles.list, marginTop: "18px" }}>
-            {customer.contacts.length === 0 ? (
-              <p style={styles.meta}>Keine Ansprechpartner vorhanden.</p>
-            ) : (
-              customer.contacts.map((c) => (
-                <div key={c.id} style={styles.item}>
-                  <strong>{c.firstName} {c.lastName}</strong>
-                  <br />
-                  {c.email}
-                  <br />
-                  {c.phone || "-"}
-                  <br />
-                  {c.roleLabel || ""}
-                  <Form method="post" style={{ marginTop: "10px" }}>
-                    <input type="hidden" name="intent" value="deleteContact" />
-                    <input type="hidden" name="id" value={c.id} />
-                    <button type="submit" style={styles.danger}>Löschen</button>
-                  </Form>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
+        <ListCreateSection
+          title="Ansprechpartner"
+          eyebrow="Kontakte"
+          empty="Keine Ansprechpartner vorhanden."
+          formIntent="addContact"
+          button="Ansprechpartner speichern"
+          items={customer.contacts}
+          renderItem={(c) => (
+            <>
+              <strong>
+                {c.firstName} {c.lastName}
+              </strong>
+              <br />
+              {c.email}
+              <br />
+              {c.phone || "-"}
+              <br />
+              {c.roleLabel || ""}
+            </>
+          )}
+          deleteIntent="deleteContact"
+          fields={[
+            ["Vorname", "firstName", true],
+            ["Nachname", "lastName"],
+            ["E-Mail", "email", true],
+            ["Telefon", "phone"],
+            ["Rolle", "roleLabel"],
+            ["Abteilung", "department"],
+          ]}
+        />
 
         <section style={{ ...styles.card, ...styles.full }}>
           <div style={styles.eyebrow}>Kostenstellen</div>
@@ -549,11 +530,15 @@ export default function CustomerDetailPage() {
           <Form method="post">
             <input type="hidden" name="intent" value="addCostCenter" />
             <div style={styles.formGrid}>
-              <div style={styles.field}><label style={styles.label}>Name</label><input name="name" style={styles.input} required /></div>
-              <div style={styles.field}><label style={styles.label}>Code</label><input name="code" style={styles.input} /></div>
-              <div style={styles.fieldFull}><label style={styles.label}>Beschreibung</label><input name="description" style={styles.input} /></div>
+              <Field label="Name" name="name" required />
+              <Field label="Code" name="code" />
+              <Field label="Beschreibung" name="description" full />
             </div>
-            <div style={styles.actions}><button type="submit" style={styles.btn}>Kostenstelle speichern</button></div>
+            <div style={styles.actions}>
+              <button type="submit" style={styles.btn}>
+                Kostenstelle speichern
+              </button>
+            </div>
           </Form>
 
           <div style={{ ...styles.list, marginTop: "18px" }}>
@@ -565,11 +550,7 @@ export default function CustomerDetailPage() {
                   <strong>{c.name}</strong> {c.code ? `(${c.code})` : ""}
                   <br />
                   {c.description || ""}
-                  <Form method="post" style={{ marginTop: "10px" }}>
-                    <input type="hidden" name="intent" value="deleteCostCenter" />
-                    <input type="hidden" name="id" value={c.id} />
-                    <button type="submit" style={styles.danger}>Löschen</button>
-                  </Form>
+                  <DeleteForm intent="deleteCostCenter" id={c.id} />
                 </div>
               ))
             )}
@@ -600,5 +581,77 @@ export default function CustomerDetailPage() {
         </section>
       </div>
     </AdminLayout>
+  );
+}
+
+function Field({ label, name, defaultValue = "", required = false, full = false }) {
+  return (
+    <div style={full ? styles.fieldFull : styles.field}>
+      <label style={styles.label}>{label}</label>
+      <input
+        name={name}
+        defaultValue={defaultValue}
+        required={required}
+        style={styles.input}
+      />
+    </div>
+  );
+}
+
+function DeleteForm({ intent, id }) {
+  return (
+    <Form method="post" style={{ marginTop: "10px" }}>
+      <input type="hidden" name="intent" value={intent} />
+      <input type="hidden" name="id" value={id} />
+      <button type="submit" style={styles.danger}>
+        Löschen
+      </button>
+    </Form>
+  );
+}
+
+function ListCreateSection({
+  title,
+  eyebrow,
+  empty,
+  formIntent,
+  button,
+  items,
+  renderItem,
+  deleteIntent,
+  fields,
+}) {
+  return (
+    <section style={styles.card}>
+      <div style={styles.eyebrow}>{eyebrow}</div>
+      <h2 style={styles.h2}>{title}</h2>
+
+      <Form method="post">
+        <input type="hidden" name="intent" value={formIntent} />
+        <div style={styles.formGrid}>
+          {fields.map(([label, name, required]) => (
+            <Field key={name} label={label} name={name} required={Boolean(required)} />
+          ))}
+        </div>
+        <div style={styles.actions}>
+          <button type="submit" style={styles.btn}>
+            {button}
+          </button>
+        </div>
+      </Form>
+
+      <div style={{ ...styles.list, marginTop: "18px" }}>
+        {items.length === 0 ? (
+          <p style={styles.meta}>{empty}</p>
+        ) : (
+          items.map((item) => (
+            <div key={item.id} style={styles.item}>
+              {renderItem(item)}
+              <DeleteForm intent={deleteIntent} id={item.id} />
+            </div>
+          ))
+        )}
+      </div>
+    </section>
   );
 }
