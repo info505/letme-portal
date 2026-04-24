@@ -136,7 +136,7 @@ function CustomerCard({ customer }) {
         type="button"
         style={styles.button}
         onClick={() => {
-          window.location.href = `/admin/customers/detail?id=${customer.id}`;
+          window.location.href = `/admin/customer-detail?id=${customer.id}`;
         }}
       >
         Details öffnen

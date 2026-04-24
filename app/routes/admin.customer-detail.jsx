@@ -3,12 +3,16 @@ import { prisma } from "../lib/prisma.server.js";
 import { getUserFromRequest } from "../lib/auth.server.js";
 import AdminLayout from "../components/AdminLayout.jsx";
 
-export async function loader({ request, params }) {
+export async function loader({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) throw redirect("/login");
   if (!user.isAdmin) throw redirect("/dashboard");
 
-  const customerId = params.customerId;
+  const url = new URL(request.url);
+  const customerId = url.searchParams.get("id");
+  const success = url.searchParams.get("success");
+
+  if (!customerId) throw redirect("/admin/customers");
 
   const customer = await prisma.portalUser.findUnique({
     where: { id: customerId },
@@ -24,12 +28,10 @@ export async function loader({ request, params }) {
 
   if (!customer) throw redirect("/admin/customers");
 
-  const url = new URL(request.url);
-  const success = url.searchParams.get("success");
-
   return {
     user,
     success,
+    customerId,
     customer: {
       ...customer,
       createdAt: customer.createdAt.toISOString(),
@@ -52,12 +54,16 @@ export async function loader({ request, params }) {
   };
 }
 
-export async function action({ request, params }) {
+export async function action({ request }) {
   const user = await getUserFromRequest(request);
   if (!user) throw redirect("/login");
   if (!user.isAdmin) throw redirect("/dashboard");
 
-  const customerId = params.customerId;
+  const url = new URL(request.url);
+  const customerId = url.searchParams.get("id");
+
+  if (!customerId) throw redirect("/admin/customers");
+
   const formData = await request.formData();
   const intent = String(formData.get("intent") || "");
 
@@ -82,7 +88,7 @@ export async function action({ request, params }) {
       create: { userId: customerId, ...data },
     });
 
-    return redirect(`/admin/customers/${customerId}?success=billing`);
+    return redirect(`/admin/customers-detail?id=${customerId}&success=billing`);
   }
 
   if (intent === "addAddress") {
@@ -90,25 +96,23 @@ export async function action({ request, params }) {
       data: {
         userId: customerId,
         label: val(formData, "label") || null,
-        companyName: val(formData, "companyName") || null,
         contactName: val(formData, "contactName") || null,
-        phone: val(formData, "phone") || null,
         street: val(formData, "street"),
         houseNumber: val(formData, "houseNumber") || null,
         postalCode: val(formData, "postalCode"),
         city: val(formData, "city"),
-        country: val(formData, "country") || "Deutschland",
+        country: "Deutschland",
         notes: val(formData, "notes") || null,
       },
     });
 
-    return redirect(`/admin/customers/${customerId}?success=address`);
+    return redirect(`/admin/customersdetail?id=${customerId}&success=address`);
   }
 
   if (intent === "deleteAddress") {
     const id = val(formData, "id");
     if (id) await prisma.deliveryAddress.delete({ where: { id } });
-    return redirect(`/admin/customers/${customerId}?success=deleted`);
+    return redirect(`/admin/customers-detail?id=${customerId}&success=deleted`);
   }
 
   if (intent === "addContact") {
@@ -124,13 +128,13 @@ export async function action({ request, params }) {
       },
     });
 
-    return redirect(`/admin/customers/${customerId}?success=contact`);
+    return redirect(`/admin/customers-detail?id=${customerId}&success=contact`);
   }
 
   if (intent === "deleteContact") {
     const id = val(formData, "id");
     if (id) await prisma.portalContact.delete({ where: { id } });
-    return redirect(`/admin/customers/${customerId}?success=deleted`);
+    return redirect(`/admin/customers-detail?id=${customerId}&success=deleted`);
   }
 
   if (intent === "addCostCenter") {
@@ -143,16 +147,16 @@ export async function action({ request, params }) {
       },
     });
 
-    return redirect(`/admin/customers/${customerId}?success=costCenter`);
+    return redirect(`/admin/customers-detail?id=${customerId}&success=costCenter`);
   }
 
   if (intent === "deleteCostCenter") {
     const id = val(formData, "id");
     if (id) await prisma.costCenter.delete({ where: { id } });
-    return redirect(`/admin/customers/${customerId}?success=deleted`);
+    return redirect(`/admin/customers-detail?id=${customerId}&success=deleted`);
   }
 
-  return redirect(`/admin/customers/${customerId}`);
+  return redirect(`/admin/customers-detail?id=${customerId}`);
 }
 
 function val(formData, key) {
@@ -249,7 +253,6 @@ const styles = {
   h2: {
     margin: "0 0 14px",
     fontSize: "26px",
-    letterSpacing: "-0.03em",
   },
   meta: {
     fontSize: "15px",
@@ -360,25 +363,10 @@ export default function CustomerDetailPage() {
       </a>
 
       <div style={styles.stats}>
-        <div style={styles.stat}>
-          <div style={styles.statLabel}>Rechnungen</div>
-          <div style={styles.statValue}>{customer.invoices.length}</div>
-        </div>
-
-        <div style={styles.stat}>
-          <div style={styles.statLabel}>Offen</div>
-          <div style={styles.statValue}>{openInvoices.length}</div>
-        </div>
-
-        <div style={styles.stat}>
-          <div style={styles.statLabel}>Offener Betrag</div>
-          <div style={styles.statValue}>{euro(openAmount)}</div>
-        </div>
-
-        <div style={styles.stat}>
-          <div style={styles.statLabel}>Bestellungen</div>
-          <div style={styles.statValue}>{customer.orders.length}</div>
-        </div>
+        <Stat label="Rechnungen" value={customer.invoices.length} />
+        <Stat label="Offen" value={openInvoices.length} />
+        <Stat label="Offener Betrag" value={euro(openAmount)} />
+        <Stat label="Bestellungen" value={customer.orders.length} />
       </div>
 
       <div style={styles.grid}>
@@ -454,9 +442,7 @@ export default function CustomerDetailPage() {
 
             <div style={styles.actions}>
               <button type="submit" style={styles.btn}>
-                {navigation.state === "submitting"
-                  ? "Speichert..."
-                  : "Rechnungsadresse speichern"}
+                {navigation.state === "submitting" ? "Speichert..." : "Rechnungsadresse speichern"}
               </button>
             </div>
           </Form>
@@ -469,6 +455,16 @@ export default function CustomerDetailPage() {
           formIntent="addAddress"
           button="Adresse speichern"
           items={customer.addresses}
+          deleteIntent="deleteAddress"
+          fields={[
+            ["Label", "label"],
+            ["Kontakt", "contactName"],
+            ["Straße", "street", true],
+            ["Hausnummer", "houseNumber"],
+            ["PLZ", "postalCode", true],
+            ["Stadt", "city", true],
+            ["Notizen", "notes"],
+          ]}
           renderItem={(a) => (
             <>
               <strong>{a.label || "Lieferadresse"}</strong>
@@ -480,16 +476,6 @@ export default function CustomerDetailPage() {
               {a.notes || ""}
             </>
           )}
-          deleteIntent="deleteAddress"
-          fields={[
-            ["Label", "label"],
-            ["Kontakt", "contactName"],
-            ["Straße", "street", true],
-            ["Hausnummer", "houseNumber"],
-            ["PLZ", "postalCode", true],
-            ["Stadt", "city", true],
-            ["Notizen", "notes"],
-          ]}
         />
 
         <ListCreateSection
@@ -499,19 +485,6 @@ export default function CustomerDetailPage() {
           formIntent="addContact"
           button="Ansprechpartner speichern"
           items={customer.contacts}
-          renderItem={(c) => (
-            <>
-              <strong>
-                {c.firstName} {c.lastName}
-              </strong>
-              <br />
-              {c.email}
-              <br />
-              {c.phone || "-"}
-              <br />
-              {c.roleLabel || ""}
-            </>
-          )}
           deleteIntent="deleteContact"
           fields={[
             ["Vorname", "firstName", true],
@@ -521,6 +494,17 @@ export default function CustomerDetailPage() {
             ["Rolle", "roleLabel"],
             ["Abteilung", "department"],
           ]}
+          renderItem={(c) => (
+            <>
+              <strong>{c.firstName} {c.lastName}</strong>
+              <br />
+              {c.email}
+              <br />
+              {c.phone || "-"}
+              <br />
+              {c.roleLabel || ""}
+            </>
+          )}
         />
 
         <section style={{ ...styles.card, ...styles.full }}>
@@ -534,10 +518,9 @@ export default function CustomerDetailPage() {
               <Field label="Code" name="code" />
               <Field label="Beschreibung" name="description" full />
             </div>
+
             <div style={styles.actions}>
-              <button type="submit" style={styles.btn}>
-                Kostenstelle speichern
-              </button>
+              <button type="submit" style={styles.btn}>Kostenstelle speichern</button>
             </div>
           </Form>
 
@@ -556,31 +539,17 @@ export default function CustomerDetailPage() {
             )}
           </div>
         </section>
-
-        <section style={{ ...styles.card, ...styles.full }}>
-          <div style={styles.eyebrow}>Bestellungen</div>
-          <h2 style={styles.h2}>Bestellhistorie</h2>
-
-          {customer.orders.length === 0 ? (
-            <p style={styles.meta}>Keine Bestellungen vorhanden.</p>
-          ) : (
-            <div style={styles.list}>
-              {customer.orders.map((o) => (
-                <div key={o.id} style={styles.item}>
-                  <strong>{o.orderNumber}</strong>
-                  <br />
-                  Status: {o.status}
-                  <br />
-                  Gesamt: {euro(o.totalAmount)}
-                  <br />
-                  Bestellt am: {formatDate(o.orderedAt)}
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
       </div>
     </AdminLayout>
+  );
+}
+
+function Stat({ label, value }) {
+  return (
+    <div style={styles.stat}>
+      <div style={styles.statLabel}>{label}</div>
+      <div style={styles.statValue}>{value}</div>
+    </div>
   );
 }
 
@@ -588,12 +557,7 @@ function Field({ label, name, defaultValue = "", required = false, full = false 
   return (
     <div style={full ? styles.fieldFull : styles.field}>
       <label style={styles.label}>{label}</label>
-      <input
-        name={name}
-        defaultValue={defaultValue}
-        required={required}
-        style={styles.input}
-      />
+      <input name={name} defaultValue={defaultValue} required={required} style={styles.input} />
     </div>
   );
 }
@@ -603,9 +567,7 @@ function DeleteForm({ intent, id }) {
     <Form method="post" style={{ marginTop: "10px" }}>
       <input type="hidden" name="intent" value={intent} />
       <input type="hidden" name="id" value={id} />
-      <button type="submit" style={styles.danger}>
-        Löschen
-      </button>
+      <button type="submit" style={styles.danger}>Löschen</button>
     </Form>
   );
 }
@@ -628,15 +590,15 @@ function ListCreateSection({
 
       <Form method="post">
         <input type="hidden" name="intent" value={formIntent} />
+
         <div style={styles.formGrid}>
           {fields.map(([label, name, required]) => (
             <Field key={name} label={label} name={name} required={Boolean(required)} />
           ))}
         </div>
+
         <div style={styles.actions}>
-          <button type="submit" style={styles.btn}>
-            {button}
-          </button>
+          <button type="submit" style={styles.btn}>{button}</button>
         </div>
       </Form>
 
