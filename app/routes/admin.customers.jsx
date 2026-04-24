@@ -1,5 +1,5 @@
 import { redirect, useLoaderData, Form, useNavigation } from "react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import bcrypt from "bcryptjs";
 import { getUserFromRequest } from "../lib/auth.server.js";
 import { prisma } from "../lib/prisma.server.js";
@@ -10,6 +10,10 @@ export async function loader({ request }) {
 
   if (!user) throw redirect("/login");
   if (!user.isAdmin) throw redirect("/dashboard");
+
+  const url = new URL(request.url);
+  const success = url.searchParams.get("success");
+  const error = url.searchParams.get("error");
 
   const customers = await prisma.portalUser.findMany({
     orderBy: { companyName: "asc" },
@@ -31,6 +35,8 @@ export async function loader({ request }) {
 
   return {
     user,
+    success,
+    error,
     customers: customers.map((c) => ({
       ...c,
       createdAt: c.createdAt.toISOString(),
@@ -47,109 +53,158 @@ export async function action({ request }) {
   const formData = await request.formData();
   const intent = formData.get("intent");
 
-  if (intent === "create") {
-    const companyName = String(formData.get("companyName") || "").trim();
-    const firstName = String(formData.get("firstName") || "").trim();
-    const lastName = String(formData.get("lastName") || "").trim();
-    const email = String(formData.get("email") || "").trim().toLowerCase();
-    const phone = String(formData.get("phone") || "").trim();
-    const username = String(formData.get("username") || "").trim();
-    const password = String(formData.get("password") || "");
-    const role = String(formData.get("role") || "ORDERER");
+  try {
+    if (intent === "create") {
+      const companyName = String(formData.get("companyName") || "").trim();
+      const firstName = String(formData.get("firstName") || "").trim();
+      const lastName = String(formData.get("lastName") || "").trim();
+      const email = String(formData.get("email") || "").trim().toLowerCase();
+      const phone = String(formData.get("phone") || "").trim();
+      const username = String(formData.get("username") || "").trim();
+      const password = String(formData.get("password") || "");
+      const role = String(formData.get("role") || "ORDERER");
 
-    if (!companyName || !firstName || !email || !username || !password) {
-      return Response.json({ error: "Pflichtfelder fehlen." }, { status: 400 });
+      if (!companyName || !firstName || !email || !username || !password) {
+        return redirect("/admin/customers?error=missing_fields");
+      }
+
+      const existing = await prisma.portalUser.findFirst({
+        where: {
+          OR: [{ email }, { username }],
+        },
+      });
+
+      if (existing) {
+        return redirect("/admin/customers?error=exists");
+      }
+
+      const passwordHash = await bcrypt.hash(password, 12);
+
+      await prisma.portalUser.create({
+        data: {
+          companyName,
+          firstName,
+          lastName,
+          email,
+          phone: phone || null,
+          username,
+          passwordHash,
+          isActive: true,
+          isAdmin: false,
+          role,
+          mustResetPassword: false,
+        },
+      });
+
+      return redirect("/admin/customers?success=created");
     }
 
-    const passwordHash = await bcrypt.hash(password, 12);
+    if (intent === "updateCustomer") {
+      const customerId = String(formData.get("customerId") || "");
+      const companyName = String(formData.get("companyName") || "").trim();
+      const firstName = String(formData.get("firstName") || "").trim();
+      const lastName = String(formData.get("lastName") || "").trim();
+      const email = String(formData.get("email") || "").trim().toLowerCase();
+      const phone = String(formData.get("phone") || "").trim();
+      const role = String(formData.get("role") || "ORDERER");
 
-    await prisma.portalUser.create({
-      data: {
-        companyName,
-        firstName,
-        lastName,
-        email,
-        phone: phone || null,
-        username,
-        passwordHash,
-        isActive: true,
-        isAdmin: false,
-        role,
-        mustResetPassword: false,
-      },
-    });
+      if (!customerId || !companyName || !firstName || !email) {
+        return redirect("/admin/customers?error=missing_fields");
+      }
 
-    return redirect("/admin/customers");
-  }
+      await prisma.portalUser.update({
+        where: { id: customerId },
+        data: {
+          companyName,
+          firstName,
+          lastName,
+          email,
+          phone: phone || null,
+          role,
+        },
+      });
 
-  if (intent === "updateCustomer") {
-    const customerId = String(formData.get("customerId") || "");
-    const companyName = String(formData.get("companyName") || "").trim();
-    const firstName = String(formData.get("firstName") || "").trim();
-    const lastName = String(formData.get("lastName") || "").trim();
-    const email = String(formData.get("email") || "").trim().toLowerCase();
-    const phone = String(formData.get("phone") || "").trim();
-    const role = String(formData.get("role") || "ORDERER");
-
-    if (!customerId || !companyName || !firstName || !email) {
-      return Response.json({ error: "Pflichtfelder fehlen." }, { status: 400 });
+      return redirect("/admin/customers?success=updated");
     }
 
-    await prisma.portalUser.update({
-      where: { id: customerId },
-      data: {
-        companyName,
-        firstName,
-        lastName,
-        email,
-        phone: phone || null,
-        role,
-      },
-    });
+    if (intent === "toggleActive") {
+      const customerId = String(formData.get("customerId") || "");
+      const currentValue = String(formData.get("currentValue") || "false");
 
-    return redirect("/admin/customers");
-  }
+      if (!customerId) {
+        return redirect("/admin/customers?error=missing_customer");
+      }
 
-  if (intent === "toggleActive") {
-    const customerId = String(formData.get("customerId") || "");
-    const currentValue = String(formData.get("currentValue") || "false");
+      if (customerId === user.id) {
+        return redirect("/admin/customers?error=self_block");
+      }
 
-    if (!customerId) {
-      return Response.json({ error: "Konto nicht gefunden." }, { status: 400 });
+      await prisma.portalUser.update({
+        where: { id: customerId },
+        data: {
+          isActive: currentValue !== "true",
+        },
+      });
+
+      return redirect("/admin/customers?success=status");
     }
 
-    await prisma.portalUser.update({
-      where: { id: customerId },
-      data: {
-        isActive: currentValue !== "true",
-      },
-    });
+    if (intent === "resetPassword") {
+      const customerId = String(formData.get("customerId") || "");
+      const newPassword = String(formData.get("newPassword") || "");
 
-    return redirect("/admin/customers");
-  }
+      if (!customerId || !newPassword) {
+        return redirect("/admin/customers?error=missing_password");
+      }
 
-  if (intent === "resetPassword") {
-    const customerId = String(formData.get("customerId") || "");
-    const newPassword = String(formData.get("newPassword") || "");
+      const passwordHash = await bcrypt.hash(newPassword, 12);
 
-    if (!customerId || !newPassword) {
-      return Response.json({ error: "Passwort fehlt." }, { status: 400 });
+      await prisma.portalUser.update({
+        where: { id: customerId },
+        data: {
+          passwordHash,
+          mustResetPassword: true,
+        },
+      });
+
+      return redirect("/admin/customers?success=password");
     }
 
-    const passwordHash = await bcrypt.hash(newPassword, 12);
+    if (intent === "deleteCustomer") {
+      const customerId = String(formData.get("customerId") || "");
 
-    await prisma.portalUser.update({
-      where: { id: customerId },
-      data: {
-        passwordHash,
-        mustResetPassword: true,
-      },
-    });
+      if (!customerId) {
+        return redirect("/admin/customers?error=missing_customer");
+      }
 
-    return redirect("/admin/customers");
+      if (customerId === user.id) {
+        return redirect("/admin/customers?error=self_delete");
+      }
+
+      const customer = await prisma.portalUser.findUnique({
+        where: { id: customerId },
+      });
+
+      if (!customer) {
+        return redirect("/admin/customers?error=missing_customer");
+      }
+
+      if (customer.isAdmin) {
+        return redirect("/admin/customers?error=admin_delete");
+      }
+
+      await prisma.portalUser.delete({
+        where: { id: customerId },
+      });
+
+      return redirect("/admin/customers?success=deleted");
+    }
+
+    return redirect("/admin/customers?error=unknown");
+  } catch (error) {
+    console.error("ADMIN_CUSTOMERS_ACTION_ERROR:", error);
+    return redirect("/admin/customers?error=server");
   }
-
-  return Response.json({ error: "Unbekannte Aktion." }, { status: 400 });
 }
 
 function formatDate(date) {
@@ -157,7 +212,44 @@ function formatDate(date) {
   return new Date(date).toLocaleDateString("de-DE");
 }
 
+function getSuccessMessage(success) {
+  if (success === "created") return "Firma wurde erfolgreich angelegt.";
+  if (success === "updated") return "Firmendaten wurden erfolgreich gespeichert.";
+  if (success === "status") return "Status wurde erfolgreich geändert.";
+  if (success === "password") return "Passwort wurde erfolgreich zurückgesetzt.";
+  if (success === "deleted") return "Kundenkonto wurde gelöscht.";
+  return null;
+}
+
+function getErrorMessage(error) {
+  if (error === "missing_fields") return "Bitte alle Pflichtfelder ausfüllen.";
+  if (error === "exists") return "Diese E-Mail oder dieser Benutzername existiert bereits.";
+  if (error === "missing_customer") return "Kundenkonto wurde nicht gefunden.";
+  if (error === "missing_password") return "Bitte ein neues Passwort eingeben.";
+  if (error === "self_block") return "Du kannst dein eigenes Admin-Konto nicht deaktivieren.";
+  if (error === "self_delete") return "Du kannst dein eigenes Admin-Konto nicht löschen.";
+  if (error === "admin_delete") return "Admin-Konten können hier nicht gelöscht werden.";
+  if (error === "server") return "Aktion konnte nicht ausgeführt werden.";
+  return null;
+}
+
 const styles = {
+  alertSuccess: {
+    background: "#edf7ee",
+    color: "#1f6b36",
+    border: "1px solid #cfe8d4",
+    padding: "14px 16px",
+    borderRadius: "16px",
+    fontWeight: 800,
+  },
+  alertError: {
+    background: "#fff4f4",
+    color: "#8b2222",
+    border: "1px solid #efcaca",
+    padding: "14px 16px",
+    borderRadius: "16px",
+    fontWeight: 800,
+  },
   grid: {
     display: "grid",
     gridTemplateColumns: "1.15fr 0.85fr",
@@ -272,6 +364,15 @@ const styles = {
     fontWeight: 800,
     cursor: "pointer",
   },
+  dangerBtn: {
+    border: "1px solid #efcaca",
+    background: "#fff4f4",
+    color: "#8b2222",
+    padding: "12px 14px",
+    borderRadius: "14px",
+    fontWeight: 900,
+    cursor: "pointer",
+  },
   stats: {
     display: "grid",
     gap: "16px",
@@ -294,6 +395,12 @@ const styles = {
     fontSize: "34px",
     fontWeight: 900,
     letterSpacing: "-0.04em",
+  },
+  searchBar: {
+    display: "grid",
+    gridTemplateColumns: "1fr 180px",
+    gap: "12px",
+    marginBottom: "18px",
   },
   list: {
     display: "grid",
@@ -346,6 +453,9 @@ const styles = {
     borderRadius: "14px",
     fontWeight: 800,
     cursor: "pointer",
+    textDecoration: "none",
+    display: "inline-flex",
+    alignItems: "center",
   },
   darkBtn: {
     border: 0,
@@ -355,6 +465,9 @@ const styles = {
     borderRadius: "14px",
     fontWeight: 800,
     cursor: "pointer",
+    textDecoration: "none",
+    display: "inline-flex",
+    alignItems: "center",
   },
   badge: {
     display: "inline-block",
@@ -415,7 +528,7 @@ function CustomerCard({ customer, navigation }) {
           </div>
         </div>
 
-        <div style={styles.role}>{customer.role}</div>
+        <div style={styles.role}>{customer.isAdmin ? "ADMIN" : customer.role}</div>
 
         <div style={styles.created}>
           Angelegt am
@@ -425,22 +538,28 @@ function CustomerCard({ customer, navigation }) {
       </div>
 
       <div style={styles.rowActions}>
+        <a href={`/admin/customers/${customer.id}`} style={styles.darkBtn}>
+          Details öffnen
+        </a>
+
         <button
           type="button"
-          style={styles.darkBtn}
+          style={styles.smallBtn}
           onClick={() => setShowEdit((prev) => !prev)}
         >
           {showEdit ? "Bearbeiten schließen" : "Bearbeiten"}
         </button>
 
-        <Form method="post">
-          <input type="hidden" name="intent" value="toggleActive" />
-          <input type="hidden" name="customerId" value={customer.id} />
-          <input type="hidden" name="currentValue" value={String(customer.isActive)} />
-          <button type="submit" style={styles.smallBtn}>
-            {customer.isActive ? "Deaktivieren" : "Aktivieren"}
-          </button>
-        </Form>
+        {!customer.isAdmin ? (
+          <Form method="post">
+            <input type="hidden" name="intent" value="toggleActive" />
+            <input type="hidden" name="customerId" value={customer.id} />
+            <input type="hidden" name="currentValue" value={String(customer.isActive)} />
+            <button type="submit" style={styles.smallBtn}>
+              {customer.isActive ? "Deaktivieren" : "Aktivieren"}
+            </button>
+          </Form>
+        ) : null}
 
         <button
           type="button"
@@ -449,6 +568,23 @@ function CustomerCard({ customer, navigation }) {
         >
           {showReset ? "Reset schließen" : "Passwort zurücksetzen"}
         </button>
+
+        {!customer.isAdmin ? (
+          <Form
+            method="post"
+            onSubmit={(e) => {
+              if (!window.confirm("Dieses Kundenkonto wirklich löschen? Alle zugehörigen Daten werden ebenfalls gelöscht.")) {
+                e.preventDefault();
+              }
+            }}
+          >
+            <input type="hidden" name="intent" value="deleteCustomer" />
+            <input type="hidden" name="customerId" value={customer.id} />
+            <button type="submit" style={styles.dangerBtn}>
+              Löschen
+            </button>
+          </Form>
+        ) : null}
       </div>
 
       {showEdit && (
@@ -490,9 +626,10 @@ function CustomerCard({ customer, navigation }) {
 
               <div style={styles.field}>
                 <label style={styles.label}>Rolle</label>
-                <select name="role" defaultValue={customer.role} style={styles.input}>
+                <select name="role" defaultValue={customer.role} style={styles.input} disabled={customer.isAdmin}>
                   <option value="ORDERER">ORDERER</option>
                   <option value="FINANCE">FINANCE</option>
+                  <option value="ADMIN">ADMIN</option>
                 </select>
               </div>
             </div>
@@ -542,12 +679,36 @@ function CustomerCard({ customer, navigation }) {
 }
 
 export default function AdminCustomersPage() {
-  const { user, customers } = useLoaderData();
+  const { user, customers, success, error } = useLoaderData();
   const [showCreate, setShowCreate] = useState(false);
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const navigation = useNavigation();
 
   const activeCount = customers.filter((c) => c.isActive).length;
   const inactiveCount = customers.length - activeCount;
+
+  const filteredCustomers = useMemo(() => {
+    const q = query.trim().toLowerCase();
+
+    return customers.filter((customer) => {
+      const matchesQuery =
+        !q ||
+        customer.companyName?.toLowerCase().includes(q) ||
+        customer.email?.toLowerCase().includes(q) ||
+        customer.username?.toLowerCase().includes(q) ||
+        customer.firstName?.toLowerCase().includes(q) ||
+        customer.lastName?.toLowerCase().includes(q);
+
+      const matchesStatus =
+        statusFilter === "ALL" ||
+        (statusFilter === "ACTIVE" && customer.isActive) ||
+        (statusFilter === "INACTIVE" && !customer.isActive) ||
+        (statusFilter === "ADMIN" && customer.isAdmin);
+
+      return matchesQuery && matchesStatus;
+    });
+  }, [customers, query, statusFilter]);
 
   return (
     <AdminLayout
@@ -555,6 +716,14 @@ export default function AdminCustomersPage() {
       subtitle="Firmenkonten anlegen, bearbeiten und Zugänge verwalten."
       user={user}
     >
+      {getSuccessMessage(success) ? (
+        <div style={styles.alertSuccess}>{getSuccessMessage(success)}</div>
+      ) : null}
+
+      {getErrorMessage(error) ? (
+        <div style={styles.alertError}>{getErrorMessage(error)}</div>
+      ) : null}
+
       <div style={styles.grid}>
         <div style={styles.card}>
           <div style={styles.eyebrow}>Kundenverwaltung</div>
@@ -657,14 +826,38 @@ export default function AdminCustomersPage() {
         <div style={styles.eyebrow}>Firmenliste</div>
         <h2 style={styles.h2}>Alle Firmenkunden</h2>
 
+        <div style={styles.searchBar}>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Suche nach Firma, E-Mail, Name oder Benutzername"
+            style={styles.input}
+          />
+
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            style={styles.input}
+          >
+            <option value="ALL">Alle</option>
+            <option value="ACTIVE">Aktiv</option>
+            <option value="INACTIVE">Inaktiv</option>
+            <option value="ADMIN">Admin</option>
+          </select>
+        </div>
+
         <div style={styles.list}>
-          {customers.map((customer) => (
-            <CustomerCard
-              key={customer.id}
-              customer={customer}
-              navigation={navigation}
-            />
-          ))}
+          {filteredCustomers.length === 0 ? (
+            <div style={styles.card}>Keine passenden Firmenkunden gefunden.</div>
+          ) : (
+            filteredCustomers.map((customer) => (
+              <CustomerCard
+                key={customer.id}
+                customer={customer}
+                navigation={navigation}
+              />
+            ))
+          )}
         </div>
       </section>
     </AdminLayout>
