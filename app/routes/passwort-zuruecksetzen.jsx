@@ -6,7 +6,7 @@ import {
   useNavigation,
 } from "react-router";
 import { hashPassword, getUserFromRequest } from "../lib/auth.server.js";
-import { getLocaleFromRequest, dict, withLang } from "../lib/i18n.js";
+import { getLocaleFromRequest, withLang } from "../lib/i18n.js";
 import {
   findValidPasswordResetToken,
   markPasswordResetTokenUsed,
@@ -28,11 +28,7 @@ export async function loader({ request }) {
   const token = String(url.searchParams.get("token") || "");
 
   if (!token) {
-    return {
-      locale,
-      token,
-      valid: false,
-    };
+    return { locale, token, valid: false };
   }
 
   const resetToken = await findValidPasswordResetToken(token);
@@ -46,7 +42,6 @@ export async function loader({ request }) {
 
 export async function action({ request }) {
   const locale = getLocaleFromRequest(request);
-  const t = dict[locale] || dict.de;
 
   const formData = await request.formData();
   const token = String(formData.get("token") || "");
@@ -54,21 +49,49 @@ export async function action({ request }) {
   const confirmPassword = String(formData.get("confirmPassword") || "");
 
   if (!token) {
-    return { ok: false, message: t.resetTokenInvalid };
+    return {
+      ok: false,
+      message:
+        locale === "en"
+          ? "The reset link is invalid or expired."
+          : "Der Reset-Link ist ungültig oder abgelaufen.",
+      tokenValid: false,
+    };
   }
 
   if (password.length < 8) {
-    return { ok: false, message: t.registerPasswordShort, tokenValid: true };
+    return {
+      ok: false,
+      message:
+        locale === "en"
+          ? "The password must be at least 8 characters long."
+          : "Das Passwort muss mindestens 8 Zeichen lang sein.",
+      tokenValid: true,
+    };
   }
 
   if (password !== confirmPassword) {
-    return { ok: false, message: t.registerPasswordMismatch, tokenValid: true };
+    return {
+      ok: false,
+      message:
+        locale === "en"
+          ? "The passwords do not match."
+          : "Die Passwörter stimmen nicht überein.",
+      tokenValid: true,
+    };
   }
 
   const resetToken = await findValidPasswordResetToken(token);
 
   if (!resetToken) {
-    return { ok: false, message: t.resetTokenInvalid, tokenValid: false };
+    return {
+      ok: false,
+      message:
+        locale === "en"
+          ? "The reset link is invalid or expired."
+          : "Der Reset-Link ist ungültig oder abgelaufen.",
+      tokenValid: false,
+    };
   }
 
   const passwordHash = await hashPassword(password);
@@ -84,14 +107,13 @@ export async function action({ request }) {
   await markPasswordResetTokenUsed(resetToken.id);
   await invalidateAllUserResetTokens(resetToken.userId);
 
-  return redirect(withLang("/login", locale));
+  throw redirect(withLang("/login", locale));
 }
 
 export default function ResetPasswordPage() {
   const { locale, token, valid } = useLoaderData();
   const actionData = useActionData();
   const navigation = useNavigation();
-  const t = dict[locale] || dict.de;
 
   const isSubmitting = navigation.state === "submitting";
   const tokenStillValid =
@@ -146,14 +168,8 @@ export default function ResetPasswordPage() {
             <LanguageSwitch />
           </div>
 
-          <h1
-            style={{
-              margin: "0 0 10px",
-              fontSize: "30px",
-              color: colors.text,
-            }}
-          >
-            {t.resetPasswordFormTitle}
+          <h1 style={{ margin: "0 0 10px", fontSize: "30px", color: colors.text }}>
+            {locale === "en" ? "Set new password" : "Neues Passwort setzen"}
           </h1>
 
           <p
@@ -164,7 +180,13 @@ export default function ResetPasswordPage() {
               fontSize: "15px",
             }}
           >
-            {tokenStillValid ? t.resetPasswordFormText : t.resetTokenInvalid}
+            {tokenStillValid
+              ? locale === "en"
+                ? "Please enter your new password."
+                : "Bitte gib dein neues Passwort ein."
+              : locale === "en"
+                ? "The reset link is invalid or expired."
+                : "Der Reset-Link ist ungültig oder abgelaufen."}
           </p>
 
           {actionData?.message ? (
@@ -197,13 +219,17 @@ export default function ResetPasswordPage() {
                     fontSize: "14px",
                   }}
                 >
-                  {t.password}
+                  {locale === "en" ? "New password" : "Neues Passwort"}
                 </span>
 
                 <input
                   name="password"
                   type="password"
-                  placeholder={t.passwordRegisterPlaceholder}
+                  placeholder={
+                    locale === "en"
+                      ? "At least 8 characters"
+                      : "Mindestens 8 Zeichen"
+                  }
                   style={input.base}
                 />
               </label>
@@ -218,13 +244,17 @@ export default function ResetPasswordPage() {
                     fontSize: "14px",
                   }}
                 >
-                  {t.confirmPassword}
+                  {locale === "en" ? "Confirm password" : "Passwort bestätigen"}
                 </span>
 
                 <input
                   name="confirmPassword"
                   type="password"
-                  placeholder={t.confirmPasswordPlaceholder}
+                  placeholder={
+                    locale === "en"
+                      ? "Repeat new password"
+                      : "Neues Passwort wiederholen"
+                  }
                   style={input.base}
                 />
               </label>
@@ -235,10 +265,19 @@ export default function ResetPasswordPage() {
                   ...button.primary,
                   width: "100%",
                   background: "linear-gradient(135deg, #c8a96a, #b8934f)",
+                  color: "#111",
+                  cursor: isSubmitting ? "not-allowed" : "pointer",
+                  opacity: isSubmitting ? 0.7 : 1,
                 }}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? t.saving : t.resetPasswordButton}
+                {isSubmitting
+                  ? locale === "en"
+                    ? "Saving..."
+                    : "Wird gespeichert..."
+                  : locale === "en"
+                    ? "Save new password"
+                    : "Neues Passwort speichern"}
               </button>
             </Form>
           ) : (
@@ -253,7 +292,7 @@ export default function ResetPasswordPage() {
                 justifyContent: "center",
               }}
             >
-              {t.requestResetLink}
+              {locale === "en" ? "Request new reset link" : "Neuen Reset-Link anfordern"}
             </a>
           )}
         </div>
