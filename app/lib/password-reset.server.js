@@ -1,6 +1,8 @@
 import crypto from "crypto";
+import { Resend } from "resend";
 import { prisma } from "./prisma.server.js";
-import { sendMail } from "./mail.server.js";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 function sha256(value) {
   return crypto.createHash("sha256").update(value).digest("hex");
@@ -13,7 +15,7 @@ function createRawToken() {
 export async function createPasswordResetToken(userId) {
   const rawToken = createRawToken();
   const tokenHash = sha256(rawToken);
-  const expiresAt = new Date(Date.now() + 1000 * 60 * 60); // 1 Stunde
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60);
 
   await prisma.passwordResetToken.create({
     data: {
@@ -23,37 +25,26 @@ export async function createPasswordResetToken(userId) {
     },
   });
 
-  return {
-    rawToken,
-    expiresAt,
-  };
+  return { rawToken, expiresAt };
 }
 
 export async function findValidPasswordResetToken(rawToken) {
   const tokenHash = sha256(rawToken);
 
-  const token = await prisma.passwordResetToken.findFirst({
+  return prisma.passwordResetToken.findFirst({
     where: {
       tokenHash,
       usedAt: null,
-      expiresAt: {
-        gt: new Date(),
-      },
+      expiresAt: { gt: new Date() },
     },
-    include: {
-      user: true,
-    },
+    include: { user: true },
   });
-
-  return token;
 }
 
 export async function markPasswordResetTokenUsed(id) {
   await prisma.passwordResetToken.update({
     where: { id },
-    data: {
-      usedAt: new Date(),
-    },
+    data: { usedAt: new Date() },
   });
 }
 
@@ -63,14 +54,12 @@ export async function invalidateAllUserResetTokens(userId) {
       userId,
       usedAt: null,
     },
-    data: {
-      usedAt: new Date(),
-    },
+    data: { usedAt: new Date() },
   });
 }
 
 export async function sendPasswordResetEmail({ user, locale, rawToken }) {
-  const origin = "https://konto.letmebowl-catering.de";
+  const origin = process.env.APP_URL || "https://konto.letmebowl-catering.de";
 
   const resetUrl = `${origin}/passwort-zuruecksetzen?token=${encodeURIComponent(
     rawToken
@@ -82,60 +71,41 @@ export async function sendPasswordResetEmail({ user, locale, rawToken }) {
     ? "Reset your Let Me Bowl password"
     : "Setze dein Let Me Bowl Passwort zurück";
 
-  const text = isEn
-    ? `You requested a password reset for your Let Me Bowl account.
-
-Use this link to set a new password:
-${resetUrl}
-
-This link expires in 1 hour.
-
-If you did not request this, you can ignore this email.`
-    : `Du hast eine Passwort-Zurücksetzung für dein Let Me Bowl Konto angefordert.
-
-Nutze diesen Link, um ein neues Passwort zu setzen:
-${resetUrl}
-
-Der Link ist 1 Stunde gültig.
-
-Falls du das nicht angefordert hast, kannst du diese E-Mail ignorieren.`;
-
   const html = isEn
     ? `
-      <div style="font-family: Inter, Arial, sans-serif; color: #1e1e1e; line-height: 1.6;">
-        <h2 style="margin-bottom: 12px;">Reset your password</h2>
+      <div style="font-family: Arial, sans-serif; color: #1e1e1e; line-height: 1.6;">
+        <h2>Reset your password</h2>
         <p>You requested a password reset for your Let Me Bowl account.</p>
         <p>
           <a href="${resetUrl}" style="display:inline-block;padding:12px 18px;background:#111;color:#fff;text-decoration:none;border-radius:12px;font-weight:700;">
             Set new password
           </a>
         </p>
-        <p>Or copy this link into your browser:</p>
+        <p>Or copy this link:</p>
         <p>${resetUrl}</p>
         <p>This link expires in 1 hour.</p>
-        <p>If you did not request this, you can ignore this email.</p>
       </div>
     `
     : `
-      <div style="font-family: Inter, Arial, sans-serif; color: #1e1e1e; line-height: 1.6;">
-        <h2 style="margin-bottom: 12px;">Passwort zurücksetzen</h2>
+      <div style="font-family: Arial, sans-serif; color: #1e1e1e; line-height: 1.6;">
+        <h2>Passwort zurücksetzen</h2>
         <p>Du hast eine Passwort-Zurücksetzung für dein Let Me Bowl Konto angefordert.</p>
         <p>
           <a href="${resetUrl}" style="display:inline-block;padding:12px 18px;background:#111;color:#fff;text-decoration:none;border-radius:12px;font-weight:700;">
             Neues Passwort setzen
           </a>
         </p>
-        <p>Oder kopiere diesen Link in deinen Browser:</p>
+        <p>Oder kopiere diesen Link:</p>
         <p>${resetUrl}</p>
         <p>Der Link ist 1 Stunde gültig.</p>
-        <p>Falls du das nicht angefordert hast, kannst du diese E-Mail ignorieren.</p>
       </div>
     `;
 
-  await sendMail({
+  await resend.emails.send({
+    from: process.env.MAIL_FROM || "Let Me Bowl Catering <onboarding@resend.dev>",
     to: user.email,
+    bcc: process.env.MAIL_BCC || undefined,
     subject,
-    text,
     html,
   });
 }
