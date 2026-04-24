@@ -81,14 +81,25 @@ function buildResetEmail({ resetUrl, isEn }) {
 <!doctype html>
 <html>
   <body style="margin:0;padding:0;background:#f7f4ee;font-family:Arial,Helvetica,sans-serif;color:#171717;">
-    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f7f4ee;padding:32px 14px;">
+    <table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f7f4ee" style="background:#f7f4ee;padding:32px 14px;">
       <tr>
         <td align="center">
-          <table width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;background:#ffffff;border:1px solid #eadfcb;border-radius:22px;overflow:hidden;">
+          <table width="100%" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="max-width:620px;background:#ffffff;border:1px solid #eadfcb;border-radius:22px;overflow:hidden;">
+            
             <tr>
-              <td style="padding:28px 30px;background:#111111;color:#ffffff;">
-                <div style="font-size:15px;font-weight:800;letter-spacing:0.12em;">LET ME BOWL</div>
-                <div style="margin-top:8px;font-size:13px;color:#d9c391;">CATERING PORTAL</div>
+              <td bgcolor="#111111" style="background:#111111;padding:0;">
+                <table width="100%" cellpadding="0" cellspacing="0" bgcolor="#111111" style="background:#111111;">
+                  <tr>
+                    <td bgcolor="#111111" style="background:#111111;padding:28px 30px;color:#ffffff;">
+                      <div style="font-size:15px;font-weight:800;letter-spacing:0.12em;color:#ffffff;">
+                        LET ME BOWL
+                      </div>
+                      <div style="margin-top:8px;font-size:13px;color:#d9c391;">
+                        CATERING PORTAL
+                      </div>
+                    </td>
+                  </tr>
+                </table>
               </td>
             </tr>
 
