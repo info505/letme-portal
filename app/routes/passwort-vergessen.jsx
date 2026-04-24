@@ -72,7 +72,10 @@ export async function action({ request }) {
 
   return {
     ok: true,
-    message: t.forgotPasswordMailSent,
+    message:
+      locale === "en"
+        ? "If the email exists, you will receive a reset link."
+        : "Wenn die E-Mail existiert, erhältst du einen Reset-Link.",
   };
 }
 
@@ -80,7 +83,6 @@ export default function ForgotPasswordPage() {
   const { locale } = useLoaderData();
   const actionData = useActionData();
   const navigation = useNavigation();
-  const t = dict[locale] || dict.de;
 
   const isSubmitting = navigation.state === "submitting";
 
@@ -140,7 +142,7 @@ export default function ForgotPasswordPage() {
               color: colors.text,
             }}
           >
-            {t.forgotPasswordTitle}
+            {locale === "en" ? "Forgot password" : "Passwort vergessen"}
           </h1>
 
           <p
@@ -151,7 +153,9 @@ export default function ForgotPasswordPage() {
               fontSize: "15px",
             }}
           >
-            {t.forgotPasswordLiveText}
+            {locale === "en"
+              ? "Enter your email and we will send you a reset link."
+              : "Gib deine E-Mail ein und wir senden dir einen Reset-Link."}
           </p>
 
           {actionData?.message ? (
@@ -181,13 +185,13 @@ export default function ForgotPasswordPage() {
                   fontSize: "14px",
                 }}
               >
-                {t.resetEmailLabel}
+                {locale === "en" ? "Email" : "E-Mail"}
               </span>
 
               <input
                 name="email"
                 type="email"
-                placeholder={t.emailPlaceholder}
+                placeholder="name@firma.de"
                 style={input.base}
               />
             </label>
@@ -198,10 +202,19 @@ export default function ForgotPasswordPage() {
                 ...button.primary,
                 width: "100%",
                 background: "linear-gradient(135deg, #c8a96a, #b8934f)",
+                color: "#111",
+                cursor: isSubmitting ? "not-allowed" : "pointer",
+                opacity: isSubmitting ? 0.7 : 1,
               }}
               disabled={isSubmitting}
             >
-              {isSubmitting ? t.sendingInstructions : t.sendInstructions}
+              {isSubmitting
+                ? locale === "en"
+                  ? "Sending..."
+                  : "Wird gesendet..."
+                : locale === "en"
+                  ? "Send reset link"
+                  : "Reset-Link senden"}
             </button>
           </Form>
 
@@ -219,7 +232,7 @@ export default function ForgotPasswordPage() {
                 fontWeight: 700,
               }}
             >
-              {t.backToLogin}
+              {locale === "en" ? "Back to login" : "Zurück zum Login"}
             </a>
           </div>
         </div>
