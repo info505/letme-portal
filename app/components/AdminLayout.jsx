@@ -43,7 +43,6 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "10px",
-    textDecoration: "none",
     color: "rgba(255,255,255,0.78)",
     padding: "13px 14px",
     borderRadius: "16px",
@@ -51,7 +50,6 @@ const styles = {
     fontWeight: 800,
     border: "1px solid transparent",
     background: "transparent",
-    textAlign: "left",
     cursor: "pointer",
     width: "100%",
   },
@@ -70,9 +68,7 @@ const styles = {
     fontSize: "13px",
     lineHeight: 1.5,
   },
-  contentWrap: {
-    padding: "30px",
-  },
+  contentWrap: { padding: "30px" },
   topbar: {
     background: colors.card,
     border: `1px solid ${colors.line}`,
@@ -112,6 +108,16 @@ const styles = {
     border: `1px solid ${colors.line}`,
     padding: "11px 15px",
     borderRadius: "999px",
+    fontWeight: 800,
+    whiteSpace: "nowrap",
+  },
+  logoutBtn: {
+    textDecoration: "none",
+    background: "#111",
+    color: "#fff",
+    padding: "11px 15px",
+    borderRadius: "999px",
+    fontSize: "14px",
     fontWeight: 800,
     whiteSpace: "nowrap",
   },
@@ -185,7 +191,13 @@ export default function AdminLayout({ title, subtitle, user, children }) {
             <p style={styles.topbarText}>{subtitle}</p>
           </div>
 
-          <div style={styles.userBox}>{user?.email || "Admin"}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={styles.userBox}>{user?.email || "Admin"}</div>
+
+            <a href="/logout" style={styles.logoutBtn}>
+              Abmelden
+            </a>
+          </div>
         </div>
 
         <div style={styles.content}>{children}</div>
