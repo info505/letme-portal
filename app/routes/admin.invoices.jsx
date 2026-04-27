@@ -34,43 +34,49 @@ function successText(success) {
   if (success === "uploaded") return "Rechnung wurde erfolgreich hochgeladen.";
   if (success === "updated") return "Rechnung wurde erfolgreich aktualisiert.";
   if (success === "deleted") return "Rechnung wurde gelöscht.";
+  if (success === "replaced") return "PDF wurde erfolgreich ersetzt.";
   return null;
 }
 
-const styles = {
-  grid: { display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: "22px", alignItems: "start" },
-  card: { background: "#fff", border: "1px solid #e8decd", borderRadius: "24px", padding: "28px", boxShadow: "0 18px 45px rgba(30,20,10,0.05)" },
-  alertSuccess: { background: "#edf7ee", color: "#1f6b36", border: "1px solid #cfe8d4", padding: "14px 16px", borderRadius: "16px", fontWeight: 800 },
-  alertError: { background: "#fff4f4", color: "#8b2222", border: "1px solid #efcaca", padding: "14px 16px", borderRadius: "16px", fontWeight: 800 },
-  eyebrow: { display: "inline-block", fontSize: "12px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#b08b4f", fontWeight: 900, marginBottom: "14px" },
-  h2: { margin: "0 0 12px", fontSize: "28px", letterSpacing: "-0.03em" },
-  text: { margin: "0 0 22px", fontSize: "15px", lineHeight: 1.7, color: "#756b5f" },
-  blackBtn: { border: 0, background: "#111", color: "#fff", padding: "14px 18px", borderRadius: "16px", fontWeight: 800, cursor: "pointer" },
-  formBox: { marginTop: "22px", border: "1px solid #eadfcd", borderRadius: "22px", padding: "22px", background: "#fbf8f2" },
-  formGrid: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "16px" },
-  field: { display: "flex", flexDirection: "column", gap: "8px" },
-  fieldFull: { display: "flex", flexDirection: "column", gap: "8px", gridColumn: "1 / -1" },
-  label: { fontSize: "12px", letterSpacing: "0.08em", textTransform: "uppercase", color: "#6b6258", fontWeight: 900 },
-  input: { width: "100%", padding: "14px 15px", borderRadius: "15px", border: "1px solid #dfd3bf", background: "#fff", fontSize: "15px", boxSizing: "border-box" },
-  formActions: { display: "flex", gap: "12px", marginTop: "18px", flexWrap: "wrap" },
-  saveBtn: { border: 0, background: "#111", color: "#fff", padding: "14px 18px", borderRadius: "16px", fontWeight: 800, cursor: "pointer" },
-  cancelBtn: { border: "1px solid #dfd3bf", background: "#fff", color: "#171717", padding: "14px 18px", borderRadius: "16px", fontWeight: 800, cursor: "pointer" },
-  dangerBtn: { border: "1px solid #efcaca", background: "#fff4f4", color: "#8b2222", padding: "12px 14px", borderRadius: "14px", fontWeight: 900, cursor: "pointer" },
-  stats: { display: "grid", gap: "16px" },
-  stat: { background: "#fff", border: "1px solid #e8decd", borderRadius: "22px", padding: "22px" },
-  statLabel: { fontSize: "12px", letterSpacing: "0.1em", textTransform: "uppercase", color: "#756b5f", fontWeight: 900, marginBottom: "10px" },
-  statValue: { fontSize: "34px", fontWeight: 900, letterSpacing: "-0.04em" },
-  list: { display: "grid", gap: "14px" },
-  invoiceItem: { border: "1px solid #ece5d8", borderRadius: "20px", padding: "20px", background: "#fbf8f2", display: "grid", gap: "16px" },
-  invoiceTop: { display: "grid", gridTemplateColumns: "1.3fr 0.6fr auto", gap: "18px", alignItems: "center" },
-  invoiceNumber: { fontSize: "20px", fontWeight: 900, marginBottom: "8px" },
-  meta: { fontSize: "14px", color: "#6b6258", lineHeight: 1.6 },
-  amount: { fontSize: "22px", fontWeight: 900, textAlign: "right" },
-  pdfBtn: { textDecoration: "none", background: "#111", color: "#fff", padding: "13px 16px", borderRadius: "15px", fontWeight: 800, whiteSpace: "nowrap" },
-  badge: { display: "inline-block", padding: "6px 10px", borderRadius: "999px", fontSize: "12px", fontWeight: 900, background: "#fbf3e3", color: "#7a5a18", border: "1px solid #efdcae" },
-  empty: { border: "1px dashed #dfd3bf", borderRadius: "20px", padding: "24px", color: "#756b5f", background: "#fffdfa" },
-  rowActions: { display: "flex", gap: "10px", flexWrap: "wrap" },
-};
+async function ensureUploadDir() {
+  const uploadDir = path.join(process.cwd(), "uploads", "invoices");
+  await fs.mkdir(uploadDir, { recursive: true });
+  return uploadDir;
+}
+
+async function savePdf(file) {
+  if (!(file instanceof File) || file.size === 0) return null;
+
+  if (file.type !== "application/pdf") {
+    throw new Error("NOT_PDF");
+  }
+
+  const uploadDir = await ensureUploadDir();
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const filename = `${Date.now()}-${safeName}`;
+  const filepath = path.join(uploadDir, filename);
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  await fs.writeFile(filepath, buffer);
+
+  return {
+    pdfUrl: `/uploads/invoices/${filename}`,
+    originalName: file.name,
+  };
+}
+
+async function deleteUploadedFile(pdfUrl) {
+  if (!pdfUrl || !pdfUrl.startsWith("/uploads/invoices/")) return;
+
+  const filename = pdfUrl.replace("/uploads/invoices/", "");
+  const filepath = path.join(process.cwd(), "uploads", "invoices", filename);
+
+  try {
+    await fs.unlink(filepath);
+  } catch {
+    // Railway kann Dateien nach Redeploy verlieren. Dann ignorieren.
+  }
+}
 
 export async function loader({ request }) {
   const user = await getUserFromRequest(request);
@@ -134,19 +140,6 @@ export async function loader({ request }) {
   };
 }
 
-async function deleteUploadedFile(pdfUrl) {
-  if (!pdfUrl || !pdfUrl.startsWith("/uploads/invoices/")) return;
-
-  const filename = pdfUrl.replace("/uploads/invoices/", "");
-  const filepath = path.join(process.cwd(), "uploads", "invoices", filename);
-
-  try {
-    await fs.unlink(filepath);
-  } catch {
-    // Datei kann auf Railway nach Redeploy schon weg sein. Dann ignorieren.
-  }
-}
-
 export async function action({ request }) {
   const user = await getUserFromRequest(request);
 
@@ -156,101 +149,154 @@ export async function action({ request }) {
   const formData = await request.formData();
   const intent = String(formData.get("intent") || "create");
 
-  if (intent === "delete") {
-    const invoiceId = String(formData.get("invoiceId") || "");
+  try {
+    if (intent === "delete") {
+      const invoiceId = String(formData.get("invoiceId") || "");
 
-    if (!invoiceId) {
-      return redirect("/admin/invoices?error=missing_invoice");
-    }
+      if (!invoiceId) return redirect("/admin/invoices?error=missing_invoice");
 
-    const invoice = await prisma.portalInvoice.findUnique({
-      where: { id: invoiceId },
-    });
-
-    if (invoice) {
-      await deleteUploadedFile(invoice.pdfUrl);
-      await prisma.portalInvoice.delete({
+      const invoice = await prisma.portalInvoice.findUnique({
         where: { id: invoiceId },
       });
+
+      if (invoice) {
+        await deleteUploadedFile(invoice.pdfUrl);
+        await prisma.portalInvoice.delete({ where: { id: invoiceId } });
+      }
+
+      return redirect("/admin/invoices?success=deleted");
     }
 
-    return redirect("/admin/invoices?success=deleted");
-  }
+    if (intent === "update") {
+      const invoiceId = String(formData.get("invoiceId") || "");
+      const invoiceNumber = String(formData.get("invoiceNumber") || "").trim();
+      const amountGross = String(formData.get("amountGross") || "").trim();
+      const issueDate = String(formData.get("issueDate") || "").trim();
+      const dueDate = String(formData.get("dueDate") || "").trim();
+      const status = String(formData.get("status") || "OFFEN");
+      const file = formData.get("pdf");
 
-  if (intent === "update") {
-    const invoiceId = String(formData.get("invoiceId") || "");
-    const invoiceNumber = String(formData.get("invoiceNumber") || "").trim();
-    const amountGross = String(formData.get("amountGross") || "").trim();
-    const issueDate = String(formData.get("issueDate") || "").trim();
-    const dueDate = String(formData.get("dueDate") || "").trim();
-    const status = String(formData.get("status") || "OFFEN");
+      if (!invoiceId || !invoiceNumber) {
+        return redirect("/admin/invoices?error=missing_fields");
+      }
 
-    if (!invoiceId || !invoiceNumber) {
-      return redirect("/admin/invoices?error=missing_fields");
-    }
+      const oldInvoice = await prisma.portalInvoice.findUnique({
+        where: { id: invoiceId },
+      });
 
-    await prisma.portalInvoice.update({
-      where: { id: invoiceId },
-      data: {
+      if (!oldInvoice) {
+        return redirect("/admin/invoices?error=missing_invoice");
+      }
+
+      const updateData = {
         invoiceNumber,
         amountGross: amountGross ? Number(amountGross.replace(",", ".")) : null,
         issueDate: issueDate ? new Date(issueDate) : null,
         dueDate: dueDate ? new Date(dueDate) : null,
         status,
+      };
+
+      let replacedPdf = false;
+
+      if (file instanceof File && file.size > 0) {
+        const saved = await savePdf(file);
+
+        if (saved) {
+          await deleteUploadedFile(oldInvoice.pdfUrl);
+          updateData.pdfUrl = saved.pdfUrl;
+          updateData.originalName = saved.originalName;
+          replacedPdf = true;
+        }
+      }
+
+      await prisma.portalInvoice.update({
+        where: { id: invoiceId },
+        data: updateData,
+      });
+
+      return redirect(
+        `/admin/invoices?success=${replacedPdf ? "replaced" : "updated"}`
+      );
+    }
+
+    const userId = formData.get("userId");
+    const invoiceNumber = String(formData.get("invoiceNumber") || "").trim();
+    const amountGross = String(formData.get("amountGross") || "").trim();
+    const issueDate = String(formData.get("issueDate") || "").trim();
+    const dueDate = String(formData.get("dueDate") || "").trim();
+    const status = String(formData.get("status") || "OFFEN");
+    const file = formData.get("pdf");
+
+    if (!userId || !invoiceNumber || !(file instanceof File) || file.size === 0) {
+      return redirect("/admin/invoices?error=missing_fields");
+    }
+
+    const saved = await savePdf(file);
+
+    await prisma.portalInvoice.create({
+      data: {
+        userId: String(userId),
+        invoiceNumber,
+        pdfUrl: saved.pdfUrl,
+        amountGross: amountGross ? Number(amountGross.replace(",", ".")) : null,
+        issueDate: issueDate ? new Date(issueDate) : null,
+        dueDate: dueDate ? new Date(dueDate) : null,
+        status,
+        originalName: saved.originalName,
       },
     });
 
-    return redirect("/admin/invoices?success=updated");
+    return redirect("/admin/invoices?success=uploaded");
+  } catch (error) {
+    console.error("ADMIN_INVOICE_ACTION_ERROR:", error);
+
+    if (error.message === "NOT_PDF") {
+      return redirect("/admin/invoices?error=not_pdf");
+    }
+
+    return redirect("/admin/invoices?error=server");
   }
-
-  const userId = formData.get("userId");
-  const invoiceNumber = String(formData.get("invoiceNumber") || "").trim();
-  const amountGross = String(formData.get("amountGross") || "").trim();
-  const issueDate = String(formData.get("issueDate") || "").trim();
-  const dueDate = String(formData.get("dueDate") || "").trim();
-  const status = String(formData.get("status") || "OFFEN");
-  const file = formData.get("pdf");
-
-  if (!userId || !invoiceNumber || !(file instanceof File) || file.size === 0) {
-    return redirect("/admin/invoices?error=missing_fields");
-  }
-
-  if (file.type !== "application/pdf") {
-    return redirect("/admin/invoices?error=not_pdf");
-  }
-
-  const uploadDir = path.join(process.cwd(), "uploads", "invoices");
-  await fs.mkdir(uploadDir, { recursive: true });
-
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const filename = `${Date.now()}-${safeName}`;
-  const filepath = path.join(uploadDir, filename);
-
-  const buffer = Buffer.from(await file.arrayBuffer());
-  await fs.writeFile(filepath, buffer);
-
-  const pdfUrl = `/uploads/invoices/${filename}`;
-
-  await prisma.portalInvoice.create({
-    data: {
-      userId: String(userId),
-      invoiceNumber,
-      pdfUrl,
-      amountGross: amountGross ? Number(amountGross.replace(",", ".")) : null,
-      issueDate: issueDate ? new Date(issueDate) : null,
-      dueDate: dueDate ? new Date(dueDate) : null,
-      status,
-      originalName: file.name,
-    },
-  });
-
-  return redirect("/admin/invoices?success=uploaded");
 }
+
+const styles = {
+  grid: { display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: "22px", alignItems: "start" },
+  card: { background: "#fff", border: "1px solid #e8decd", borderRadius: "24px", padding: "28px", boxShadow: "0 18px 45px rgba(30,20,10,0.05)" },
+  alertSuccess: { background: "#edf7ee", color: "#1f6b36", border: "1px solid #cfe8d4", padding: "14px 16px", borderRadius: "16px", fontWeight: 800 },
+  alertError: { background: "#fff4f4", color: "#8b2222", border: "1px solid #efcaca", padding: "14px 16px", borderRadius: "16px", fontWeight: 800 },
+  eyebrow: { display: "inline-block", fontSize: "12px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#b08b4f", fontWeight: 900, marginBottom: "14px" },
+  h2: { margin: "0 0 12px", fontSize: "28px", letterSpacing: "-0.03em" },
+  text: { margin: "0 0 22px", fontSize: "15px", lineHeight: 1.7, color: "#756b5f" },
+  blackBtn: { border: 0, background: "#111", color: "#fff", padding: "14px 18px", borderRadius: "16px", fontWeight: 800, cursor: "pointer" },
+  formBox: { marginTop: "22px", border: "1px solid #eadfcd", borderRadius: "22px", padding: "22px", background: "#fbf8f2" },
+  formGrid: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "16px" },
+  field: { display: "flex", flexDirection: "column", gap: "8px" },
+  fieldFull: { display: "flex", flexDirection: "column", gap: "8px", gridColumn: "1 / -1" },
+  label: { fontSize: "12px", letterSpacing: "0.08em", textTransform: "uppercase", color: "#6b6258", fontWeight: 900 },
+  input: { width: "100%", padding: "14px 15px", borderRadius: "15px", border: "1px solid #dfd3bf", background: "#fff", fontSize: "15px", boxSizing: "border-box" },
+  formActions: { display: "flex", gap: "12px", marginTop: "18px", flexWrap: "wrap" },
+  saveBtn: { border: 0, background: "#111", color: "#fff", padding: "14px 18px", borderRadius: "16px", fontWeight: 800, cursor: "pointer" },
+  cancelBtn: { border: "1px solid #dfd3bf", background: "#fff", color: "#171717", padding: "14px 18px", borderRadius: "16px", fontWeight: 800, cursor: "pointer" },
+  dangerBtn: { border: "1px solid #efcaca", background: "#fff4f4", color: "#8b2222", padding: "12px 14px", borderRadius: "14px", fontWeight: 900, cursor: "pointer" },
+  stats: { display: "grid", gap: "16px" },
+  stat: { background: "#fff", border: "1px solid #e8decd", borderRadius: "22px", padding: "22px" },
+  statLabel: { fontSize: "12px", letterSpacing: "0.1em", textTransform: "uppercase", color: "#756b5f", fontWeight: 900, marginBottom: "10px" },
+  statValue: { fontSize: "34px", fontWeight: 900, letterSpacing: "-0.04em" },
+  list: { display: "grid", gap: "14px" },
+  invoiceItem: { border: "1px solid #ece5d8", borderRadius: "20px", padding: "20px", background: "#fbf8f2", display: "grid", gap: "16px" },
+  invoiceTop: { display: "grid", gridTemplateColumns: "1.3fr 0.6fr auto", gap: "18px", alignItems: "center" },
+  invoiceNumber: { fontSize: "20px", fontWeight: 900, marginBottom: "8px" },
+  meta: { fontSize: "14px", color: "#6b6258", lineHeight: 1.6 },
+  amount: { fontSize: "22px", fontWeight: 900, textAlign: "right" },
+  pdfBtn: { textDecoration: "none", background: "#111", color: "#fff", padding: "13px 16px", borderRadius: "15px", fontWeight: 800, whiteSpace: "nowrap" },
+  badge: { display: "inline-block", padding: "6px 10px", borderRadius: "999px", fontSize: "12px", fontWeight: 900, background: "#fbf3e3", color: "#7a5a18", border: "1px solid #efdcae" },
+  empty: { border: "1px dashed #dfd3bf", borderRadius: "20px", padding: "24px", color: "#756b5f", background: "#fffdfa" },
+  rowActions: { display: "flex", gap: "10px", flexWrap: "wrap" },
+};
 
 function EditInvoiceForm({ inv, navigation, onClose }) {
   return (
     <div style={styles.formBox}>
-      <Form method="post">
+      <Form method="post" encType="multipart/form-data">
         <input type="hidden" name="intent" value="update" />
         <input type="hidden" name="invoiceId" value={inv.id} />
 
@@ -282,6 +328,14 @@ function EditInvoiceForm({ inv, navigation, onClose }) {
           <div style={styles.field}>
             <label style={styles.label}>Fällig am</label>
             <input name="dueDate" type="date" defaultValue={toDateInput(inv.dueDate)} style={styles.input} />
+          </div>
+
+          <div style={styles.fieldFull}>
+            <label style={styles.label}>PDF ersetzen</label>
+            <input type="file" name="pdf" accept="application/pdf" style={styles.input} />
+            <div style={styles.meta}>
+              Aktuelle Datei: {inv.originalName || "PDF vorhanden"}
+            </div>
           </div>
         </div>
 
@@ -317,6 +371,8 @@ function InvoiceRow({ inv, navigation }) {
             Fällig am: {formatDate(inv.dueDate)}
             <br />
             Status: <span style={styles.badge}>{statusLabel(inv.status)}</span>
+            <br />
+            Datei: {inv.originalName || "-"}
           </div>
         </div>
 
@@ -334,9 +390,12 @@ function InvoiceRow({ inv, navigation }) {
           {showEdit ? "Bearbeiten schließen" : "Bearbeiten"}
         </button>
 
-        <Form method="post" onSubmit={(e) => {
-          if (!window.confirm("Diese Rechnung wirklich löschen?")) e.preventDefault();
-        }}>
+        <Form
+          method="post"
+          onSubmit={(e) => {
+            if (!window.confirm("Diese Rechnung wirklich löschen?")) e.preventDefault();
+          }}
+        >
           <input type="hidden" name="intent" value="delete" />
           <input type="hidden" name="invoiceId" value={inv.id} />
           <button type="submit" style={styles.dangerBtn}>Löschen</button>
