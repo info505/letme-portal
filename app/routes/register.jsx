@@ -6,12 +6,7 @@ import {
   useNavigation,
 } from "react-router";
 import { prisma } from "../lib/prisma.server.js";
-import {
-  hashPassword,
-  createPortalSession,
-  createSessionCookie,
-  getUserFromRequest,
-} from "../lib/auth.server.js";
+import { hashPassword, getUserFromRequest } from "../lib/auth.server.js";
 import { getLocaleFromRequest, dict, withLang } from "../lib/i18n.js";
 import { input, colors } from "../lib/ui.js";
 import LanguageSwitch from "../components/LanguageSwitch.jsx";
@@ -120,7 +115,7 @@ export async function action({ request }) {
 
   const passwordHash = await hashPassword(password);
 
-  const user = await prisma.portalUser.create({
+  await prisma.portalUser.create({
     data: {
       companyName,
       firstName,
@@ -129,6 +124,12 @@ export async function action({ request }) {
       email,
       phone,
       passwordHash,
+
+      isActive: false,
+      isAdmin: false,
+      role: "ORDERER",
+      mustResetPassword: false,
+
       billing: {
         create: {
           companyName,
@@ -140,13 +141,15 @@ export async function action({ request }) {
     },
   });
 
-  const { sessionToken, expiresAt } = await createPortalSession(user.id);
-
-  return redirect(`/dashboard?lang=${locale}`, {
-    headers: {
-      "Set-Cookie": createSessionCookie(sessionToken, expiresAt),
-    },
-  });
+  return {
+    ok: true,
+    locale,
+    message:
+      locale === "en"
+        ? "Thank you for registering. We have received your company account request and will review it shortly. Once approved, you will be able to access your Let Me Bowl portal."
+        : "Vielen Dank für deine Registrierung. Wir haben deine Anfrage für ein Firmenkonto erhalten und prüfen sie zeitnah. Sobald dein Zugang freigegeben wurde, kannst du dein Let Me Bowl Portal nutzen.",
+    values: {},
+  };
 }
 
 export default function RegisterPage() {
@@ -156,6 +159,8 @@ export default function RegisterPage() {
   const isSubmitting = navigation.state === "submitting";
   const values = actionData?.values || {};
   const t = dict[locale] || dict.de;
+
+  const isSuccess = actionData?.ok === true;
 
   const bullets =
     locale === "en"
@@ -331,11 +336,20 @@ export default function RegisterPage() {
           margin-bottom: 16px;
           padding: 14px 16px;
           border-radius: 16px;
+          font-weight: 700;
+          line-height: 1.5;
+        }
+
+        .alert-error {
           background: #fff4f4;
           color: #8b2222;
           border: 1px solid #efcaca;
-          font-weight: 700;
-          line-height: 1.5;
+        }
+
+        .alert-success {
+          background: #edf7ee;
+          color: #1f6b36;
+          border: 1px solid #cfe8d4;
         }
 
         .section {
@@ -468,118 +482,126 @@ export default function RegisterPage() {
               <h2 className="form-title">{t.registerNow}</h2>
               <p className="form-text">
                 {locale === "en"
-                  ? "Set up your company access in a few clear steps."
-                  : "Richte deinen Firmenzugang in wenigen klaren Schritten ein."}
+                  ? "Set up your company access in a few clear steps. After submitting, your request will be reviewed before activation."
+                  : "Richte deinen Firmenzugang in wenigen klaren Schritten ein. Nach dem Absenden wird deine Anfrage geprüft und anschließend freigegeben."}
               </p>
             </div>
 
             {actionData?.message ? (
-              <div className="alert">{actionData.message}</div>
+              <div
+                className={`alert ${
+                  isSuccess ? "alert-success" : "alert-error"
+                }`}
+              >
+                {actionData.message}
+              </div>
             ) : null}
 
-            <Form method="post">
-              <div className="section">
-                <h3 className="section-title">
-                  {locale === "en" ? "Company" : "Firma"}
-                </h3>
+            {!isSuccess ? (
+              <Form method="post">
+                <div className="section">
+                  <h3 className="section-title">
+                    {locale === "en" ? "Company" : "Firma"}
+                  </h3>
 
-                <div className="grid">
-                  <div className="full">
+                  <div className="grid">
+                    <div className="full">
+                      <Field
+                        label={t.company}
+                        name="companyName"
+                        defaultValue={values.companyName}
+                        placeholder={t.companyPlaceholder}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="section">
+                  <h3 className="section-title">
+                    {locale === "en" ? "Contact person" : "Ansprechpartner"}
+                  </h3>
+
+                  <div className="grid">
                     <Field
-                      label={t.company}
-                      name="companyName"
-                      defaultValue={values.companyName}
-                      placeholder={t.companyPlaceholder}
+                      label={t.firstName}
+                      name="firstName"
+                      defaultValue={values.firstName}
+                      placeholder={t.firstNamePlaceholder}
+                      required
+                    />
+
+                    <Field
+                      label={t.lastName}
+                      name="lastName"
+                      defaultValue={values.lastName}
+                      placeholder={t.lastNamePlaceholder}
+                      required
+                    />
+
+                    <Field
+                      label={t.phone}
+                      name="phone"
+                      defaultValue={values.phone}
+                      placeholder={t.phonePlaceholder}
+                    />
+
+                    <div className="full">
+                      <Field
+                        label={t.email}
+                        name="email"
+                        type="email"
+                        defaultValue={values.email}
+                        placeholder={t.emailPlaceholder}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="section">
+                  <h3 className="section-title">
+                    {locale === "en" ? "Access" : "Zugang"}
+                  </h3>
+
+                  <div className="grid">
+                    <div className="full">
+                      <Field
+                        label={t.username}
+                        name="username"
+                        defaultValue={values.username}
+                        placeholder={t.usernamePlaceholder}
+                        required
+                      />
+                    </div>
+
+                    <Field
+                      label={t.password}
+                      name="password"
+                      type="password"
+                      placeholder={t.passwordRegisterPlaceholder}
+                      required
+                    />
+
+                    <Field
+                      label={t.confirmPassword}
+                      name="confirmPassword"
+                      type="password"
+                      placeholder={t.confirmPasswordPlaceholder}
                       required
                     />
                   </div>
                 </div>
-              </div>
 
-              <div className="section">
-                <h3 className="section-title">
-                  {locale === "en" ? "Contact person" : "Ansprechpartner"}
-                </h3>
-
-                <div className="grid">
-                  <Field
-                    label={t.firstName}
-                    name="firstName"
-                    defaultValue={values.firstName}
-                    placeholder={t.firstNamePlaceholder}
-                    required
-                  />
-
-                  <Field
-                    label={t.lastName}
-                    name="lastName"
-                    defaultValue={values.lastName}
-                    placeholder={t.lastNamePlaceholder}
-                    required
-                  />
-
-                  <Field
-                    label={t.phone}
-                    name="phone"
-                    defaultValue={values.phone}
-                    placeholder={t.phonePlaceholder}
-                  />
-
-                  <div className="full">
-                    <Field
-                      label={t.email}
-                      name="email"
-                      type="email"
-                      defaultValue={values.email}
-                      placeholder={t.emailPlaceholder}
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="section">
-                <h3 className="section-title">
-                  {locale === "en" ? "Access" : "Zugang"}
-                </h3>
-
-                <div className="grid">
-                  <div className="full">
-                    <Field
-                      label={t.username}
-                      name="username"
-                      defaultValue={values.username}
-                      placeholder={t.usernamePlaceholder}
-                      required
-                    />
-                  </div>
-
-                  <Field
-                    label={t.password}
-                    name="password"
-                    type="password"
-                    placeholder={t.passwordRegisterPlaceholder}
-                    required
-                  />
-
-                  <Field
-                    label={t.confirmPassword}
-                    name="confirmPassword"
-                    type="password"
-                    placeholder={t.confirmPasswordPlaceholder}
-                    required
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="submit-button"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? t.registerSubmitting : t.registerNow}
-              </button>
-            </Form>
+                <button
+                  type="submit"
+                  className="submit-button"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? t.registerSubmitting : t.registerNow}
+                </button>
+              </Form>
+            ) : null}
 
             <div className="bottom-line">
               {t.alreadyRegistered}{" "}
@@ -617,14 +639,7 @@ function Field({
       >
         {label}
         {required ? (
-          <span
-            style={{
-              color: "#b27b26",
-              fontWeight: 800,
-            }}
-          >
-            *
-          </span>
+          <span style={{ color: "#b27b26", fontWeight: 800 }}>*</span>
         ) : null}
       </span>
 
