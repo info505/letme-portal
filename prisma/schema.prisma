@@ -54,20 +54,23 @@ model Session {
 }
 
 model PortalUser {
-  id                String         @id @default(cuid())
-  companyName       String
-  firstName         String
-  lastName          String
-  username          String         @unique
-  email             String         @unique
-  phone             String?
-  passwordHash      String
-  isActive          Boolean        @default(true)
-  isAdmin           Boolean        @default(false)
-  role              PortalUserRole @default(ADMIN)
-  mustResetPassword Boolean        @default(false)
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  id                     String         @id @default(cuid())
+  companyName            String
+  firstName              String
+  lastName               String
+  username               String         @unique
+  email                  String         @unique
+  phone                  String?
+  passwordHash           String
+
+  isActive               Boolean        @default(false)
+  isAdmin                Boolean        @default(false)
+  role                   PortalUserRole @default(ORDERER)
+  mustResetPassword      Boolean        @default(false)
+  invoicePurchaseEnabled Boolean        @default(false)
+
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
 
   billing        BillingProfile?
   addresses      DeliveryAddress[]

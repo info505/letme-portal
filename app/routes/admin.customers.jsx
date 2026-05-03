@@ -30,6 +30,10 @@ async function sendApprovalEmail(customer) {
           Sie können sich ab sofort im Portal anmelden und Ihre Firmendaten,
           Rechnungen und Bestellungen verwalten.
         </p>
+        <p style="padding:14px 16px;background:#fff8e8;border:1px solid #efdcae;border-radius:14px;">
+          Hinweis: Rechnungskauf ist nicht automatisch verfügbar. Diese Zahlungsart wird
+          separat nach Prüfung freigegeben.
+        </p>
         <p>
           <a href="https://konto.letmebowl-catering.de/login"
              style="display:inline-block;padding:12px 18px;background:#111;color:#fff;text-decoration:none;border-radius:12px;font-weight:700;">
@@ -66,6 +70,7 @@ export async function loader({ request }) {
       role: true,
       mustResetPassword: true,
       isAdmin: true,
+      invoicePurchaseEnabled: true,
       createdAt: true,
     },
   });
@@ -125,10 +130,11 @@ export async function action({ request }) {
           isAdmin: false,
           role: "ORDERER",
           mustResetPassword: false,
+          invoicePurchaseEnabled: false,
           billing: {
             create: {
               companyName,
-              contactName: `${firstName} ${lastName}`,
+              contactName: `${firstName} ${lastName}`.trim(),
               email,
               phone,
             },
@@ -209,7 +215,7 @@ function formatDate(date) {
 }
 
 function getSuccessMessage(success) {
-  if (success === "created") return "Firma wurde erfolgreich angelegt.";
+  if (success === "created") return "Firma wurde erfolgreich angelegt. Rechnungskauf ist standardmäßig nicht freigegeben.";
   if (success === "approved") return "Kundenkonto wurde freigegeben und der Kunde wurde per E-Mail informiert.";
   if (success === "approved_mail_failed") return "Kundenkonto wurde freigegeben. Die E-Mail konnte jedoch nicht versendet werden.";
   if (success === "status") return "Status wurde erfolgreich geändert.";
@@ -228,113 +234,131 @@ function getErrorMessage(error) {
   return null;
 }
 
-const styles = {
-  alertSuccess: { background: "#edf7ee", color: "#1f6b36", border: "1px solid #cfe8d4", padding: "14px 16px", borderRadius: "16px", fontWeight: 800 },
-  alertError: { background: "#fff4f4", color: "#8b2222", border: "1px solid #efcaca", padding: "14px 16px", borderRadius: "16px", fontWeight: 800 },
-  grid: { display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: "22px", alignItems: "start" },
-  card: { background: "#fff", border: "1px solid #e8decd", borderRadius: "24px", padding: "28px", boxShadow: "0 18px 45px rgba(30,20,10,0.05)" },
-  eyebrow: { fontSize: "12px", letterSpacing: "0.12em", textTransform: "uppercase", color: "#b08b4f", fontWeight: 900, marginBottom: "14px" },
-  h2: { margin: "0 0 12px", fontSize: "28px", letterSpacing: "-0.03em" },
-  text: { margin: "0 0 22px", fontSize: "15px", lineHeight: 1.7, color: "#756b5f" },
-  blackBtn: { border: 0, background: "#111", color: "#fff", padding: "14px 18px", borderRadius: "16px", fontWeight: 800, cursor: "pointer" },
-  formBox: { marginTop: "22px", border: "1px solid #eadfcd", borderRadius: "22px", padding: "22px", background: "#fbf8f2" },
-  formGrid: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "16px" },
-  field: { display: "flex", flexDirection: "column", gap: "8px" },
-  label: { fontSize: "12px", letterSpacing: "0.08em", textTransform: "uppercase", color: "#6b6258", fontWeight: 900 },
-  input: { width: "100%", padding: "14px 15px", borderRadius: "15px", border: "1px solid #dfd3bf", background: "#fff", fontSize: "15px", boxSizing: "border-box" },
-  actions: { display: "flex", gap: "12px", marginTop: "18px", flexWrap: "wrap" },
-  saveBtn: { border: 0, background: "#111", color: "#fff", padding: "14px 18px", borderRadius: "16px", fontWeight: 800, cursor: "pointer" },
-  cancelBtn: { border: "1px solid #dfd3bf", background: "#fff", color: "#171717", padding: "14px 18px", borderRadius: "16px", fontWeight: 800, cursor: "pointer" },
-  dangerBtn: { border: "1px solid #efcaca", background: "#fff4f4", color: "#8b2222", padding: "12px 14px", borderRadius: "14px", fontWeight: 900, cursor: "pointer" },
-  stats: { display: "grid", gap: "16px" },
-  stat: { background: "#fff", border: "1px solid #e8decd", borderRadius: "22px", padding: "22px" },
-  statLabel: { fontSize: "12px", letterSpacing: "0.1em", textTransform: "uppercase", color: "#756b5f", fontWeight: 900, marginBottom: "10px" },
-  statValue: { fontSize: "34px", fontWeight: 900, letterSpacing: "-0.04em" },
-  searchBar: { display: "grid", gridTemplateColumns: "1fr 180px", gap: "12px", marginBottom: "18px" },
-  list: { display: "grid", gap: "14px" },
-  customerItem: { border: "1px solid #ece5d8", borderRadius: "20px", padding: "20px", background: "#fbf8f2" },
-  customerItemPending: { border: "1px solid #efdcae", background: "#fff8e8" },
-  customerTop: { display: "grid", gridTemplateColumns: "1.25fr 0.55fr auto", gap: "18px", alignItems: "start" },
-  company: { fontSize: "20px", fontWeight: 900, marginBottom: "8px" },
-  meta: { fontSize: "14px", color: "#6b6258", lineHeight: 1.65 },
-  role: { fontSize: "15px", fontWeight: 900, textAlign: "right" },
-  created: { fontSize: "14px", color: "#756b5f", textAlign: "right", lineHeight: 1.5 },
-  rowActions: { display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "18px" },
-  smallBtn: { border: "1px solid #dfd3bf", background: "#fff", color: "#171717", padding: "12px 14px", borderRadius: "14px", fontWeight: 800, cursor: "pointer" },
-  darkBtn: { border: 0, background: "#111", color: "#fff", padding: "12px 14px", borderRadius: "14px", fontWeight: 800, cursor: "pointer" },
-  approveBtn: { border: 0, background: "#1f6b36", color: "#fff", padding: "12px 14px", borderRadius: "14px", fontWeight: 900, cursor: "pointer" },
-  badge: { display: "inline-block", padding: "6px 10px", borderRadius: "999px", fontSize: "12px", fontWeight: 900, marginLeft: "4px" },
-  active: { background: "#edf6ed", color: "#2f6b35", border: "1px solid #cfe7cf" },
-  inactive: { background: "#fbeaea", color: "#8a2d2d", border: "1px solid #efc9c9" },
-  pending: { background: "#fff3d6", color: "#8a5f10", border: "1px solid #efdcae" },
-};
-
 function CustomerCard({ customer }) {
   const isPending = !customer.isActive && !customer.isAdmin;
+  const invoiceAllowed = Boolean(customer.invoicePurchaseEnabled);
 
   return (
-    <div style={{ ...styles.customerItem, ...(isPending ? styles.customerItemPending : {}) }}>
-      <div style={styles.customerTop}>
-        <div>
-          <div style={styles.company}>{customer.companyName}</div>
-          <div style={styles.meta}>
-            Kontakt: {customer.firstName} {customer.lastName || ""}
-            <br />
-            E-Mail: {customer.email}
-            <br />
-            Telefon: {customer.phone || "-"}
-            <br />
-            Benutzername: {customer.username}
-            <br />
-            Registriert am: {formatDate(customer.createdAt)}
-            <br />
-            Status:
-            <span style={{ ...styles.badge, ...(isPending ? styles.pending : customer.isActive ? styles.active : styles.inactive) }}>
-              {isPending ? "Wartet auf Freigabe" : customer.isActive ? "Aktiv" : "Gesperrt"}
-            </span>
+    <article className={`lmbCustomerCard ${isPending ? "isPending" : ""}`}>
+      <div className="lmbCustomerMain">
+        <div className="lmbCustomerInfo">
+          <div className="lmbCustomerCompany">{customer.companyName}</div>
+
+          <div className="lmbCustomerMeta">
+            <div>
+              <span>Kontakt</span>
+              <strong>
+                {customer.firstName} {customer.lastName || ""}
+              </strong>
+            </div>
+
+            <div>
+              <span>E-Mail</span>
+              <strong>{customer.email}</strong>
+            </div>
+
+            <div>
+              <span>Telefon</span>
+              <strong>{customer.phone || "-"}</strong>
+            </div>
+
+            <div>
+              <span>Benutzername</span>
+              <strong>{customer.username}</strong>
+            </div>
+
+            <div>
+              <span>Registriert</span>
+              <strong>{formatDate(customer.createdAt)}</strong>
+            </div>
+
+            <div>
+              <span>Rechnungskauf</span>
+              <strong className={invoiceAllowed ? "lmbInvoiceTextOk" : "lmbInvoiceTextNo"}>
+                {invoiceAllowed ? "Freigegeben" : "Nicht freigegeben"}
+              </strong>
+            </div>
           </div>
         </div>
 
-        <div style={styles.role}>{customer.isAdmin ? "ADMIN" : customer.role}</div>
+        <div className="lmbCustomerSide">
+          <div className="lmbRolePill">{customer.isAdmin ? "ADMIN" : customer.role}</div>
 
-        <div style={styles.created}>
-          {isPending ? "Neue Registrierung" : "Kundenkonto"}
-          <br />
-          {formatDate(customer.createdAt)}
+          <span
+            className={`lmbStatusPill ${
+              isPending ? "pending" : customer.isActive ? "active" : "inactive"
+            }`}
+          >
+            {isPending ? "Wartet auf Freigabe" : customer.isActive ? "Aktiv" : "Gesperrt"}
+          </span>
+
+          <span className={`lmbStatusPill ${invoiceAllowed ? "active" : "invoiceLocked"}`}>
+            {invoiceAllowed ? "Rechnung frei" : "Rechnung gesperrt"}
+          </span>
+
+          <div className="lmbCreatedText">
+            {isPending ? "Neue Registrierung" : "Kundenkonto"}
+            <br />
+            {formatDate(customer.createdAt)}
+          </div>
         </div>
       </div>
 
-      <div style={styles.rowActions}>
-        <button type="button" style={styles.darkBtn} onClick={() => { window.location.href = `/admin/customer-detail?id=${customer.id}`; }}>
+      <div className="lmbCustomerActions">
+        <button
+          type="button"
+          className="lmbBtn lmbBtnDark"
+          onClick={() => {
+            window.location.href = `/admin/customer-detail?id=${customer.id}`;
+          }}
+        >
           Details öffnen
         </button>
 
         {isPending ? (
-          <Form method="post">
+          <Form method="post" className="lmbActionForm">
             <input type="hidden" name="intent" value="approveCustomer" />
             <input type="hidden" name="customerId" value={customer.id} />
-            <button type="submit" style={styles.approveBtn}>Freigeben</button>
+            <button type="submit" className="lmbBtn lmbBtnApprove">
+              Konto freigeben
+            </button>
           </Form>
         ) : null}
 
         {!customer.isAdmin ? (
-          <Form method="post">
+          <Form method="post" className="lmbActionForm">
             <input type="hidden" name="intent" value="toggleActive" />
             <input type="hidden" name="customerId" value={customer.id} />
             <input type="hidden" name="currentValue" value={String(customer.isActive)} />
-            <button type="submit" style={styles.smallBtn}>{customer.isActive ? "Sperren" : "Aktivieren"}</button>
+            <button type="submit" className="lmbBtn lmbBtnLight">
+              {customer.isActive ? "Konto sperren" : "Konto aktivieren"}
+            </button>
           </Form>
         ) : null}
 
         {!customer.isAdmin ? (
-          <Form method="post" onSubmit={(e) => { if (!window.confirm("Dieses Kundenkonto wirklich löschen? Alle zugehörigen Daten werden ebenfalls gelöscht.")) e.preventDefault(); }}>
+          <Form
+            method="post"
+            className="lmbActionForm"
+            onSubmit={(e) => {
+              if (
+                !window.confirm(
+                  "Dieses Kundenkonto wirklich löschen? Alle zugehörigen Daten werden ebenfalls gelöscht."
+                )
+              ) {
+                e.preventDefault();
+              }
+            }}
+          >
             <input type="hidden" name="intent" value="deleteCustomer" />
             <input type="hidden" name="customerId" value={customer.id} />
-            <button type="submit" style={styles.dangerBtn}>Löschen</button>
+            <button type="submit" className="lmbBtn lmbBtnDanger">
+              Löschen
+            </button>
           </Form>
         ) : null}
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -347,6 +371,7 @@ export default function AdminCustomersPage() {
   const activeCount = customers.filter((c) => c.isActive).length;
   const pendingCount = customers.filter((c) => !c.isActive && !c.isAdmin).length;
   const inactiveCount = customers.filter((c) => !c.isActive).length;
+  const invoiceEnabledCount = customers.filter((c) => c.invoicePurchaseEnabled).length;
 
   const filteredCustomers = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -367,84 +392,659 @@ export default function AdminCustomersPage() {
         (statusFilter === "ACTIVE" && customer.isActive) ||
         (statusFilter === "PENDING" && isPending) ||
         (statusFilter === "INACTIVE" && !customer.isActive) ||
-        (statusFilter === "ADMIN" && customer.isAdmin);
+        (statusFilter === "ADMIN" && customer.isAdmin) ||
+        (statusFilter === "INVOICE_ENABLED" && customer.invoicePurchaseEnabled) ||
+        (statusFilter === "INVOICE_DISABLED" && !customer.invoicePurchaseEnabled);
 
       return matchesQuery && matchesStatus;
     });
   }, [customers, query, statusFilter]);
 
   return (
-    <AdminLayout title="Firmenkunden" subtitle="Firmenkonten prüfen, freigeben und verwalten." user={user}>
-      {getSuccessMessage(success) ? <div style={styles.alertSuccess}>{getSuccessMessage(success)}</div> : null}
-      {getErrorMessage(error) ? <div style={styles.alertError}>{getErrorMessage(error)}</div> : null}
+    <AdminLayout
+      title="Firmenkunden"
+      subtitle="Firmenkonten prüfen, freigeben und Rechnungskauf separat steuern."
+      user={user}
+    >
+      <style>{`
+        .lmbAdminCustomers {
+          display: grid;
+          gap: 22px;
+        }
 
-      <div style={styles.grid}>
-        <div style={styles.card}>
-          <div style={styles.eyebrow}>Kundenverwaltung</div>
-          <h2 style={styles.h2}>Neue Firma manuell anlegen</h2>
-          <p style={styles.text}>
-            Hier kannst du Firmenkunden selbst anlegen. Registrierungen über die Website erscheinen automatisch als „Wartet auf Freigabe“.
-          </p>
+        .lmbAlert {
+          padding: 14px 16px;
+          border-radius: 16px;
+          font-weight: 850;
+          line-height: 1.5;
+        }
 
-          <button type="button" style={styles.blackBtn} onClick={() => setShowCreate((prev) => !prev)}>
-            {showCreate ? "Formular schließen" : "Neue Firma anlegen"}
-          </button>
+        .lmbAlertSuccess {
+          background: #edf7ee;
+          color: #1f6b36;
+          border: 1px solid #cfe8d4;
+        }
 
-          {showCreate && (
-            <div style={styles.formBox}>
-              <Form method="post">
-                <input type="hidden" name="intent" value="create" />
+        .lmbAlertError {
+          background: #fff4f4;
+          color: #8b2222;
+          border: 1px solid #efcaca;
+        }
 
-                <div style={styles.formGrid}>
-                  <div style={styles.field}><label style={styles.label}>Firma</label><input name="companyName" style={styles.input} required /></div>
-                  <div style={styles.field}><label style={styles.label}>Vorname</label><input name="firstName" style={styles.input} required /></div>
-                  <div style={styles.field}><label style={styles.label}>Nachname</label><input name="lastName" style={styles.input} /></div>
-                  <div style={styles.field}><label style={styles.label}>E-Mail</label><input name="email" type="email" style={styles.input} required /></div>
-                  <div style={styles.field}><label style={styles.label}>Telefon</label><input name="phone" style={styles.input} /></div>
-                  <div style={styles.field}><label style={styles.label}>Benutzername</label><input name="username" style={styles.input} required /></div>
-                  <div style={styles.field}><label style={styles.label}>Start-Passwort</label><input name="password" type="text" style={styles.input} required /></div>
-                </div>
+        .lmbTopGrid {
+          display: grid;
+          grid-template-columns: minmax(0, 1.12fr) minmax(280px, 0.88fr);
+          gap: 22px;
+          align-items: start;
+        }
 
-                <div style={styles.actions}>
-                  <button type="submit" style={styles.saveBtn}>Firma speichern</button>
-                  <button type="button" style={styles.cancelBtn} onClick={() => setShowCreate(false)}>Abbrechen</button>
-                </div>
-              </Form>
+        .lmbCard {
+          background: #fff;
+          border: 1px solid #e8decd;
+          border-radius: 26px;
+          padding: 28px;
+          box-shadow: 0 18px 45px rgba(30,20,10,0.05);
+          min-width: 0;
+        }
+
+        .lmbEyebrow {
+          font-size: 12px;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: #b08b4f;
+          font-weight: 950;
+          margin-bottom: 14px;
+        }
+
+        .lmbH2 {
+          margin: 0 0 12px;
+          font-size: 28px;
+          line-height: 1.08;
+          letter-spacing: -0.035em;
+          color: #171717;
+        }
+
+        .lmbText {
+          margin: 0 0 22px;
+          font-size: 15px;
+          line-height: 1.7;
+          color: #756b5f;
+          font-weight: 600;
+        }
+
+        .lmbInfoBox {
+          margin-top: 18px;
+          padding: 15px 16px;
+          border-radius: 18px;
+          background: #fff8e8;
+          border: 1px solid #efdcae;
+          color: #7a5a18;
+          font-size: 13.5px;
+          line-height: 1.6;
+          font-weight: 700;
+        }
+
+        .lmbStats {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 14px;
+        }
+
+        .lmbStat {
+          background: #fff;
+          border: 1px solid #e8decd;
+          border-radius: 22px;
+          padding: 22px;
+          box-shadow: 0 12px 30px rgba(30,20,10,0.035);
+        }
+
+        .lmbStatLabel {
+          font-size: 11px;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: #756b5f;
+          font-weight: 950;
+          margin-bottom: 10px;
+        }
+
+        .lmbStatValue {
+          font-size: 34px;
+          font-weight: 950;
+          letter-spacing: -0.04em;
+          color: #171717;
+        }
+
+        .lmbCreateBox {
+          margin-top: 22px;
+          border: 1px solid #eadfcd;
+          border-radius: 24px;
+          padding: 22px;
+          background: #fbf8f2;
+        }
+
+        .lmbFormGrid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 16px;
+        }
+
+        .lmbField {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          min-width: 0;
+        }
+
+        .lmbLabel {
+          font-size: 12px;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #6b6258;
+          font-weight: 950;
+        }
+
+        .lmbInput {
+          width: 100%;
+          padding: 14px 15px;
+          border-radius: 15px;
+          border: 1px solid #dfd3bf;
+          background: #fff;
+          color: #171717;
+          font-size: 15px;
+          box-sizing: border-box;
+          outline: none;
+        }
+
+        .lmbInput:focus {
+          border-color: #c8a96a;
+          box-shadow: 0 0 0 4px rgba(200,169,106,0.12);
+        }
+
+        .lmbCreateActions {
+          display: flex;
+          gap: 12px;
+          margin-top: 18px;
+          flex-wrap: wrap;
+        }
+
+        .lmbBtn {
+          min-height: 44px;
+          border-radius: 14px;
+          padding: 0 15px;
+          font-size: 14px;
+          font-weight: 900;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          text-decoration: none;
+          white-space: nowrap;
+        }
+
+        .lmbBtnDark {
+          border: 0;
+          background: #111;
+          color: #fff;
+        }
+
+        .lmbBtnLight {
+          border: 1px solid #dfd3bf;
+          background: #fff;
+          color: #171717;
+        }
+
+        .lmbBtnApprove {
+          border: 0;
+          background: #1f6b36;
+          color: #fff;
+        }
+
+        .lmbBtnDanger {
+          border: 1px solid #efcaca;
+          background: #fff4f4;
+          color: #8b2222;
+        }
+
+        .lmbBtnWide {
+          min-height: 48px;
+          padding: 0 18px;
+          border-radius: 16px;
+        }
+
+        .lmbSearchBar {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 220px;
+          gap: 12px;
+          margin-bottom: 18px;
+        }
+
+        .lmbCustomerList {
+          display: grid;
+          gap: 14px;
+        }
+
+        .lmbCustomerCard {
+          border: 1px solid #ece5d8;
+          border-radius: 22px;
+          padding: 20px;
+          background: #fbf8f2;
+          min-width: 0;
+        }
+
+        .lmbCustomerCard.isPending {
+          border-color: #efdcae;
+          background: #fff8e8;
+        }
+
+        .lmbCustomerMain {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 190px;
+          gap: 18px;
+          align-items: start;
+        }
+
+        .lmbCustomerInfo {
+          min-width: 0;
+        }
+
+        .lmbCustomerCompany {
+          font-size: 21px;
+          line-height: 1.15;
+          font-weight: 950;
+          letter-spacing: -0.025em;
+          color: #171717;
+          margin-bottom: 12px;
+          overflow-wrap: anywhere;
+        }
+
+        .lmbCustomerMeta {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px 18px;
+          font-size: 13.5px;
+          color: #6b6258;
+          line-height: 1.45;
+        }
+
+        .lmbCustomerMeta span {
+          display: block;
+          font-size: 11px;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          font-weight: 950;
+          color: #9a8d7d;
+          margin-bottom: 3px;
+        }
+
+        .lmbCustomerMeta strong {
+          display: block;
+          color: #332f2a;
+          font-weight: 800;
+          overflow-wrap: anywhere;
+        }
+
+        .lmbInvoiceTextOk {
+          color: #2f6b35 !important;
+        }
+
+        .lmbInvoiceTextNo {
+          color: #8a5f10 !important;
+        }
+
+        .lmbCustomerSide {
+          display: grid;
+          justify-items: end;
+          gap: 8px;
+        }
+
+        .lmbRolePill {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 7px 11px;
+          border-radius: 999px;
+          background: #efe7d8;
+          border: 1px solid #e1d4bf;
+          color: #5f523f;
+          font-size: 12px;
+          font-weight: 950;
+        }
+
+        .lmbStatusPill {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 7px 11px;
+          border-radius: 999px;
+          font-size: 12px;
+          font-weight: 950;
+          text-align: center;
+        }
+
+        .lmbStatusPill.active {
+          background: #edf6ed;
+          color: #2f6b35;
+          border: 1px solid #cfe7cf;
+        }
+
+        .lmbStatusPill.inactive {
+          background: #fbeaea;
+          color: #8a2d2d;
+          border: 1px solid #efc9c9;
+        }
+
+        .lmbStatusPill.pending {
+          background: #fff3d6;
+          color: #8a5f10;
+          border: 1px solid #efdcae;
+        }
+
+        .lmbStatusPill.invoiceLocked {
+          background: #fbf3e3;
+          color: #7a5a18;
+          border: 1px solid #efdcae;
+        }
+
+        .lmbCreatedText {
+          font-size: 13px;
+          color: #756b5f;
+          text-align: right;
+          line-height: 1.45;
+          font-weight: 700;
+        }
+
+        .lmbCustomerActions {
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+          margin-top: 18px;
+        }
+
+        .lmbActionForm {
+          display: inline-flex;
+          margin: 0;
+        }
+
+        .lmbEmptyState {
+          border: 1px dashed #dccfba;
+          border-radius: 20px;
+          padding: 24px;
+          background: #fbf8f2;
+          color: #756b5f;
+          font-weight: 800;
+          text-align: center;
+        }
+
+        @media (max-width: 980px) {
+          .lmbTopGrid {
+            grid-template-columns: 1fr;
+          }
+
+          .lmbStats {
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+          }
+        }
+
+        @media (max-width: 760px) {
+          .lmbAdminCustomers {
+            gap: 16px;
+          }
+
+          .lmbCard {
+            padding: 18px;
+            border-radius: 22px;
+          }
+
+          .lmbH2 {
+            font-size: 23px;
+          }
+
+          .lmbText {
+            font-size: 14px;
+          }
+
+          .lmbStats {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+          }
+
+          .lmbStat {
+            padding: 16px;
+            border-radius: 18px;
+          }
+
+          .lmbStatValue {
+            font-size: 28px;
+          }
+
+          .lmbFormGrid {
+            grid-template-columns: 1fr;
+          }
+
+          .lmbSearchBar {
+            grid-template-columns: 1fr;
+          }
+
+          .lmbCustomerCard {
+            padding: 16px;
+            border-radius: 20px;
+          }
+
+          .lmbCustomerMain {
+            grid-template-columns: 1fr;
+            gap: 14px;
+          }
+
+          .lmbCustomerCompany {
+            font-size: 19px;
+          }
+
+          .lmbCustomerMeta {
+            grid-template-columns: 1fr;
+            gap: 9px;
+          }
+
+          .lmbCustomerSide {
+            justify-items: start;
+            grid-template-columns: 1fr;
+          }
+
+          .lmbCreatedText {
+            text-align: left;
+          }
+
+          .lmbCustomerActions {
+            display: grid;
+            grid-template-columns: 1fr;
+          }
+
+          .lmbActionForm {
+            display: block;
+            width: 100%;
+          }
+
+          .lmbCustomerActions .lmbBtn,
+          .lmbActionForm .lmbBtn {
+            width: 100%;
+            min-height: 48px;
+          }
+
+          .lmbCreateActions {
+            display: grid;
+            grid-template-columns: 1fr;
+          }
+
+          .lmbCreateActions .lmbBtn {
+            width: 100%;
+          }
+        }
+
+        @media (max-width: 420px) {
+          .lmbStats {
+            grid-template-columns: 1fr;
+          }
+
+          .lmbInput {
+            font-size: 16px;
+          }
+        }
+      `}</style>
+
+      <div className="lmbAdminCustomers">
+        {getSuccessMessage(success) ? (
+          <div className="lmbAlert lmbAlertSuccess">{getSuccessMessage(success)}</div>
+        ) : null}
+
+        {getErrorMessage(error) ? (
+          <div className="lmbAlert lmbAlertError">{getErrorMessage(error)}</div>
+        ) : null}
+
+        <div className="lmbTopGrid">
+          <section className="lmbCard">
+            <div className="lmbEyebrow">Kundenverwaltung</div>
+            <h2 className="lmbH2">Neue Firma manuell anlegen</h2>
+            <p className="lmbText">
+              Hier kannst du Firmenkunden selbst anlegen. Registrierungen über die Website erscheinen automatisch als „Wartet auf Freigabe“.
+            </p>
+
+            <button
+              type="button"
+              className="lmbBtn lmbBtnDark lmbBtnWide"
+              onClick={() => setShowCreate((prev) => !prev)}
+            >
+              {showCreate ? "Formular schließen" : "Neue Firma anlegen"}
+            </button>
+
+            <div className="lmbInfoBox">
+              Hinweis: Rechnungskauf wird nicht automatisch aktiviert. Die Freigabe erfolgt separat im jeweiligen Kundendetail.
             </div>
-          )}
+
+            {showCreate && (
+              <div className="lmbCreateBox">
+                <Form method="post">
+                  <input type="hidden" name="intent" value="create" />
+
+                  <div className="lmbFormGrid">
+                    <div className="lmbField">
+                      <label className="lmbLabel">Firma</label>
+                      <input name="companyName" className="lmbInput" required />
+                    </div>
+
+                    <div className="lmbField">
+                      <label className="lmbLabel">Vorname</label>
+                      <input name="firstName" className="lmbInput" required />
+                    </div>
+
+                    <div className="lmbField">
+                      <label className="lmbLabel">Nachname</label>
+                      <input name="lastName" className="lmbInput" />
+                    </div>
+
+                    <div className="lmbField">
+                      <label className="lmbLabel">E-Mail</label>
+                      <input name="email" type="email" className="lmbInput" required />
+                    </div>
+
+                    <div className="lmbField">
+                      <label className="lmbLabel">Telefon</label>
+                      <input name="phone" className="lmbInput" />
+                    </div>
+
+                    <div className="lmbField">
+                      <label className="lmbLabel">Benutzername</label>
+                      <input name="username" className="lmbInput" required />
+                    </div>
+
+                    <div className="lmbField">
+                      <label className="lmbLabel">Start-Passwort</label>
+                      <input name="password" type="text" className="lmbInput" required />
+                    </div>
+                  </div>
+
+                  <div className="lmbCreateActions">
+                    <button type="submit" className="lmbBtn lmbBtnDark lmbBtnWide">
+                      Firma speichern
+                    </button>
+
+                    <button
+                      type="button"
+                      className="lmbBtn lmbBtnLight lmbBtnWide"
+                      onClick={() => setShowCreate(false)}
+                    >
+                      Abbrechen
+                    </button>
+                  </div>
+                </Form>
+              </div>
+            )}
+          </section>
+
+          <aside className="lmbStats">
+            <div className="lmbStat">
+              <div className="lmbStatLabel">Gesamt</div>
+              <div className="lmbStatValue">{customers.length}</div>
+            </div>
+
+            <div className="lmbStat">
+              <div className="lmbStatLabel">Freigabe</div>
+              <div className="lmbStatValue">{pendingCount}</div>
+            </div>
+
+            <div className="lmbStat">
+              <div className="lmbStatLabel">Aktiv</div>
+              <div className="lmbStatValue">{activeCount}</div>
+            </div>
+
+            <div className="lmbStat">
+              <div className="lmbStatLabel">Gesperrt</div>
+              <div className="lmbStatValue">{inactiveCount}</div>
+            </div>
+
+            <div className="lmbStat">
+              <div className="lmbStatLabel">Rechnung frei</div>
+              <div className="lmbStatValue">{invoiceEnabledCount}</div>
+            </div>
+          </aside>
         </div>
 
-        <div style={styles.stats}>
-          <div style={styles.stat}><div style={styles.statLabel}>Gesamt</div><div style={styles.statValue}>{customers.length}</div></div>
-          <div style={styles.stat}><div style={styles.statLabel}>Wartet auf Freigabe</div><div style={styles.statValue}>{pendingCount}</div></div>
-          <div style={styles.stat}><div style={styles.statLabel}>Aktiv</div><div style={styles.statValue}>{activeCount}</div></div>
-          <div style={styles.stat}><div style={styles.statLabel}>Gesperrt</div><div style={styles.statValue}>{inactiveCount}</div></div>
-        </div>
+        <section className="lmbCard">
+          <div className="lmbEyebrow">Firmenliste</div>
+          <h2 className="lmbH2">Alle Firmenkunden</h2>
+
+          <div className="lmbSearchBar">
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Suche nach Firma, E-Mail, Name oder Benutzername"
+              className="lmbInput"
+            />
+
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="lmbInput"
+            >
+              <option value="ALL">Alle</option>
+              <option value="PENDING">Wartet auf Freigabe</option>
+              <option value="ACTIVE">Aktiv</option>
+              <option value="INACTIVE">Gesperrt</option>
+              <option value="INVOICE_ENABLED">Rechnungskauf freigegeben</option>
+              <option value="INVOICE_DISABLED">Rechnungskauf gesperrt</option>
+              <option value="ADMIN">Admin</option>
+            </select>
+          </div>
+
+          <div className="lmbCustomerList">
+            {filteredCustomers.length === 0 ? (
+              <div className="lmbEmptyState">Keine passenden Firmenkunden gefunden.</div>
+            ) : (
+              filteredCustomers.map((customer) => (
+                <CustomerCard key={customer.id} customer={customer} />
+              ))
+            )}
+          </div>
+        </section>
       </div>
-
-      <section style={styles.card}>
-        <div style={styles.eyebrow}>Firmenliste</div>
-        <h2 style={styles.h2}>Alle Firmenkunden</h2>
-
-        <div style={styles.searchBar}>
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Suche nach Firma, E-Mail, Name oder Benutzername" style={styles.input} />
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={styles.input}>
-            <option value="ALL">Alle</option>
-            <option value="PENDING">Wartet auf Freigabe</option>
-            <option value="ACTIVE">Aktiv</option>
-            <option value="INACTIVE">Gesperrt</option>
-            <option value="ADMIN">Admin</option>
-          </select>
-        </div>
-
-        <div style={styles.list}>
-          {filteredCustomers.length === 0 ? (
-            <div style={styles.card}>Keine passenden Firmenkunden gefunden.</div>
-          ) : (
-            filteredCustomers.map((customer) => <CustomerCard key={customer.id} customer={customer} />)
-          )}
-        </div>
-      </section>
     </AdminLayout>
   );
 }

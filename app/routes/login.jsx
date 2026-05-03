@@ -18,11 +18,15 @@ export async function loader({ request }) {
   const locale = getLocaleFromRequest(request);
   const user = await getUserFromRequest(request);
 
-  // 🔥 WICHTIG: Direkt weiterleiten je nach Rolle
   if (user) {
+    if (user.mustResetPassword && !user.isAdmin) {
+      throw redirect(`/passwort-aendern?lang=${locale}`);
+    }
+
     if (user.isAdmin) {
       throw redirect(`/admin?lang=${locale}`);
     }
+
     throw redirect(`/dashboard?lang=${locale}`);
   }
 
@@ -63,10 +67,13 @@ export async function action({ request }) {
 
   const { sessionToken, expiresAt } = await createPortalSession(user.id);
 
-  // 🔥 HIER ENTSCHEIDUNG ADMIN / USER
-  const redirectTo = user.isAdmin
+  let redirectTo = user.isAdmin
     ? `/admin?lang=${locale}`
     : `/dashboard?lang=${locale}`;
+
+  if (user.mustResetPassword && !user.isAdmin) {
+    redirectTo = `/passwort-aendern?lang=${locale}`;
+  }
 
   return redirect(redirectTo, {
     headers: {

@@ -7,7 +7,25 @@ import PortalLayout from "../components/PortalLayout.jsx";
 
 export async function loader({ request }) {
   const locale = getLocaleFromRequest(request);
-  const user = await getUserFromRequest(request);
+  const sessionUser = await getUserFromRequest(request);
+
+  if (!sessionUser) {
+    throw redirect(`/login?lang=${locale}`);
+  }
+
+  const user = await prisma.portalUser.findUnique({
+    where: { id: sessionUser.id },
+    select: {
+      id: true,
+      companyName: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      phone: true,
+      isActive: true,
+      invoicePurchaseEnabled: true,
+    },
+  });
 
   if (!user) {
     throw redirect(`/login?lang=${locale}`);
@@ -106,6 +124,7 @@ export default function DashboardPage() {
   } = useLoaderData();
 
   const t = dict[locale] || dict.de;
+  const invoicePurchaseEnabled = Boolean(user.invoicePurchaseEnabled);
 
   function handleOrderNow() {
     const form = document.createElement("form");
@@ -113,6 +132,11 @@ export default function DashboardPage() {
     form.action = "https://letmebowl-catering.de/cart/update";
 
     const attrs = {
+      "attributes[Portal_User_ID]": user.id || "",
+      "attributes[Portal_Firma]": user.companyName || "",
+      "attributes[Portal_Konto_aktiv]": user.isActive ? "Ja" : "Nein",
+      "attributes[Rechnungskauf erlaubt]": invoicePurchaseEnabled ? "Ja" : "Nein",
+
       "attributes[Lieferadresse_ID]": defaultDeliveryAddress?.id || "",
       "attributes[Lieferadresse_Label]": defaultDeliveryAddress?.label || "",
       "attributes[Lieferadresse_Voll]": defaultDeliveryAddress
@@ -128,14 +152,17 @@ export default function DashboardPage() {
             .filter(Boolean)
             .join(", ")
         : "",
+
       "attributes[Kostenstelle_ID]": activeCostCenter?.id || "",
       "attributes[Kostenstelle_Name]": activeCostCenter?.name || "",
       "attributes[Kostenstelle_Code]": activeCostCenter?.code || "",
+
       "attributes[Kontaktname]": [user.firstName, user.lastName]
         .filter(Boolean)
         .join(" "),
       "attributes[Telefon]": user.phone || "",
       "attributes[E-Mail]": user.email || "",
+
       return_to: "/pages/bestellen",
     };
 
@@ -207,6 +234,54 @@ export default function DashboardPage() {
           display: flex;
           gap: 10px;
           flex-wrap: wrap;
+        }
+
+        .status-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 14px;
+        }
+
+        .status-card {
+          padding: 20px;
+          border-radius: 22px;
+          background: #fff;
+          border: 1px solid ${colors.border};
+        }
+
+        .status-card.is-ok {
+          background: #edf7ee;
+          border-color: #cfe8d4;
+        }
+
+        .status-card.is-warn {
+          background: #fff8e8;
+          border-color: #efdcae;
+        }
+
+        .status-kicker {
+          font-size: 12px;
+          font-weight: 900;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: ${colors.muted};
+          margin-bottom: 8px;
+        }
+
+        .status-title {
+          margin: 0 0 8px;
+          font-size: 22px;
+          line-height: 1.15;
+          letter-spacing: -0.02em;
+          color: ${colors.text};
+        }
+
+        .status-text {
+          margin: 0;
+          color: ${colors.muted};
+          font-size: 14px;
+          line-height: 1.65;
+          font-weight: 600;
         }
 
         .stats-grid {
@@ -423,7 +498,8 @@ export default function DashboardPage() {
         }
 
         @media (max-width: 1100px) {
-          .stats-grid {
+          .stats-grid,
+          .status-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
 
@@ -445,7 +521,8 @@ export default function DashboardPage() {
             border-radius: 20px;
           }
 
-          .stats-grid {
+          .stats-grid,
+          .status-grid {
             grid-template-columns: 1fr;
           }
 
@@ -517,6 +594,54 @@ export default function DashboardPage() {
               {locale === "en" ? "View orders" : "Bestellungen"}
             </a>
           </div>
+        </section>
+
+        <section className="status-grid">
+          <StatusCard
+            ok={Boolean(user.isActive)}
+            kicker={locale === "en" ? "Account status" : "Kontostatus"}
+            title={
+              user.isActive
+                ? locale === "en"
+                  ? "Account active"
+                  : "Konto aktiv"
+                : locale === "en"
+                ? "Account pending"
+                : "Konto noch nicht freigegeben"
+            }
+            text={
+              user.isActive
+                ? locale === "en"
+                  ? "Your business account is active and can be used for portal orders."
+                  : "Dein Firmenkonto ist aktiv und kann für Portal-Bestellungen genutzt werden."
+                : locale === "en"
+                ? "Your company account is still being reviewed."
+                : "Dein Firmenkonto wird aktuell noch geprüft."
+            }
+          />
+
+          <StatusCard
+            ok={invoicePurchaseEnabled}
+            kicker={locale === "en" ? "Invoice purchase" : "Rechnungskauf"}
+            title={
+              invoicePurchaseEnabled
+                ? locale === "en"
+                  ? "Invoice purchase approved"
+                  : "Rechnungskauf freigegeben"
+                : locale === "en"
+                ? "Invoice purchase not yet approved"
+                : "Rechnungskauf noch nicht freigegeben"
+            }
+            text={
+              invoicePurchaseEnabled
+                ? locale === "en"
+                  ? "Invoice purchase can be used for eligible orders."
+                  : "Rechnungskauf kann für berechtigte Bestellungen genutzt werden."
+                : locale === "en"
+                ? "Invoice purchase is only available after separate review and approval."
+                : "Rechnungskauf ist erst nach separater Prüfung und Freigabe möglich."
+            }
+          />
         </section>
 
         <section className="stats-grid">
@@ -785,6 +910,16 @@ export default function DashboardPage() {
         </section>
       </div>
     </PortalLayout>
+  );
+}
+
+function StatusCard({ kicker, title, text, ok }) {
+  return (
+    <div className={`status-card ${ok ? "is-ok" : "is-warn"}`}>
+      <div className="status-kicker">{kicker}</div>
+      <h3 className="status-title">{title}</h3>
+      <p className="status-text">{text}</p>
+    </div>
   );
 }
 
