@@ -6,7 +6,6 @@ const SHOPIFY_API_VERSION = process.env.SHOPIFY_API_VERSION || "2026-04";
 const SHOPIFY_CLIENT_ID = process.env.SHOPIFY_CLIENT_ID;
 const SHOPIFY_CLIENT_SECRET = process.env.SHOPIFY_CLIENT_SECRET;
 
-// Token kurz zwischenspeichern, damit nicht bei jedem API-Call neu angefragt wird
 let cachedAccessToken = null;
 let cachedAccessTokenExpiresAt = 0;
 
@@ -93,10 +92,7 @@ function buildCustomerNote(user) {
 function buildTags(user) {
   const companyName = getCompanyName(user);
 
-  const tags = [
-    "kundenportal",
-    "rechnung_pruefung",
-  ];
+  const tags = ["kundenportal", "rechnung_pruefung"];
 
   if (companyName) {
     tags.push("firmenkunde");
@@ -128,32 +124,47 @@ async function getShopifyAccessToken() {
     return cachedAccessToken;
   }
 
-  const response = await fetch(
-    `https://${SHOPIFY_SHOP_DOMAIN}/admin/oauth/access_token`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        grant_type: "client_credentials",
-        client_id: SHOPIFY_CLIENT_ID,
-        client_secret: SHOPIFY_CLIENT_SECRET,
-      }),
-    }
-  );
+  const tokenUrl = `https://${SHOPIFY_SHOP_DOMAIN}/admin/oauth/access_token`;
 
-  const json = await response.json();
+  const response = await fetch(tokenUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/json",
+    },
+    body: new URLSearchParams({
+      grant_type: "client_credentials",
+      client_id: SHOPIFY_CLIENT_ID,
+      client_secret: SHOPIFY_CLIENT_SECRET,
+    }),
+  });
+
+  const rawText = await response.text();
+
+  let json = null;
+
+  try {
+    json = JSON.parse(rawText);
+  } catch (parseError) {
+    console.error("Shopify Token Antwort war kein JSON.");
+    console.error("Shopify Token Status:", response.status);
+    console.error("Shopify Token URL:", tokenUrl);
+    console.error("Shopify Token Antwort:", rawText.slice(0, 1000));
+
+    throw new Error(
+      "Shopify Access Token konnte nicht erzeugt werden: Antwort war kein JSON."
+    );
+  }
 
   if (!response.ok || !json.access_token) {
     console.error("Shopify Token Fehler:", JSON.stringify(json, null, 2));
+    console.error("Shopify Token Status:", response.status);
+
     throw new Error("Shopify Access Token konnte nicht erzeugt werden.");
   }
 
   cachedAccessToken = json.access_token;
 
-  // Shopify Tokens sind kurzlebig. Wenn expires_in kommt, nutzen wir es.
-  // Sonst sicherheitshalber 20 Minuten cachen.
   const expiresInSeconds = Number(json.expires_in || 1200);
   cachedAccessTokenExpiresAt = Date.now() + expiresInSeconds * 1000;
 
@@ -180,10 +191,26 @@ async function shopifyGraphql(query, variables = {}) {
     }
   );
 
-  const json = await response.json();
+  const rawText = await response.text();
+
+  let json = null;
+
+  try {
+    json = JSON.parse(rawText);
+  } catch (parseError) {
+    console.error("Shopify GraphQL Antwort war kein JSON.");
+    console.error("Shopify GraphQL Status:", response.status);
+    console.error("Shopify GraphQL Antwort:", rawText.slice(0, 1000));
+
+    throw new Error(
+      "Shopify GraphQL Request fehlgeschlagen: Antwort war kein JSON."
+    );
+  }
 
   if (!response.ok || json.errors) {
     console.error("Shopify GraphQL Fehler:", JSON.stringify(json, null, 2));
+    console.error("Shopify GraphQL Status:", response.status);
+
     throw new Error("Shopify GraphQL Request fehlgeschlagen.");
   }
 
@@ -269,7 +296,7 @@ export async function createShopifyCustomer(user) {
   const errors = data?.customerCreate?.userErrors || [];
 
   if (errors.length) {
-    console.error("Shopify customerCreate Fehler:", errors);
+    console.error("Shopify customerCreate Fehler:", JSON.stringify(errors, null, 2));
     throw new Error(errors.map((error) => error.message).join(", "));
   }
 
@@ -319,7 +346,7 @@ export async function updateShopifyCustomer(customerId, user) {
   const errors = data?.customerUpdate?.userErrors || [];
 
   if (errors.length) {
-    console.error("Shopify customerUpdate Fehler:", errors);
+    console.error("Shopify customerUpdate Fehler:", JSON.stringify(errors, null, 2));
     throw new Error(errors.map((error) => error.message).join(", "));
   }
 
@@ -352,7 +379,7 @@ export async function addTagsToShopifyCustomer(customerId, tags) {
   const errors = data?.tagsAdd?.userErrors || [];
 
   if (errors.length) {
-    console.error("Shopify tagsAdd Fehler:", errors);
+    console.error("Shopify tagsAdd Fehler:", JSON.stringify(errors, null, 2));
     throw new Error(errors.map((error) => error.message).join(", "));
   }
 
