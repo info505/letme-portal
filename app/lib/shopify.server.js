@@ -58,16 +58,41 @@ function getCompanyName(user) {
 function getBillingInfo(user) {
   const parts = [];
 
-  if (user.billingAddress) parts.push(`Rechnungsadresse: ${cleanString(user.billingAddress)}`);
-  if (user.billingStreet) parts.push(`Straße: ${cleanString(user.billingStreet)}`);
-  if (user.billingZip) parts.push(`PLZ: ${cleanString(user.billingZip)}`);
-  if (user.billingCity) parts.push(`Ort: ${cleanString(user.billingCity)}`);
-  if (user.billingCountry) parts.push(`Land: ${cleanString(user.billingCountry)}`);
+  if (user.billingAddress) {
+    parts.push(`Rechnungsadresse: ${cleanString(user.billingAddress)}`);
+  }
 
-  if (user.address) parts.push(`Adresse: ${cleanString(user.address)}`);
-  if (user.street) parts.push(`Straße: ${cleanString(user.street)}`);
-  if (user.zip) parts.push(`PLZ: ${cleanString(user.zip)}`);
-  if (user.city) parts.push(`Ort: ${cleanString(user.city)}`);
+  if (user.billingStreet) {
+    parts.push(`Straße: ${cleanString(user.billingStreet)}`);
+  }
+
+  if (user.billingZip) {
+    parts.push(`PLZ: ${cleanString(user.billingZip)}`);
+  }
+
+  if (user.billingCity) {
+    parts.push(`Ort: ${cleanString(user.billingCity)}`);
+  }
+
+  if (user.billingCountry) {
+    parts.push(`Land: ${cleanString(user.billingCountry)}`);
+  }
+
+  if (user.address) {
+    parts.push(`Adresse: ${cleanString(user.address)}`);
+  }
+
+  if (user.street) {
+    parts.push(`Straße: ${cleanString(user.street)}`);
+  }
+
+  if (user.zip) {
+    parts.push(`PLZ: ${cleanString(user.zip)}`);
+  }
+
+  if (user.city) {
+    parts.push(`Ort: ${cleanString(user.city)}`);
+  }
 
   return parts.filter(Boolean).join("\n");
 }
@@ -92,7 +117,10 @@ function buildCustomerNote(user) {
 function buildTags(user) {
   const companyName = getCompanyName(user);
 
-  const tags = ["kundenportal", "rechnung_pruefung"];
+  const tags = [
+    "kundenportal",
+    "rechnung_pruefung",
+  ];
 
   if (companyName) {
     tags.push("firmenkunde");
@@ -168,6 +196,8 @@ async function getShopifyAccessToken() {
   const expiresInSeconds = Number(json.expires_in || 1200);
   cachedAccessTokenExpiresAt = Date.now() + expiresInSeconds * 1000;
 
+  console.log("Shopify Access Token erfolgreich erzeugt.");
+
   return cachedAccessToken;
 }
 
@@ -176,20 +206,20 @@ async function shopifyGraphql(query, variables = {}) {
 
   const accessToken = await getShopifyAccessToken();
 
-  const response = await fetch(
-    `https://${SHOPIFY_SHOP_DOMAIN}/admin/api/${SHOPIFY_API_VERSION}/graphql.json`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Shopify-Access-Token": accessToken,
-      },
-      body: JSON.stringify({
-        query,
-        variables,
-      }),
-    }
-  );
+  const graphQlUrl = `https://${SHOPIFY_SHOP_DOMAIN}/admin/api/${SHOPIFY_API_VERSION}/graphql.json`;
+
+  const response = await fetch(graphQlUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "X-Shopify-Access-Token": accessToken,
+    },
+    body: JSON.stringify({
+      query,
+      variables,
+    }),
+  });
 
   const rawText = await response.text();
 
@@ -200,6 +230,7 @@ async function shopifyGraphql(query, variables = {}) {
   } catch (parseError) {
     console.error("Shopify GraphQL Antwort war kein JSON.");
     console.error("Shopify GraphQL Status:", response.status);
+    console.error("Shopify GraphQL URL:", graphQlUrl);
     console.error("Shopify GraphQL Antwort:", rawText.slice(0, 1000));
 
     throw new Error(
@@ -210,6 +241,7 @@ async function shopifyGraphql(query, variables = {}) {
   if (!response.ok || json.errors) {
     console.error("Shopify GraphQL Fehler:", JSON.stringify(json, null, 2));
     console.error("Shopify GraphQL Status:", response.status);
+    console.error("Shopify GraphQL URL:", graphQlUrl);
 
     throw new Error("Shopify GraphQL Request fehlgeschlagen.");
   }
@@ -296,7 +328,11 @@ export async function createShopifyCustomer(user) {
   const errors = data?.customerCreate?.userErrors || [];
 
   if (errors.length) {
-    console.error("Shopify customerCreate Fehler:", JSON.stringify(errors, null, 2));
+    console.error(
+      "Shopify customerCreate Fehler:",
+      JSON.stringify(errors, null, 2)
+    );
+
     throw new Error(errors.map((error) => error.message).join(", "));
   }
 
@@ -346,7 +382,11 @@ export async function updateShopifyCustomer(customerId, user) {
   const errors = data?.customerUpdate?.userErrors || [];
 
   if (errors.length) {
-    console.error("Shopify customerUpdate Fehler:", JSON.stringify(errors, null, 2));
+    console.error(
+      "Shopify customerUpdate Fehler:",
+      JSON.stringify(errors, null, 2)
+    );
+
     throw new Error(errors.map((error) => error.message).join(", "));
   }
 
@@ -379,7 +419,11 @@ export async function addTagsToShopifyCustomer(customerId, tags) {
   const errors = data?.tagsAdd?.userErrors || [];
 
   if (errors.length) {
-    console.error("Shopify tagsAdd Fehler:", JSON.stringify(errors, null, 2));
+    console.error(
+      "Shopify tagsAdd Fehler:",
+      JSON.stringify(errors, null, 2)
+    );
+
     throw new Error(errors.map((error) => error.message).join(", "));
   }
 
