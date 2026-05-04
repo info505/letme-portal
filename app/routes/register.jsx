@@ -8,6 +8,7 @@ import {
 import { prisma } from "../lib/prisma.server.js";
 import { hashPassword, getUserFromRequest } from "../lib/auth.server.js";
 import { getLocaleFromRequest, dict, withLang } from "../lib/i18n.js";
+import { syncCustomerToShopify } from "../lib/shopify.server.js";
 import LanguageSwitch from "../components/LanguageSwitch.jsx";
 
 const colors = {
@@ -146,7 +147,7 @@ export async function action({ request }) {
 
   const passwordHash = await hashPassword(password);
 
-  await prisma.portalUser.create({
+  const user = await prisma.portalUser.create({
     data: {
       companyName,
       firstName,
@@ -171,7 +172,47 @@ export async function action({ request }) {
         },
       },
     },
+    include: {
+      billing: true,
+    },
   });
+
+  try {
+    const shopifyResult = await syncCustomerToShopify({
+      id: user.id,
+      companyName: user.companyName,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      username: user.username,
+      email: user.email,
+      phone: user.phone,
+
+      billingAddress: user.billing
+        ? [
+            user.billing.companyName,
+            user.billing.contactName,
+            user.billing.street,
+            user.billing.zip,
+            user.billing.city,
+            user.billing.country,
+          ]
+            .filter(Boolean)
+            .join(", ")
+        : "",
+      billingStreet: user.billing?.street || "",
+      billingZip: user.billing?.zip || "",
+      billingCity: user.billing?.city || "",
+      billingCountry: user.billing?.country || "",
+    });
+
+    console.log(
+      "Shopify Sync erfolgreich:",
+      shopifyResult.action,
+      shopifyResult.customer?.id
+    );
+  } catch (shopifyError) {
+    console.error("Shopify Sync fehlgeschlagen:", shopifyError);
+  }
 
   return {
     ok: true,
