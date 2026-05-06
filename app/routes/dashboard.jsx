@@ -124,53 +124,65 @@ export default function DashboardPage() {
   } = useLoaderData();
 
   const t = dict[locale] || dict.de;
-  const invoicePurchaseEnabled = Boolean(user.invoicePurchaseEnabled);
+
+  const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
+
+  const invoicePurchaseEnabled =
+    Boolean(user.isActive) && Boolean(user.invoicePurchaseEnabled);
+
+  function buildDeliveryAddressFull() {
+    if (!defaultDeliveryAddress) return "";
+
+    return [
+      [defaultDeliveryAddress.street, defaultDeliveryAddress.houseNumber]
+        .filter(Boolean)
+        .join(" "),
+      [defaultDeliveryAddress.postalCode, defaultDeliveryAddress.city]
+        .filter(Boolean)
+        .join(" "),
+      defaultDeliveryAddress.country || "",
+    ]
+      .filter(Boolean)
+      .join(", ");
+  }
 
   function handleOrderNow() {
     const form = document.createElement("form");
     form.method = "POST";
     form.action = "https://letmebowl-catering.de/cart/update";
 
+    const deliveryAddressFull = buildDeliveryAddressFull();
+
     const attrs = {
+      "attributes[Portal Kunde]": "Ja",
       "attributes[Portal_User_ID]": user.id || "",
+      "attributes[Portal_Email]": user.email || "",
       "attributes[Portal_Firma]": user.companyName || "",
+      "attributes[Portal_Name]": fullName || user.companyName || "",
       "attributes[Portal_Konto_aktiv]": user.isActive ? "Ja" : "Nein",
+      "attributes[Kunde eingeloggt]": "Ja",
       "attributes[Rechnungskauf erlaubt]": invoicePurchaseEnabled ? "Ja" : "Nein",
 
       "attributes[Lieferadresse_ID]": defaultDeliveryAddress?.id || "",
       "attributes[Lieferadresse_Label]": defaultDeliveryAddress?.label || "",
-      "attributes[Lieferadresse_Voll]": defaultDeliveryAddress
-        ? [
-            [defaultDeliveryAddress.street, defaultDeliveryAddress.houseNumber]
-              .filter(Boolean)
-              .join(" "),
-            [defaultDeliveryAddress.postalCode, defaultDeliveryAddress.city]
-              .filter(Boolean)
-              .join(" "),
-            defaultDeliveryAddress.country || "",
-          ]
-            .filter(Boolean)
-            .join(", ")
-        : "",
+      "attributes[Lieferadresse_Voll]": deliveryAddressFull,
 
       "attributes[Kostenstelle_ID]": activeCostCenter?.id || "",
       "attributes[Kostenstelle_Name]": activeCostCenter?.name || "",
       "attributes[Kostenstelle_Code]": activeCostCenter?.code || "",
 
-      "attributes[Kontaktname]": [user.firstName, user.lastName]
-        .filter(Boolean)
-        .join(" "),
+      "attributes[Kontaktname]": fullName || "",
       "attributes[Telefon]": user.phone || "",
       "attributes[E-Mail]": user.email || "",
 
-      return_to: "/pages/bestellen",
+      return_to: "/cart",
     };
 
     Object.entries(attrs).forEach(([name, value]) => {
       const input = document.createElement("input");
       input.type = "hidden";
       input.name = name;
-      input.value = value;
+      input.value = value ?? "";
       form.appendChild(input);
     });
 
@@ -575,7 +587,7 @@ export default function DashboardPage() {
                 fontWeight: 800,
               }}
             >
-              {t.orderNow}
+              {t.orderNow || (locale === "en" ? "Order now" : "Jetzt bestellen")}
             </button>
 
             <a
@@ -1002,6 +1014,7 @@ function OrderRow({ order, locale }) {
 
 function formatDate(value, locale) {
   const date = new Date(value);
+
   return new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "de-DE", {
     day: "2-digit",
     month: "2-digit",
@@ -1041,24 +1054,28 @@ function getStatusStyle(status) {
         color: "#1f6b36",
         border: "1px solid #cfe8d4",
       };
+
     case "CONFIRMED":
       return {
         background: "#eef4ff",
         color: "#285ea8",
         border: "1px solid #cfddf6",
       };
+
     case "IN_PREPARATION":
       return {
         background: "#fff6e9",
         color: "#8a5a00",
         border: "1px solid #f0dfbf",
       };
+
     case "CANCELLED":
       return {
         background: "#fff1f1",
         color: "#8b2222",
         border: "1px solid #efcaca",
       };
+
     default:
       return {
         background: "#f3f3f3",
