@@ -510,5 +510,5 @@ app.use(express.static("build/client"));
 app.all("*", createRequestHandler({ build }));
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server läuft auf Port ${PORT}`);
+  console.log(`Server läuft auf Port ${PORT} - portal email route fixed`);
 });
