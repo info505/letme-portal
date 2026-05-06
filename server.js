@@ -8,7 +8,581 @@ const PORT = process.env.PORT || 8080;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// ===== PORTAL ORDER API + EMAIL NOTIFICATION =====
+
+function euroFromCents(cents) {
+  const value = Number(cents || 0) / 100;
+
+  return new Intl.NumberFormat("de-DE", {
+    style: "currency",
+    currency: "EUR",
+  }).format(value);
+}
+
+function safeText(value) {
+  if (value === null || value === undefined) return "";
+  return String(value).trim();
+}
+
+function parseItems(rawItems) {
+  try {
+    if (!rawItems) return [];
+    const parsed = JSON.parse(rawItems);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.error("Items konnten nicht gelesen werden:", error);
+    return [];
+  }
+}
+
+function buildOrderEmailHtml(data) {
+  const items = parseItems(data.items);
+
+  const itemRows = items
+    .map((item) => {
+      const title = safeText(item.title) || "Artikel";
+      const quantity = Number(item.quantity || 1);
+      const total = euroFromCents(item.totalPriceCents || 0);
+      const variantTitle = safeText(item.variantTitle);
+      const sku = safeText(item.sku);
+
+      return `
+        <tr>
+          <td style="padding:12px;border-bottom:1px solid #eee;">
+            <strong>${escapeHtml(title)}</strong>
+            ${variantTitle ? `<br><span style="color:#666;">${escapeHtml(variantTitle)}</span>` : ""}
+            ${sku ? `<br><span style="color:#999;">SKU: ${escapeHtml(sku)}</span>` : ""}
+          </td>
+          <td style="padding:12px;border-bottom:1px solid #eee;text-align:center;">${quantity}</td>
+          <td style="padding:12px;border-bottom:1px solid #eee;text-align:right;">${total}</td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  const deliveryType = safeText(data.deliveryType) || "-";
+  const deliveryDate = safeText(data.deliveryDate) || "-";
+  const deliveryTime = safeText(data.deliveryTime) || "-";
+  const eventTime = safeText(data.eventTime) || "-";
+
+  const contactName = safeText(data.contactName) || "-";
+  const contactEmail = safeText(data.contactEmail) || "-";
+  const contactPhone = safeText(data.contactPhone) || "-";
+
+  const invoiceAllowed = data.invoiceAllowed === "true" || data.invoiceAllowed === "Ja";
+  const customerIsLoggedIn = data.customerIsLoggedIn === "true" || data.customerIsLoggedIn === "Ja";
+
+  const portalDeliveryAddressLabel = safeText(data.portalDeliveryAddressLabel);
+  const portalDeliveryAddressFull = safeText(data.portalDeliveryAddressFull);
+
+  const portalCostCenterName = safeText(data.portalCostCenterName);
+  const portalCostCenterCode = safeText(data.portalCostCenterCode);
+
+  const deliveryCompany = safeText(data.deliveryCompany);
+  const deliveryStreet = safeText(data.deliveryStreet);
+  const deliveryZip = safeText(data.deliveryZip);
+  const deliveryCity = safeText(data.deliveryCity);
+  const deliveryExtra = safeText(data.deliveryExtra);
+
+  const billingCompany = safeText(data.billingCompany);
+  const billingStreet = safeText(data.billingStreet);
+  const billingZip = safeText(data.billingZip);
+  const billingCity = safeText(data.billingCity);
+  const billingExtra = safeText(data.billingExtra);
+
+  const internalReference = safeText(data.internalReference);
+  const total = euroFromCents(data.totalAmountCents || data.subtotalAmountCents || 0);
+
+  return `
+<!doctype html>
+<html>
+  <body style="margin:0;padding:0;background:#f5f2ec;font-family:Arial,sans-serif;color:#1f2430;">
+    <div style="max-width:760px;margin:0 auto;padding:28px;">
+      <div style="background:#fff;border-radius:22px;padding:28px;border:1px solid #e7dfd2;">
+        <h1 style="margin:0 0 8px;font-size:28px;">Neue Let Me Bowl Bestellung</h1>
+        <p style="margin:0 0 24px;color:#666;">Eine neue Bestellung wurde über Website / Firmenkonto übermittelt.</p>
+
+        <div style="background:#f8f3e8;border-radius:16px;padding:18px;margin-bottom:22px;">
+          <h2 style="margin:0 0 12px;font-size:18px;">Bestellübersicht</h2>
+          <p style="margin:4px 0;"><strong>Lieferart:</strong> ${escapeHtml(deliveryType)}</p>
+          <p style="margin:4px 0;"><strong>Datum:</strong> ${escapeHtml(deliveryDate)}</p>
+          <p style="margin:4px 0;"><strong>Zeit:</strong> ${escapeHtml(deliveryTime)}</p>
+          <p style="margin:4px 0;"><strong>Eventbeginn:</strong> ${escapeHtml(eventTime)}</p>
+          <p style="margin:4px 0;"><strong>Gesamt:</strong> ${escapeHtml(total)}</p>
+        </div>
+
+        <h2 style="font-size:18px;margin:0 0 12px;">Kundendaten</h2>
+        <p style="margin:4px 0;"><strong>Name:</strong> ${escapeHtml(contactName)}</p>
+        <p style="margin:4px 0;"><strong>E-Mail:</strong> ${escapeHtml(contactEmail)}</p>
+        <p style="margin:4px 0;"><strong>Telefon:</strong> ${escapeHtml(contactPhone)}</p>
+        <p style="margin:4px 0;"><strong>Firmenkonto erkannt:</strong> ${customerIsLoggedIn ? "Ja" : "Nein"}</p>
+        <p style="margin:4px 0 22px;"><strong>Rechnungskauf freigegeben:</strong> ${invoiceAllowed ? "Ja" : "Nein"}</p>
+
+        ${
+          portalDeliveryAddressLabel || portalCostCenterName
+            ? `
+              <div style="background:#eef8ef;border-radius:16px;padding:18px;margin-bottom:22px;border:1px solid #cfe8d4;">
+                <h2 style="font-size:18px;margin:0 0 12px;">Firmenkonto / Portal</h2>
+                ${
+                  portalDeliveryAddressLabel
+                    ? `<p style="margin:4px 0;"><strong>Lieferadresse:</strong> ${escapeHtml(portalDeliveryAddressLabel)}</p>`
+                    : ""
+                }
+                ${
+                  portalDeliveryAddressFull
+                    ? `<p style="margin:4px 0;"><strong>Adresse voll:</strong> ${escapeHtml(portalDeliveryAddressFull)}</p>`
+                    : ""
+                }
+                ${
+                  portalCostCenterName
+                    ? `<p style="margin:4px 0;"><strong>Kostenstelle:</strong> ${escapeHtml(portalCostCenterName)} ${portalCostCenterCode ? "· " + escapeHtml(portalCostCenterCode) : ""}</p>`
+                    : ""
+                }
+              </div>
+            `
+            : ""
+        }
+
+        <h2 style="font-size:18px;margin:0 0 12px;">Artikel</h2>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+          <thead>
+            <tr>
+              <th style="padding:12px;border-bottom:2px solid #ddd;text-align:left;">Artikel</th>
+              <th style="padding:12px;border-bottom:2px solid #ddd;text-align:center;">Menge</th>
+              <th style="padding:12px;border-bottom:2px solid #ddd;text-align:right;">Summe</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              itemRows ||
+              `
+              <tr>
+                <td colspan="3" style="padding:12px;color:#888;">Keine Artikeldaten übertragen.</td>
+              </tr>
+              `
+            }
+          </tbody>
+        </table>
+
+        <h2 style="font-size:18px;margin:0 0 12px;">Lieferadresse</h2>
+        ${
+          deliveryType.toLowerCase().includes("abhol")
+            ? `<p style="margin:4px 0 22px;">Abholung im Geschäft</p>`
+            : `
+              <p style="margin:4px 0;"><strong>Firma:</strong> ${escapeHtml(deliveryCompany || "-")}</p>
+              <p style="margin:4px 0;"><strong>Straße:</strong> ${escapeHtml(deliveryStreet || "-")}</p>
+              <p style="margin:4px 0;"><strong>PLZ / Ort:</strong> ${escapeHtml(`${deliveryZip || "-"} ${deliveryCity || ""}`)}</p>
+              <p style="margin:4px 0 22px;"><strong>Zusatz:</strong> ${escapeHtml(deliveryExtra || "-")}</p>
+            `
+        }
+
+        <h2 style="font-size:18px;margin:0 0 12px;">Rechnungsadresse</h2>
+        <p style="margin:4px 0;"><strong>Firma:</strong> ${escapeHtml(billingCompany || "-")}</p>
+        <p style="margin:4px 0;"><strong>Straße:</strong> ${escapeHtml(billingStreet || "-")}</p>
+        <p style="margin:4px 0;"><strong>PLZ / Ort:</strong> ${escapeHtml(`${billingZip || "-"} ${billingCity || ""}`)}</p>
+        <p style="margin:4px 0 22px;"><strong>Zusatz:</strong> ${escapeHtml(billingExtra || "-")}</p>
+
+        <h2 style="font-size:18px;margin:0 0 12px;">Hinweise / interne Referenz</h2>
+        <p style="white-space:pre-line;background:#fafafa;border:1px solid #eee;border-radius:14px;padding:14px;margin:0;">
+          ${escapeHtml(internalReference || "-")}
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
+  `;
+}
+
+function buildOrderEmailText(data) {
+  const items = parseItems(data.items);
+
+  const itemText = items
+    .map((item) => {
+      return `- ${safeText(item.title)} | Menge: ${item.quantity || 1} | Summe: ${euroFromCents(item.totalPriceCents || 0)}`;
+    })
+    .join("\n");
+
+  return `
+Neue Let Me Bowl Bestellung
+
+Lieferart: ${safeText(data.deliveryType)}
+Datum: ${safeText(data.deliveryDate)}
+Zeit: ${safeText(data.deliveryTime)}
+Eventbeginn: ${safeText(data.eventTime)}
+
+Kunde:
+Name: ${safeText(data.contactName)}
+E-Mail: ${safeText(data.contactEmail)}
+Telefon: ${safeText(data.contactPhone)}
+
+Firmenkonto erkannt: ${data.customerIsLoggedIn === "true" ? "Ja" : "Nein"}
+Rechnungskauf freigegeben: ${data.invoiceAllowed === "true" ? "Ja" : "Nein"}
+
+Portal:
+Lieferadresse: ${safeText(data.portalDeliveryAddressLabel)}
+Kostenstelle: ${safeText(data.portalCostCenterName)} ${safeText(data.portalCostCenterCode)}
+
+Artikel:
+${itemText || "Keine Artikeldaten übertragen."}
+
+Gesamt: ${euroFromCents(data.totalAmountCents || data.subtotalAmountCents || 0)}
+
+Lieferadresse:
+Firma: ${safeText(data.deliveryCompany)}
+Straße: ${safeText(data.deliveryStreet)}
+PLZ/Ort: ${safeText(data.deliveryZip)} ${safeText(data.deliveryCity)}
+Zusatz: ${safeText(data.deliveryExtra)}
+
+Rechnungsadresse:
+Firma: ${safeText(data.billingCompany)}
+Straße: ${safeText(data.billingStreet)}
+PLZ/Ort: ${safeText(data.billingZip)} ${safeText(data.billingCity)}
+Zusatz: ${safeText(data.billingExtra)}
+
+Hinweise:
+${safeText(data.internalReference)}
+  `.trim();
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+async function sendOrderNotificationEmail(data) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const to = process.env.ORDER_NOTIFICATION_EMAIL || "info@letmebowl-catering.de";
+  const from = process.env.RESEND_FROM || "Let Me Bowl <noreply@letmebowl-catering.de>";
+
+  if (!apiKey) {
+    console.warn("RESEND_API_KEY fehlt. Bestell-E-Mail wurde nicht gesendet.");
+    return {
+      sent: false,
+      reason: "RESEND_API_KEY fehlt",
+    };
+  }
+
+  const customerName = safeText(data.contactName) || "Kunde";
+  const deliveryDate = safeText(data.deliveryDate) || "ohne Datum";
+  const subject = `Neue Bestellung: ${customerName} – ${deliveryDate}`;
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from,
+      to,
+      subject,
+      html: buildOrderEmailHtml(data),
+      text: buildOrderEmailText(data),
+    }),
+  });
+
+  const result = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    console.error("Resend Fehler:", result);
+    return {
+      sent: false,
+      reason: result,
+    };
+  }
+
+  return {
+    sent: true,
+    result,
+  };
+}
+
+app.post("/api/portal-order", async (req, res) => {
+  try {
+    const data = req.body || {};
+
+    console.log("Neue Portal-Bestellung empfangen:", {
+      contactName: data.contactName,
+      contactEmail: data.contactEmail,
+      deliveryType: data.deliveryType,
+      deliveryDate: data.deliveryDate,
+      deliveryTime: data.deliveryTime,
+      totalAmountCents: data.totalAmountCents,
+    });
+
+    const emailResult = await sendOrderNotificationEmail(data);
+
+    return res.json({
+      ok: true,
+      email: emailResult,
+    });
+  } catch (error) {
+    console.error("Portal Order Fehler:", error);
+
+    return res.status(500).json({
+      ok: false,
+      error: "Bestellung konnte nicht verarbeitet werden.",
+    });
+  }
+});
+
 const resend = new Resend(process.env.RESEND_API_KEY);
+app.options("/api/portal-order-email", (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "https://letmebowl-catering.de");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  return res.sendStatus(204);
+});
+
+app.post("/api/portal-order-email", async (req, res) => {
+  try {
+    res.setHeader("Access-Control-Allow-Origin", "https://letmebowl-catering.de");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+
+    const data = req.body || {};
+
+    const customerEmail = data.customerEmail || "";
+    const customerName = data.customerName || "-";
+    const customerCompany = data.customerCompany || "-";
+    const customerPhone = data.customerPhone || "-";
+
+    const deliveryType = data.deliveryType || "-";
+    const deliveryDate = data.deliveryDate || "-";
+    const deliveryTime = data.deliveryTime || "-";
+    const eventTime = data.eventTime || "-";
+
+    const billingCompany = data.billingCompany || customerCompany || "-";
+    const billingStreet = data.billingStreet || "-";
+    const billingZip = data.billingZip || "-";
+    const billingCity = data.billingCity || "-";
+
+    const deliveryStreet = data.deliveryStreet || "-";
+    const deliveryZip = data.deliveryZip || "-";
+    const deliveryCity = data.deliveryCity || "-";
+
+    const costCenterName = data.costCenterName || "-";
+    const costCenterCode = data.costCenterCode || "";
+    const internalReference = data.internalReference || "-";
+
+    const items = Array.isArray(data.items) ? data.items : [];
+
+    const euro = (cents) => {
+      const value = Number(cents || 0) / 100;
+      return new Intl.NumberFormat("de-DE", {
+        style: "currency",
+        currency: "EUR",
+      }).format(value);
+    };
+
+    const itemRowsText = items.length
+      ? items
+          .map((item) => {
+            return `• ${item.title || "-"} | Menge: ${item.quantity || 1} | ${euro(item.totalPriceCents)}`;
+          })
+          .join("\n")
+      : "Keine Artikel übermittelt.";
+
+    const itemRowsHtml = items.length
+      ? items
+          .map((item) => {
+            return `
+              <tr>
+                <td style="padding:10px;border-bottom:1px solid #eee;">${item.title || "-"}</td>
+                <td style="padding:10px;border-bottom:1px solid #eee;text-align:center;">${item.quantity || 1}</td>
+                <td style="padding:10px;border-bottom:1px solid #eee;text-align:right;">${euro(item.totalPriceCents)}</td>
+              </tr>
+            `;
+          })
+          .join("")
+      : `<tr><td colspan="3" style="padding:10px;">Keine Artikel übermittelt.</td></tr>`;
+
+    const totalText = euro(data.cartTotalCents || 0);
+
+    const ownerTo = process.env.ORDER_MAIL_TO || "info@letmebowl-catering.de";
+    const from = process.env.MAIL_FROM || "Let Me Bowl <noreply@letmebowl-catering.de>";
+
+    const subjectOwner = `Neue Firmenbestellung – ${customerCompany} – ${deliveryDate} ${deliveryTime}`;
+    const subjectCustomer = `Deine Bestellung bei Let Me Bowl wurde erhalten`;
+
+    const ownerText = `
+NEUE FIRMENBESTELLUNG
+
+KUNDE
+Firma: ${customerCompany}
+Kontakt: ${customerName}
+E-Mail: ${customerEmail}
+Telefon: ${customerPhone}
+
+TERMIN
+Lieferart: ${deliveryType}
+Datum: ${deliveryDate}
+Zeit: ${deliveryTime}
+Eventbeginn: ${eventTime}
+
+LIEFERADRESSE
+${deliveryStreet}
+${deliveryZip} ${deliveryCity}
+
+RECHNUNGSDATEN
+${billingCompany}
+${billingStreet}
+${billingZip} ${billingCity}
+
+KOSTENSTELLE / REFERENZ
+Kostenstelle: ${costCenterName}${costCenterCode ? " · " + costCenterCode : ""}
+Hinweise: ${internalReference}
+
+ARTIKEL
+${itemRowsText}
+
+GESAMT
+${totalText}
+`;
+
+    const ownerHtml = `
+      <div style="font-family:Arial,sans-serif;color:#1f2430;line-height:1.5;">
+        <h2>Neue Firmenbestellung</h2>
+
+        <h3>Kunde</h3>
+        <p>
+          <strong>Firma:</strong> ${customerCompany}<br>
+          <strong>Kontakt:</strong> ${customerName}<br>
+          <strong>E-Mail:</strong> ${customerEmail}<br>
+          <strong>Telefon:</strong> ${customerPhone}
+        </p>
+
+        <h3>Termin</h3>
+        <p>
+          <strong>Lieferart:</strong> ${deliveryType}<br>
+          <strong>Datum:</strong> ${deliveryDate}<br>
+          <strong>Zeit:</strong> ${deliveryTime}<br>
+          <strong>Eventbeginn:</strong> ${eventTime}
+        </p>
+
+        <h3>Lieferadresse</h3>
+        <p>${deliveryStreet}<br>${deliveryZip} ${deliveryCity}</p>
+
+        <h3>Rechnungsdaten</h3>
+        <p>${billingCompany}<br>${billingStreet}<br>${billingZip} ${billingCity}</p>
+
+        <h3>Kostenstelle / Referenz</h3>
+        <p>
+          <strong>Kostenstelle:</strong> ${costCenterName}${costCenterCode ? " · " + costCenterCode : ""}<br>
+          <strong>Hinweise:</strong> ${internalReference}
+        </p>
+
+        <h3>Artikel</h3>
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:10px;border-bottom:2px solid #ddd;">Artikel</th>
+              <th style="text-align:center;padding:10px;border-bottom:2px solid #ddd;">Menge</th>
+              <th style="text-align:right;padding:10px;border-bottom:2px solid #ddd;">Summe</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemRowsHtml}
+          </tbody>
+        </table>
+
+        <p style="margin-top:20px;font-size:18px;">
+          <strong>Gesamt:</strong> ${totalText}
+        </p>
+      </div>
+    `;
+
+    const customerText = `
+Vielen Dank für deine Bestellung.
+
+Wir haben deine Firmenbestellung erhalten und prüfen die Angaben.
+
+ÜBERSICHT
+Firma: ${customerCompany}
+Kontakt: ${customerName}
+Lieferart: ${deliveryType}
+Datum: ${deliveryDate}
+Zeit: ${deliveryTime}
+Eventbeginn: ${eventTime}
+
+ARTIKEL
+${itemRowsText}
+
+GESAMT
+${totalText}
+
+Die Rechnung folgt separat.
+`;
+
+    const customerHtml = `
+      <div style="font-family:Arial,sans-serif;color:#1f2430;line-height:1.6;">
+        <h2>Vielen Dank für deine Bestellung.</h2>
+        <p>Wir haben deine Firmenbestellung erhalten und prüfen die Angaben.</p>
+
+        <h3>Bestellübersicht</h3>
+        <p>
+          <strong>Firma:</strong> ${customerCompany}<br>
+          <strong>Kontakt:</strong> ${customerName}<br>
+          <strong>Lieferart:</strong> ${deliveryType}<br>
+          <strong>Datum:</strong> ${deliveryDate}<br>
+          <strong>Zeit:</strong> ${deliveryTime}<br>
+          <strong>Eventbeginn:</strong> ${eventTime}
+        </p>
+
+        <h3>Artikel</h3>
+        <table style="width:100%;border-collapse:collapse;">
+          <tbody>
+            ${itemRowsHtml}
+          </tbody>
+        </table>
+
+        <p style="margin-top:20px;font-size:18px;">
+          <strong>Gesamt:</strong> ${totalText}
+        </p>
+
+        <p>Die Rechnung folgt separat.</p>
+      </div>
+    `;
+
+    const ownerMail = await resend.emails.send({
+      from,
+      to: ownerTo,
+      subject: subjectOwner,
+      text: ownerText,
+      html: ownerHtml,
+      replyTo: customerEmail || undefined,
+    });
+
+    let customerMail = null;
+
+    if (customerEmail) {
+      customerMail = await resend.emails.send({
+        from,
+        to: customerEmail,
+        subject: subjectCustomer,
+        text: customerText,
+        html: customerHtml,
+      });
+    }
+
+    return res.json({
+      ok: true,
+      ownerMail,
+      customerMail,
+    });
+  } catch (error) {
+    console.error("portal-order-email error:", error);
+
+    return res.status(500).json({
+      ok: false,
+      error: "E-Mail konnte nicht gesendet werden.",
+    });
+  }
+});
 
 app.get("/api/health", (req, res) => {
   res.json({ ok: true });
