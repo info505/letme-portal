@@ -1,6 +1,6 @@
 import express from "express";
 import { createRequestHandler } from "@react-router/express";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -40,7 +40,31 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// ===== MAILJET / SMTP =====
+
+function createMailTransporter() {
+  const host = process.env.SMTP_HOST || "in-v3.mailjet.com";
+  const port = Number(process.env.SMTP_PORT || 587);
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (!user || !pass) {
+    console.warn("SMTP_USER oder SMTP_PASS fehlt. E-Mail-Versand nicht möglich.");
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: {
+      user,
+      pass,
+    },
+  });
+}
+
+const transporter = createMailTransporter();
 
 // ===== HILFSFUNKTIONEN =====
 
@@ -80,6 +104,10 @@ function parseItems(rawItems) {
   }
 }
 
+function isTruthy(value) {
+  return value === true || value === "true" || value === "Ja" || value === "1";
+}
+
 function buildOrderEmailHtml(data) {
   const items = parseItems(data.items);
 
@@ -95,8 +123,16 @@ function buildOrderEmailHtml(data) {
         <tr>
           <td style="padding:12px;border-bottom:1px solid #eee;">
             <strong>${escapeHtml(title)}</strong>
-            ${variantTitle ? `<br><span style="color:#666;">${escapeHtml(variantTitle)}</span>` : ""}
-            ${sku ? `<br><span style="color:#999;">SKU: ${escapeHtml(sku)}</span>` : ""}
+            ${
+              variantTitle
+                ? `<br><span style="color:#666;">${escapeHtml(variantTitle)}</span>`
+                : ""
+            }
+            ${
+              sku
+                ? `<br><span style="color:#999;">SKU: ${escapeHtml(sku)}</span>`
+                : ""
+            }
           </td>
           <td style="padding:12px;border-bottom:1px solid #eee;text-align:center;">${quantity}</td>
           <td style="padding:12px;border-bottom:1px solid #eee;text-align:right;">${total}</td>
@@ -110,33 +146,26 @@ function buildOrderEmailHtml(data) {
   const deliveryTime = safeText(data.deliveryTime) || "-";
   const eventTime = safeText(data.eventTime) || "-";
 
-  const contactName = safeText(data.contactName) || "-";
-  const contactEmail = safeText(data.contactEmail) || "-";
-  const contactPhone = safeText(data.contactPhone) || "-";
+  const contactName = safeText(data.contactName || data.customerName) || "-";
+  const contactEmail = safeText(data.contactEmail || data.customerEmail) || "-";
+  const contactPhone = safeText(data.contactPhone || data.customerPhone) || "-";
 
-  const invoiceAllowed =
-    data.invoiceAllowed === "true" ||
-    data.invoiceAllowed === "Ja" ||
-    data.invoiceAllowed === true;
-
-  const customerIsLoggedIn =
-    data.customerIsLoggedIn === "true" ||
-    data.customerIsLoggedIn === "Ja" ||
-    data.customerIsLoggedIn === true;
+  const invoiceAllowed = isTruthy(data.invoiceAllowed || data.invoiceApproved);
+  const customerIsLoggedIn = isTruthy(data.customerIsLoggedIn);
 
   const portalDeliveryAddressLabel = safeText(data.portalDeliveryAddressLabel);
   const portalDeliveryAddressFull = safeText(data.portalDeliveryAddressFull);
 
-  const portalCostCenterName = safeText(data.portalCostCenterName);
-  const portalCostCenterCode = safeText(data.portalCostCenterCode);
+  const portalCostCenterName = safeText(data.portalCostCenterName || data.costCenterName);
+  const portalCostCenterCode = safeText(data.portalCostCenterCode || data.costCenterCode);
 
-  const deliveryCompany = safeText(data.deliveryCompany);
+  const deliveryCompany = safeText(data.deliveryCompany || data.customerCompany);
   const deliveryStreet = safeText(data.deliveryStreet);
   const deliveryZip = safeText(data.deliveryZip);
   const deliveryCity = safeText(data.deliveryCity);
   const deliveryExtra = safeText(data.deliveryExtra);
 
-  const billingCompany = safeText(data.billingCompany);
+  const billingCompany = safeText(data.billingCompany || data.customerCompany);
   const billingStreet = safeText(data.billingStreet);
   const billingZip = safeText(data.billingZip);
   const billingCity = safeText(data.billingCity);
@@ -154,7 +183,7 @@ function buildOrderEmailHtml(data) {
     <div style="max-width:760px;margin:0 auto;padding:28px;">
       <div style="background:#fff;border-radius:22px;padding:28px;border:1px solid #e7dfd2;">
         <h1 style="margin:0 0 8px;font-size:28px;">Neue Let Me Bowl Bestellung</h1>
-        <p style="margin:0 0 24px;color:#666;">Eine neue Bestellung wurde über Website / Firmenkonto übermittelt.</p>
+        <p style="margin:0 0 24px;color:#666;">Eine neue Firmenbestellung wurde über Website / Firmenkonto übermittelt.</p>
 
         <div style="background:#f8f3e8;border-radius:16px;padding:18px;margin-bottom:22px;">
           <h2 style="margin:0 0 12px;font-size:18px;">Bestellübersicht</h2>
@@ -254,7 +283,9 @@ function buildOrderEmailText(data) {
 
   const itemText = items
     .map((item) => {
-      return `- ${safeText(item.title)} | Menge: ${item.quantity || 1} | Summe: ${euroFromCents(item.totalPriceCents || 0)}`;
+      return `- ${safeText(item.title)} | Menge: ${
+        item.quantity || 1
+      } | Summe: ${euroFromCents(item.totalPriceCents || 0)}`;
     })
     .join("\n");
 
@@ -267,30 +298,34 @@ Zeit: ${safeText(data.deliveryTime)}
 Eventbeginn: ${safeText(data.eventTime)}
 
 Kunde:
-Name: ${safeText(data.contactName)}
-E-Mail: ${safeText(data.contactEmail)}
-Telefon: ${safeText(data.contactPhone)}
+Name: ${safeText(data.contactName || data.customerName)}
+E-Mail: ${safeText(data.contactEmail || data.customerEmail)}
+Telefon: ${safeText(data.contactPhone || data.customerPhone)}
 
-Firmenkonto erkannt: ${data.customerIsLoggedIn === "true" || data.customerIsLoggedIn === "Ja" ? "Ja" : "Nein"}
-Rechnungskauf freigegeben: ${data.invoiceAllowed === "true" || data.invoiceAllowed === "Ja" ? "Ja" : "Nein"}
+Firmenkonto erkannt: ${isTruthy(data.customerIsLoggedIn) ? "Ja" : "Nein"}
+Rechnungskauf freigegeben: ${isTruthy(data.invoiceAllowed || data.invoiceApproved) ? "Ja" : "Nein"}
 
 Portal:
 Lieferadresse: ${safeText(data.portalDeliveryAddressLabel)}
-Kostenstelle: ${safeText(data.portalCostCenterName)} ${safeText(data.portalCostCenterCode)}
+Kostenstelle: ${safeText(data.portalCostCenterName || data.costCenterName)} ${safeText(
+    data.portalCostCenterCode || data.costCenterCode
+  )}
 
 Artikel:
 ${itemText || "Keine Artikeldaten übertragen."}
 
-Gesamt: ${euroFromCents(data.totalAmountCents || data.cartTotalCents || data.subtotalAmountCents || 0)}
+Gesamt: ${euroFromCents(
+    data.totalAmountCents || data.cartTotalCents || data.subtotalAmountCents || 0
+  )}
 
 Lieferadresse:
-Firma: ${safeText(data.deliveryCompany)}
+Firma: ${safeText(data.deliveryCompany || data.customerCompany)}
 Straße: ${safeText(data.deliveryStreet)}
 PLZ/Ort: ${safeText(data.deliveryZip)} ${safeText(data.deliveryCity)}
 Zusatz: ${safeText(data.deliveryExtra)}
 
 Rechnungsadresse:
-Firma: ${safeText(data.billingCompany)}
+Firma: ${safeText(data.billingCompany || data.customerCompany)}
 Straße: ${safeText(data.billingStreet)}
 PLZ/Ort: ${safeText(data.billingZip)} ${safeText(data.billingCity)}
 Zusatz: ${safeText(data.billingExtra)}
@@ -300,25 +335,140 @@ ${safeText(data.internalReference)}
   `.trim();
 }
 
+function buildCustomerConfirmationHtml(data) {
+  const items = parseItems(data.items);
+
+  const itemRows = items
+    .map((item) => {
+      return `
+        <tr>
+          <td style="padding:10px;border-bottom:1px solid #eee;">${escapeHtml(
+            safeText(item.title) || "-"
+          )}</td>
+          <td style="padding:10px;border-bottom:1px solid #eee;text-align:center;">${
+            item.quantity || 1
+          }</td>
+          <td style="padding:10px;border-bottom:1px solid #eee;text-align:right;">${euroFromCents(
+            item.totalPriceCents || 0
+          )}</td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  const total = euroFromCents(
+    data.totalAmountCents || data.cartTotalCents || data.subtotalAmountCents || 0
+  );
+
+  return `
+<!doctype html>
+<html>
+  <body style="margin:0;padding:0;background:#f5f2ec;font-family:Arial,sans-serif;color:#1f2430;">
+    <div style="max-width:720px;margin:0 auto;padding:28px;">
+      <div style="background:#fff;border-radius:22px;padding:28px;border:1px solid #e7dfd2;">
+        <h1 style="margin:0 0 10px;font-size:28px;">Vielen Dank für deine Bestellung.</h1>
+        <p style="margin:0 0 22px;color:#555;line-height:1.6;">
+          Wir haben deine Firmenbestellung erhalten und prüfen die Angaben.
+        </p>
+
+        <div style="background:#f8f3e8;border-radius:16px;padding:18px;margin-bottom:22px;">
+          <p style="margin:4px 0;"><strong>Firma:</strong> ${escapeHtml(
+            safeText(data.customerCompany || data.billingCompany || data.deliveryCompany) || "-"
+          )}</p>
+          <p style="margin:4px 0;"><strong>Kontakt:</strong> ${escapeHtml(
+            safeText(data.contactName || data.customerName) || "-"
+          )}</p>
+          <p style="margin:4px 0;"><strong>Lieferart:</strong> ${escapeHtml(
+            safeText(data.deliveryType) || "-"
+          )}</p>
+          <p style="margin:4px 0;"><strong>Datum:</strong> ${escapeHtml(
+            safeText(data.deliveryDate) || "-"
+          )}</p>
+          <p style="margin:4px 0;"><strong>Zeit:</strong> ${escapeHtml(
+            safeText(data.deliveryTime) || "-"
+          )}</p>
+          <p style="margin:4px 0;"><strong>Eventbeginn:</strong> ${escapeHtml(
+            safeText(data.eventTime) || "-"
+          )}</p>
+        </div>
+
+        <h2 style="font-size:18px;margin:0 0 12px;">Artikel</h2>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:22px;">
+          <tbody>
+            ${
+              itemRows ||
+              `<tr><td style="padding:10px;color:#888;">Keine Artikeldaten übertragen.</td></tr>`
+            }
+          </tbody>
+        </table>
+
+        <p style="font-size:18px;margin:0 0 22px;">
+          <strong>Gesamt:</strong> ${escapeHtml(total)}
+        </p>
+
+        <p style="margin:0;color:#555;line-height:1.6;">
+          Die Rechnung folgt separat nach dem vereinbarten Abrechnungsprozess.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
+  `;
+}
+
+function buildCustomerConfirmationText(data) {
+  const items = parseItems(data.items);
+
+  const itemText = items
+    .map((item) => {
+      return `- ${safeText(item.title)} | Menge: ${
+        item.quantity || 1
+      } | Summe: ${euroFromCents(item.totalPriceCents || 0)}`;
+    })
+    .join("\n");
+
+  return `
+Vielen Dank für deine Bestellung.
+
+Wir haben deine Firmenbestellung erhalten und prüfen die Angaben.
+
+Firma: ${safeText(data.customerCompany || data.billingCompany || data.deliveryCompany)}
+Kontakt: ${safeText(data.contactName || data.customerName)}
+Lieferart: ${safeText(data.deliveryType)}
+Datum: ${safeText(data.deliveryDate)}
+Zeit: ${safeText(data.deliveryTime)}
+Eventbeginn: ${safeText(data.eventTime)}
+
+Artikel:
+${itemText || "Keine Artikeldaten übertragen."}
+
+Gesamt: ${euroFromCents(
+    data.totalAmountCents || data.cartTotalCents || data.subtotalAmountCents || 0
+  )}
+
+Die Rechnung folgt separat.
+  `.trim();
+}
+
 async function sendOrderNotificationEmail(data) {
-  const apiKey = process.env.RESEND_API_KEY;
+  if (!transporter) {
+    return {
+      sent: false,
+      reason: "SMTP nicht konfiguriert",
+    };
+  }
+
   const ownerTo =
     process.env.ORDER_NOTIFICATION_EMAIL ||
     process.env.ORDER_MAIL_TO ||
     "info@letmebowl-catering.de";
 
-  const from =
-    process.env.RESEND_FROM ||
-    process.env.MAIL_FROM ||
-    "Let Me Bowl <noreply@letmebowl-catering.de>";
+  const bcc = process.env.MAIL_BCC || undefined;
 
-  if (!apiKey) {
-    console.warn("RESEND_API_KEY fehlt. Bestell-E-Mail wurde nicht gesendet.");
-    return {
-      sent: false,
-      reason: "RESEND_API_KEY fehlt",
-    };
-  }
+  const from =
+    process.env.MAIL_FROM ||
+    process.env.SMTP_FROM ||
+    "Let Me Bowl <info@letmebowl-catering.de>";
 
   const contactEmail = safeText(data.contactEmail || data.customerEmail);
   const contactName = safeText(data.contactName || data.customerName) || "Kunde";
@@ -327,9 +477,10 @@ async function sendOrderNotificationEmail(data) {
   const ownerSubject = `Neue Bestellung: ${contactName} – ${deliveryDate}`;
   const customerSubject = "Deine Bestellung bei Let Me Bowl wurde erhalten";
 
-  const ownerMail = await resend.emails.send({
+  const ownerMail = await transporter.sendMail({
     from,
     to: ownerTo,
+    bcc,
     subject: ownerSubject,
     html: buildOrderEmailHtml(data),
     text: buildOrderEmailText(data),
@@ -339,31 +490,12 @@ async function sendOrderNotificationEmail(data) {
   let customerMail = null;
 
   if (contactEmail) {
-    customerMail = await resend.emails.send({
+    customerMail = await transporter.sendMail({
       from,
       to: contactEmail,
       subject: customerSubject,
-      html: `
-        <div style="font-family:Arial,sans-serif;color:#1f2430;line-height:1.6;">
-          <h2>Vielen Dank für deine Bestellung.</h2>
-          <p>Wir haben deine Firmenbestellung erhalten und prüfen die Angaben.</p>
-          <p><strong>Datum:</strong> ${escapeHtml(safeText(data.deliveryDate) || "-")}<br>
-          <strong>Zeit:</strong> ${escapeHtml(safeText(data.deliveryTime) || "-")}<br>
-          <strong>Lieferart:</strong> ${escapeHtml(safeText(data.deliveryType) || "-")}</p>
-          <p>Die Rechnung folgt separat.</p>
-        </div>
-      `,
-      text: `
-Vielen Dank für deine Bestellung.
-
-Wir haben deine Firmenbestellung erhalten und prüfen die Angaben.
-
-Datum: ${safeText(data.deliveryDate)}
-Zeit: ${safeText(data.deliveryTime)}
-Lieferart: ${safeText(data.deliveryType)}
-
-Die Rechnung folgt separat.
-      `.trim(),
+      html: buildCustomerConfirmationHtml(data),
+      text: buildCustomerConfirmationText(data),
     });
   }
 
@@ -375,20 +507,33 @@ Die Rechnung folgt separat.
 }
 
 // ===== API: Portal-Bestellung speichern / E-Mail senden =====
+
 app.post("/api/portal-order", async (req, res) => {
   try {
     const data = req.body || {};
 
+    const normalizedData = {
+      ...data,
+      contactEmail: data.contactEmail || data.customerEmail || "",
+      contactName: data.contactName || data.customerName || "",
+      contactPhone: data.contactPhone || data.customerPhone || "",
+      deliveryCompany: data.deliveryCompany || data.customerCompany || "",
+      billingCompany: data.billingCompany || data.customerCompany || "",
+      totalAmountCents:
+        data.totalAmountCents || data.cartTotalCents || data.subtotalAmountCents || 0,
+      items: Array.isArray(data.items) ? JSON.stringify(data.items) : data.items,
+    };
+
     console.log("Neue Portal-Bestellung empfangen:", {
-      contactName: data.contactName,
-      contactEmail: data.contactEmail,
-      deliveryType: data.deliveryType,
-      deliveryDate: data.deliveryDate,
-      deliveryTime: data.deliveryTime,
-      totalAmountCents: data.totalAmountCents,
+      contactName: normalizedData.contactName,
+      contactEmail: normalizedData.contactEmail,
+      deliveryType: normalizedData.deliveryType,
+      deliveryDate: normalizedData.deliveryDate,
+      deliveryTime: normalizedData.deliveryTime,
+      totalAmountCents: normalizedData.totalAmountCents,
     });
 
-    const emailResult = await sendOrderNotificationEmail(data);
+    const emailResult = await sendOrderNotificationEmail(normalizedData);
 
     return res.json({
       ok: true,
@@ -400,28 +545,26 @@ app.post("/api/portal-order", async (req, res) => {
     return res.status(500).json({
       ok: false,
       error: "Bestellung konnte nicht verarbeitet werden.",
+      detail: String(error?.message || error),
     });
   }
 });
 
-// ===== API: Nur E-Mail für Danke-Seite / Rechnungskauf senden =====
+// Optional bleibt drin, falls irgendwo noch die Danke-Seite diese Route aufruft.
+// Später können wir es entfernen.
 app.post("/api/portal-order-email", async (req, res) => {
   try {
     const data = req.body || {};
 
     const normalizedData = {
       ...data,
-
       contactEmail: data.contactEmail || data.customerEmail || "",
       contactName: data.contactName || data.customerName || "",
       contactPhone: data.contactPhone || data.customerPhone || "",
-
       deliveryCompany: data.deliveryCompany || data.customerCompany || "",
       billingCompany: data.billingCompany || data.customerCompany || "",
-
       totalAmountCents:
         data.totalAmountCents || data.cartTotalCents || data.subtotalAmountCents || 0,
-
       items: Array.isArray(data.items) ? JSON.stringify(data.items) : data.items,
     };
 
@@ -446,16 +589,22 @@ app.post("/api/portal-order-email", async (req, res) => {
     return res.status(500).json({
       ok: false,
       error: "E-Mail konnte nicht gesendet werden.",
+      detail: String(error?.message || error),
     });
   }
 });
 
 // ===== Health Check =====
+
 app.get("/api/health", (req, res) => {
-  res.json({ ok: true });
+  res.json({
+    ok: true,
+    mailConfigured: Boolean(transporter),
+  });
 });
 
 // ===== Passwort vergessen =====
+
 app.post("/api/password-forgot", async (req, res) => {
   try {
     const { email } = req.body;
@@ -467,13 +616,22 @@ app.post("/api/password-forgot", async (req, res) => {
       });
     }
 
-    const resetLink = `${process.env.APP_URL}/passwort-zuruecksetzen?email=${encodeURIComponent(email)}`;
+    if (!transporter) {
+      return res.status(500).json({
+        ok: false,
+        message: "SMTP ist nicht konfiguriert.",
+      });
+    }
 
-    await resend.emails.send({
+    const resetLink = `${process.env.APP_URL}/passwort-zuruecksetzen?email=${encodeURIComponent(
+      email
+    )}`;
+
+    await transporter.sendMail({
       from:
-        process.env.RESEND_FROM ||
         process.env.MAIL_FROM ||
-        "Let Me Bowl <noreply@letmebowl-catering.de>",
+        process.env.SMTP_FROM ||
+        "Let Me Bowl <info@letmebowl-catering.de>",
       to: email,
       bcc: process.env.MAIL_BCC || undefined,
       subject: "Passwort zurücksetzen",
@@ -484,20 +642,26 @@ app.post("/api/password-forgot", async (req, res) => {
         <p>Klicke auf den Link:</p>
         <a href="${escapeHtml(resetLink)}">${escapeHtml(resetLink)}</a>
       `,
+      text: `Passwort zurücksetzen\n\nFür diese E-Mail wurde ein Passwort-Reset angefragt:\n${email}\n\n${resetLink}`,
     });
 
-    return res.json({ ok: true, message: "E-Mail wurde gesendet" });
+    return res.json({
+      ok: true,
+      message: "E-Mail wurde gesendet",
+    });
   } catch (error) {
     console.error("Password forgot error:", error);
 
     return res.status(500).json({
       ok: false,
       message: "Fehler beim Senden der E-Mail",
+      detail: String(error?.message || error),
     });
   }
 });
 
 // ===== React Router erst NACH allen API-Routen =====
+
 const build = await import("./build/server/index.js");
 
 // Hochgeladene PDFs öffentlich machen
@@ -510,5 +674,5 @@ app.use(express.static("build/client"));
 app.all("*", createRequestHandler({ build }));
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server läuft auf Port ${PORT} - portal email route fixed`);
+  console.log(`Server läuft auf Port ${PORT} - Mailjet SMTP aktiv`);
 });
