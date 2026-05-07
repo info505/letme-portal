@@ -1,6 +1,5 @@
 import express from "express";
 import { createRequestHandler } from "@react-router/express";
-import nodemailer from "nodemailer";
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -40,42 +39,7 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// ===== MAILJET / SMTP =====
-
-function createMailTransporter() {
-  const host = process.env.SMTP_HOST || "in-v3.mailjet.com";
-  const port = Number(process.env.SMTP_PORT || 587);
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-
-  if (!user || !pass) {
-    console.warn("SMTP_USER oder SMTP_PASS fehlt. E-Mail-Versand nicht möglich.");
-    return null;
-  }
-
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: {
-      user,
-      pass,
-    },
-  });
-}
-
-const transporter = createMailTransporter();
-
 // ===== HILFSFUNKTIONEN =====
-
-function euroFromCents(cents) {
-  const value = Number(cents || 0) / 100;
-
-  return new Intl.NumberFormat("de-DE", {
-    style: "currency",
-    currency: "EUR",
-  }).format(value);
-}
 
 function safeText(value) {
   if (value === null || value === undefined) return "";
@@ -89,6 +53,15 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function euroFromCents(cents) {
+  const value = Number(cents || 0) / 100;
+
+  return new Intl.NumberFormat("de-DE", {
+    style: "currency",
+    currency: "EUR",
+  }).format(value);
 }
 
 function parseItems(rawItems) {
@@ -108,7 +81,98 @@ function isTruthy(value) {
   return value === true || value === "true" || value === "Ja" || value === "1";
 }
 
-function buildOrderEmailHtml(data) {
+function getMailjetConfig() {
+  const apiKey =
+    process.env.MAILJET_API_KEY ||
+    process.env.MJ_APIKEY_PUBLIC ||
+    process.env.SMTP_USER;
+
+  const secretKey =
+    process.env.MAILJET_SECRET_KEY ||
+    process.env.MJ_APIKEY_PRIVATE ||
+    process.env.SMTP_PASS;
+
+  const fromEmail =
+    process.env.MAIL_FROM_EMAIL ||
+    process.env.MAILJET_FROM_EMAIL ||
+    "info@letmebowl-catering.de";
+
+  const fromName =
+    process.env.MAIL_FROM_NAME ||
+    process.env.MAILJET_FROM_NAME ||
+    "Let Me Bowl";
+
+  const ownerEmail =
+    process.env.ORDER_NOTIFICATION_EMAIL ||
+    process.env.ORDER_MAIL_TO ||
+    "info@letmebowl-catering.de";
+
+  const bccEmail = process.env.MAIL_BCC || "";
+
+  return {
+    apiKey,
+    secretKey,
+    fromEmail,
+    fromName,
+    ownerEmail,
+    bccEmail,
+    configured: Boolean(apiKey && secretKey && fromEmail && ownerEmail),
+  };
+}
+
+async function sendMailjetMessages(messages) {
+  const config = getMailjetConfig();
+
+  if (!config.configured) {
+    console.warn("Mailjet ist nicht vollständig konfiguriert.");
+    return {
+      sent: false,
+      reason: "Mailjet Variablen fehlen",
+      config: {
+        hasApiKey: Boolean(config.apiKey),
+        hasSecretKey: Boolean(config.secretKey),
+        fromEmail: config.fromEmail,
+        ownerEmail: config.ownerEmail,
+      },
+    };
+  }
+
+  const auth = Buffer.from(`${config.apiKey}:${config.secretKey}`).toString(
+    "base64"
+  );
+
+  const response = await fetch("https://api.mailjet.com/v3.1/send", {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${auth}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      Messages: messages,
+    }),
+  });
+
+  const result = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    console.error("Mailjet API Fehler:", result);
+
+    return {
+      sent: false,
+      status: response.status,
+      reason: result,
+    };
+  }
+
+  return {
+    sent: true,
+    result,
+  };
+}
+
+// ===== E-MAIL TEMPLATES =====
+
+function buildOwnerEmailHtml(data) {
   const items = parseItems(data.items);
 
   const itemRows = items
@@ -153,11 +217,19 @@ function buildOrderEmailHtml(data) {
   const invoiceAllowed = isTruthy(data.invoiceAllowed || data.invoiceApproved);
   const customerIsLoggedIn = isTruthy(data.customerIsLoggedIn);
 
+  const portalCustomerCompany = safeText(
+    data.portalCustomerCompany || data.customerCompany
+  );
+
   const portalDeliveryAddressLabel = safeText(data.portalDeliveryAddressLabel);
   const portalDeliveryAddressFull = safeText(data.portalDeliveryAddressFull);
 
-  const portalCostCenterName = safeText(data.portalCostCenterName || data.costCenterName);
-  const portalCostCenterCode = safeText(data.portalCostCenterCode || data.costCenterCode);
+  const portalCostCenterName = safeText(
+    data.portalCostCenterName || data.costCenterName
+  );
+  const portalCostCenterCode = safeText(
+    data.portalCostCenterCode || data.costCenterCode
+  );
 
   const deliveryCompany = safeText(data.deliveryCompany || data.customerCompany);
   const deliveryStreet = safeText(data.deliveryStreet);
@@ -172,6 +244,8 @@ function buildOrderEmailHtml(data) {
   const billingExtra = safeText(data.billingExtra);
 
   const internalReference = safeText(data.internalReference);
+  const note = safeText(data.note);
+
   const total = euroFromCents(
     data.totalAmountCents || data.cartTotalCents || data.subtotalAmountCents || 0
   );
@@ -180,7 +254,7 @@ function buildOrderEmailHtml(data) {
 <!doctype html>
 <html>
   <body style="margin:0;padding:0;background:#f5f2ec;font-family:Arial,sans-serif;color:#1f2430;">
-    <div style="max-width:760px;margin:0 auto;padding:28px;">
+    <div style="max-width:780px;margin:0 auto;padding:28px;">
       <div style="background:#fff;border-radius:22px;padding:28px;border:1px solid #e7dfd2;">
         <h1 style="margin:0 0 8px;font-size:28px;">Neue Let Me Bowl Bestellung</h1>
         <p style="margin:0 0 24px;color:#666;">Eine neue Firmenbestellung wurde über Website / Firmenkonto übermittelt.</p>
@@ -195,6 +269,7 @@ function buildOrderEmailHtml(data) {
         </div>
 
         <h2 style="font-size:18px;margin:0 0 12px;">Kundendaten</h2>
+        <p style="margin:4px 0;"><strong>Firma:</strong> ${escapeHtml(portalCustomerCompany || deliveryCompany || billingCompany || "-")}</p>
         <p style="margin:4px 0;"><strong>Name:</strong> ${escapeHtml(contactName)}</p>
         <p style="margin:4px 0;"><strong>E-Mail:</strong> ${escapeHtml(contactEmail)}</p>
         <p style="margin:4px 0;"><strong>Telefon:</strong> ${escapeHtml(contactPhone)}</p>
@@ -240,11 +315,7 @@ function buildOrderEmailHtml(data) {
           <tbody>
             ${
               itemRows ||
-              `
-              <tr>
-                <td colspan="3" style="padding:12px;color:#888;">Keine Artikeldaten übertragen.</td>
-              </tr>
-              `
+              `<tr><td colspan="3" style="padding:12px;color:#888;">Keine Artikeldaten übertragen.</td></tr>`
             }
           </tbody>
         </table>
@@ -268,9 +339,20 @@ function buildOrderEmailHtml(data) {
         <p style="margin:4px 0 22px;"><strong>Zusatz:</strong> ${escapeHtml(billingExtra || "-")}</p>
 
         <h2 style="font-size:18px;margin:0 0 12px;">Hinweise / interne Referenz</h2>
-        <p style="white-space:pre-line;background:#fafafa;border:1px solid #eee;border-radius:14px;padding:14px;margin:0;">
+        <p style="white-space:pre-line;background:#fafafa;border:1px solid #eee;border-radius:14px;padding:14px;margin:0 0 18px;">
           ${escapeHtml(internalReference || "-")}
         </p>
+
+        ${
+          note
+            ? `
+              <h2 style="font-size:18px;margin:0 0 12px;">Technische Bestellnotiz</h2>
+              <p style="white-space:pre-line;background:#fafafa;border:1px solid #eee;border-radius:14px;padding:14px;margin:0;">
+                ${escapeHtml(note)}
+              </p>
+            `
+            : ""
+        }
       </div>
     </div>
   </body>
@@ -278,7 +360,7 @@ function buildOrderEmailHtml(data) {
   `;
 }
 
-function buildOrderEmailText(data) {
+function buildOwnerEmailText(data) {
   const items = parseItems(data.items);
 
   const itemText = items
@@ -298,6 +380,7 @@ Zeit: ${safeText(data.deliveryTime)}
 Eventbeginn: ${safeText(data.eventTime)}
 
 Kunde:
+Firma: ${safeText(data.portalCustomerCompany || data.customerCompany || data.deliveryCompany || data.billingCompany)}
 Name: ${safeText(data.contactName || data.customerName)}
 E-Mail: ${safeText(data.contactEmail || data.customerEmail)}
 Telefon: ${safeText(data.contactPhone || data.customerPhone)}
@@ -307,9 +390,7 @@ Rechnungskauf freigegeben: ${isTruthy(data.invoiceAllowed || data.invoiceApprove
 
 Portal:
 Lieferadresse: ${safeText(data.portalDeliveryAddressLabel)}
-Kostenstelle: ${safeText(data.portalCostCenterName || data.costCenterName)} ${safeText(
-    data.portalCostCenterCode || data.costCenterCode
-  )}
+Kostenstelle: ${safeText(data.portalCostCenterName || data.costCenterName)} ${safeText(data.portalCostCenterCode || data.costCenterCode)}
 
 Artikel:
 ${itemText || "Keine Artikeldaten übertragen."}
@@ -332,25 +413,22 @@ Zusatz: ${safeText(data.billingExtra)}
 
 Hinweise:
 ${safeText(data.internalReference)}
+
+Bestellnotiz:
+${safeText(data.note)}
   `.trim();
 }
 
-function buildCustomerConfirmationHtml(data) {
+function buildCustomerEmailHtml(data) {
   const items = parseItems(data.items);
 
   const itemRows = items
     .map((item) => {
       return `
         <tr>
-          <td style="padding:10px;border-bottom:1px solid #eee;">${escapeHtml(
-            safeText(item.title) || "-"
-          )}</td>
-          <td style="padding:10px;border-bottom:1px solid #eee;text-align:center;">${
-            item.quantity || 1
-          }</td>
-          <td style="padding:10px;border-bottom:1px solid #eee;text-align:right;">${euroFromCents(
-            item.totalPriceCents || 0
-          )}</td>
+          <td style="padding:10px;border-bottom:1px solid #eee;">${escapeHtml(safeText(item.title) || "-")}</td>
+          <td style="padding:10px;border-bottom:1px solid #eee;text-align:center;">${item.quantity || 1}</td>
+          <td style="padding:10px;border-bottom:1px solid #eee;text-align:right;">${euroFromCents(item.totalPriceCents || 0)}</td>
         </tr>
       `;
     })
@@ -372,24 +450,12 @@ function buildCustomerConfirmationHtml(data) {
         </p>
 
         <div style="background:#f8f3e8;border-radius:16px;padding:18px;margin-bottom:22px;">
-          <p style="margin:4px 0;"><strong>Firma:</strong> ${escapeHtml(
-            safeText(data.customerCompany || data.billingCompany || data.deliveryCompany) || "-"
-          )}</p>
-          <p style="margin:4px 0;"><strong>Kontakt:</strong> ${escapeHtml(
-            safeText(data.contactName || data.customerName) || "-"
-          )}</p>
-          <p style="margin:4px 0;"><strong>Lieferart:</strong> ${escapeHtml(
-            safeText(data.deliveryType) || "-"
-          )}</p>
-          <p style="margin:4px 0;"><strong>Datum:</strong> ${escapeHtml(
-            safeText(data.deliveryDate) || "-"
-          )}</p>
-          <p style="margin:4px 0;"><strong>Zeit:</strong> ${escapeHtml(
-            safeText(data.deliveryTime) || "-"
-          )}</p>
-          <p style="margin:4px 0;"><strong>Eventbeginn:</strong> ${escapeHtml(
-            safeText(data.eventTime) || "-"
-          )}</p>
+          <p style="margin:4px 0;"><strong>Firma:</strong> ${escapeHtml(safeText(data.portalCustomerCompany || data.customerCompany || data.billingCompany || data.deliveryCompany) || "-")}</p>
+          <p style="margin:4px 0;"><strong>Kontakt:</strong> ${escapeHtml(safeText(data.contactName || data.customerName) || "-")}</p>
+          <p style="margin:4px 0;"><strong>Lieferart:</strong> ${escapeHtml(safeText(data.deliveryType) || "-")}</p>
+          <p style="margin:4px 0;"><strong>Datum:</strong> ${escapeHtml(safeText(data.deliveryDate) || "-")}</p>
+          <p style="margin:4px 0;"><strong>Zeit:</strong> ${escapeHtml(safeText(data.deliveryTime) || "-")}</p>
+          <p style="margin:4px 0;"><strong>Eventbeginn:</strong> ${escapeHtml(safeText(data.eventTime) || "-")}</p>
         </div>
 
         <h2 style="font-size:18px;margin:0 0 12px;">Artikel</h2>
@@ -416,7 +482,7 @@ function buildCustomerConfirmationHtml(data) {
   `;
 }
 
-function buildCustomerConfirmationText(data) {
+function buildCustomerEmailText(data) {
   const items = parseItems(data.items);
 
   const itemText = items
@@ -432,7 +498,7 @@ Vielen Dank für deine Bestellung.
 
 Wir haben deine Firmenbestellung erhalten und prüfen die Angaben.
 
-Firma: ${safeText(data.customerCompany || data.billingCompany || data.deliveryCompany)}
+Firma: ${safeText(data.portalCustomerCompany || data.customerCompany || data.billingCompany || data.deliveryCompany)}
 Kontakt: ${safeText(data.contactName || data.customerName)}
 Lieferart: ${safeText(data.deliveryType)}
 Datum: ${safeText(data.deliveryDate)}
@@ -450,60 +516,71 @@ Die Rechnung folgt separat.
   `.trim();
 }
 
-async function sendOrderNotificationEmail(data) {
-  if (!transporter) {
-    return {
-      sent: false,
-      reason: "SMTP nicht konfiguriert",
-    };
-  }
+async function sendOrderEmails(data) {
+  const config = getMailjetConfig();
 
-  const ownerTo =
-    process.env.ORDER_NOTIFICATION_EMAIL ||
-    process.env.ORDER_MAIL_TO ||
-    "info@letmebowl-catering.de";
-
-  const bcc = process.env.MAIL_BCC || undefined;
-
-  const from =
-    process.env.MAIL_FROM ||
-    process.env.SMTP_FROM ||
-    "Let Me Bowl <info@letmebowl-catering.de>";
-
-  const contactEmail = safeText(data.contactEmail || data.customerEmail);
+  const customerEmail = safeText(data.contactEmail || data.customerEmail);
   const contactName = safeText(data.contactName || data.customerName) || "Kunde";
   const deliveryDate = safeText(data.deliveryDate) || "ohne Datum";
 
   const ownerSubject = `Neue Bestellung: ${contactName} – ${deliveryDate}`;
   const customerSubject = "Deine Bestellung bei Let Me Bowl wurde erhalten";
 
-  const ownerMail = await transporter.sendMail({
-    from,
-    to: ownerTo,
-    bcc,
-    subject: ownerSubject,
-    html: buildOrderEmailHtml(data),
-    text: buildOrderEmailText(data),
-    replyTo: contactEmail || undefined,
-  });
+  const messages = [];
 
-  let customerMail = null;
+  const ownerMessage = {
+    From: {
+      Email: config.fromEmail,
+      Name: config.fromName,
+    },
+    To: [
+      {
+        Email: config.ownerEmail,
+        Name: "Let Me Bowl",
+      },
+    ],
+    Subject: ownerSubject,
+    TextPart: buildOwnerEmailText(data),
+    HTMLPart: buildOwnerEmailHtml(data),
+  };
 
-  if (contactEmail) {
-    customerMail = await transporter.sendMail({
-      from,
-      to: contactEmail,
-      subject: customerSubject,
-      html: buildCustomerConfirmationHtml(data),
-      text: buildCustomerConfirmationText(data),
+  if (customerEmail) {
+    ownerMessage.ReplyTo = {
+      Email: customerEmail,
+      Name: contactName,
+    };
+  }
+
+  if (config.bccEmail) {
+    ownerMessage.Bcc = [
+      {
+        Email: config.bccEmail,
+        Name: "Let Me Bowl BCC",
+      },
+    ];
+  }
+
+  messages.push(ownerMessage);
+
+  if (customerEmail) {
+    messages.push({
+      From: {
+        Email: config.fromEmail,
+        Name: config.fromName,
+      },
+      To: [
+        {
+          Email: customerEmail,
+          Name: contactName,
+        },
+      ],
+      Subject: customerSubject,
+      TextPart: buildCustomerEmailText(data),
+      HTMLPart: buildCustomerEmailHtml(data),
     });
   }
 
-  return {
-    sent: true,
-    ownerMail,
-    customerMail,
-  };
+  return await sendMailjetMessages(messages);
 }
 
 // ===== API: Portal-Bestellung speichern / E-Mail senden =====
@@ -514,13 +591,38 @@ app.post("/api/portal-order", async (req, res) => {
 
     const normalizedData = {
       ...data,
-      contactEmail: data.contactEmail || data.customerEmail || "",
-      contactName: data.contactName || data.customerName || "",
+
+      customerEmail: data.customerEmail || data.portalCustomerEmail || data.contactEmail || "",
+      customerName: data.customerName || data.portalCustomerName || data.contactName || "",
+      customerCompany:
+        data.customerCompany ||
+        data.portalCustomerCompany ||
+        data.deliveryCompany ||
+        data.billingCompany ||
+        "",
+
+      contactEmail: data.contactEmail || data.customerEmail || data.portalCustomerEmail || "",
+      contactName: data.contactName || data.customerName || data.portalCustomerName || "",
       contactPhone: data.contactPhone || data.customerPhone || "",
-      deliveryCompany: data.deliveryCompany || data.customerCompany || "",
-      billingCompany: data.billingCompany || data.customerCompany || "",
+
+      deliveryCompany:
+        data.deliveryCompany ||
+        data.customerCompany ||
+        data.portalCustomerCompany ||
+        "",
+
+      billingCompany:
+        data.billingCompany ||
+        data.customerCompany ||
+        data.portalCustomerCompany ||
+        "",
+
       totalAmountCents:
-        data.totalAmountCents || data.cartTotalCents || data.subtotalAmountCents || 0,
+        data.totalAmountCents ||
+        data.cartTotalCents ||
+        data.subtotalAmountCents ||
+        0,
+
       items: Array.isArray(data.items) ? JSON.stringify(data.items) : data.items,
     };
 
@@ -533,7 +635,12 @@ app.post("/api/portal-order", async (req, res) => {
       totalAmountCents: normalizedData.totalAmountCents,
     });
 
-    const emailResult = await sendOrderNotificationEmail(normalizedData);
+    const emailResult = await sendOrderEmails(normalizedData);
+
+    console.log("Bestell-E-Mail Ergebnis:", {
+      sent: emailResult.sent,
+      status: emailResult.status || null,
+    });
 
     return res.json({
       ok: true,
@@ -550,21 +657,45 @@ app.post("/api/portal-order", async (req, res) => {
   }
 });
 
-// Optional bleibt drin, falls irgendwo noch die Danke-Seite diese Route aufruft.
-// Später können wir es entfernen.
+// Optional: falls die Danke-Seite diese Route noch aufruft
 app.post("/api/portal-order-email", async (req, res) => {
   try {
     const data = req.body || {};
 
     const normalizedData = {
       ...data,
-      contactEmail: data.contactEmail || data.customerEmail || "",
-      contactName: data.contactName || data.customerName || "",
+
+      customerEmail: data.customerEmail || data.portalCustomerEmail || data.contactEmail || "",
+      customerName: data.customerName || data.portalCustomerName || data.contactName || "",
+      customerCompany:
+        data.customerCompany ||
+        data.portalCustomerCompany ||
+        data.deliveryCompany ||
+        data.billingCompany ||
+        "",
+
+      contactEmail: data.contactEmail || data.customerEmail || data.portalCustomerEmail || "",
+      contactName: data.contactName || data.customerName || data.portalCustomerName || "",
       contactPhone: data.contactPhone || data.customerPhone || "",
-      deliveryCompany: data.deliveryCompany || data.customerCompany || "",
-      billingCompany: data.billingCompany || data.customerCompany || "",
+
+      deliveryCompany:
+        data.deliveryCompany ||
+        data.customerCompany ||
+        data.portalCustomerCompany ||
+        "",
+
+      billingCompany:
+        data.billingCompany ||
+        data.customerCompany ||
+        data.portalCustomerCompany ||
+        "",
+
       totalAmountCents:
-        data.totalAmountCents || data.cartTotalCents || data.subtotalAmountCents || 0,
+        data.totalAmountCents ||
+        data.cartTotalCents ||
+        data.subtotalAmountCents ||
+        0,
+
       items: Array.isArray(data.items) ? JSON.stringify(data.items) : data.items,
     };
 
@@ -577,7 +708,12 @@ app.post("/api/portal-order-email", async (req, res) => {
       totalAmountCents: normalizedData.totalAmountCents,
     });
 
-    const emailResult = await sendOrderNotificationEmail(normalizedData);
+    const emailResult = await sendOrderEmails(normalizedData);
+
+    console.log("Bestell-E-Mail Ergebnis:", {
+      sent: emailResult.sent,
+      status: emailResult.status || null,
+    });
 
     return res.json({
       ok: true,
@@ -597,9 +733,16 @@ app.post("/api/portal-order-email", async (req, res) => {
 // ===== Health Check =====
 
 app.get("/api/health", (req, res) => {
+  const config = getMailjetConfig();
+
   res.json({
     ok: true,
-    mailConfigured: Boolean(transporter),
+    mailProvider: "mailjet-api",
+    mailConfigured: config.configured,
+    fromEmail: config.fromEmail,
+    ownerEmail: config.ownerEmail,
+    hasApiKey: Boolean(config.apiKey),
+    hasSecretKey: Boolean(config.secretKey),
   });
 });
 
@@ -607,7 +750,7 @@ app.get("/api/health", (req, res) => {
 
 app.post("/api/password-forgot", async (req, res) => {
   try {
-    const { email } = req.body;
+    const email = safeText(req.body?.email).toLowerCase();
 
     if (!email) {
       return res.status(400).json({
@@ -616,38 +759,48 @@ app.post("/api/password-forgot", async (req, res) => {
       });
     }
 
-    if (!transporter) {
-      return res.status(500).json({
-        ok: false,
-        message: "SMTP ist nicht konfiguriert.",
-      });
-    }
-
     const resetLink = `${process.env.APP_URL}/passwort-zuruecksetzen?email=${encodeURIComponent(
       email
     )}`;
 
-    await transporter.sendMail({
-      from:
-        process.env.MAIL_FROM ||
-        process.env.SMTP_FROM ||
-        "Let Me Bowl <info@letmebowl-catering.de>",
-      to: email,
-      bcc: process.env.MAIL_BCC || undefined,
-      subject: "Passwort zurücksetzen",
-      html: `
-        <h2>Passwort zurücksetzen</h2>
-        <p>Für diese E-Mail wurde ein Passwort-Reset angefragt:</p>
-        <p><strong>${escapeHtml(email)}</strong></p>
-        <p>Klicke auf den Link:</p>
-        <a href="${escapeHtml(resetLink)}">${escapeHtml(resetLink)}</a>
-      `,
-      text: `Passwort zurücksetzen\n\nFür diese E-Mail wurde ein Passwort-Reset angefragt:\n${email}\n\n${resetLink}`,
-    });
+    const config = getMailjetConfig();
+
+    const emailResult = await sendMailjetMessages([
+      {
+        From: {
+          Email: config.fromEmail,
+          Name: config.fromName,
+        },
+        To: [
+          {
+            Email: email,
+            Name: email,
+          },
+        ],
+        Subject: "Passwort zurücksetzen",
+        TextPart: `Passwort zurücksetzen\n\nFür diese E-Mail wurde ein Passwort-Reset angefragt:\n${email}\n\n${resetLink}`,
+        HTMLPart: `
+          <h2>Passwort zurücksetzen</h2>
+          <p>Für diese E-Mail wurde ein Passwort-Reset angefragt:</p>
+          <p><strong>${escapeHtml(email)}</strong></p>
+          <p>Klicke auf den Link:</p>
+          <a href="${escapeHtml(resetLink)}">${escapeHtml(resetLink)}</a>
+        `,
+      },
+    ]);
+
+    if (!emailResult.sent) {
+      return res.status(500).json({
+        ok: false,
+        message: "E-Mail konnte nicht gesendet werden.",
+        email: emailResult,
+      });
+    }
 
     return res.json({
       ok: true,
       message: "E-Mail wurde gesendet",
+      email: emailResult,
     });
   } catch (error) {
     console.error("Password forgot error:", error);
@@ -674,5 +827,5 @@ app.use(express.static("build/client"));
 app.all("*", createRequestHandler({ build }));
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server läuft auf Port ${PORT} - Mailjet SMTP aktiv`);
+  console.log(`Server läuft auf Port ${PORT} - Mailjet API aktiv`);
 });
