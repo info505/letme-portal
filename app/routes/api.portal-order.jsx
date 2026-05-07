@@ -1,4 +1,3 @@
-import { json } from "@react-router/node";
 import { prisma } from "../lib/prisma.server.js";
 import { sendMail } from "../lib/mail.server.js";
 
@@ -23,7 +22,7 @@ function parseItems(rawItems) {
 function centsToEuro(cents) {
   const value = Number(cents || 0) / 100;
   if (Number.isNaN(value)) return 0;
-  return value;
+  return Number(value.toFixed(2));
 }
 
 function euroText(value) {
@@ -120,8 +119,12 @@ function normalizeOrderData(data) {
     billingCity: safeText(data.billingCity || ""),
     billingExtra: safeText(data.billingExtra || ""),
 
-    costCenterName: safeText(data.costCenterName || data.portalCostCenterName || ""),
-    costCenterCode: safeText(data.costCenterCode || data.portalCostCenterCode || ""),
+    costCenterName: safeText(
+      data.costCenterName || data.portalCostCenterName || ""
+    ),
+    costCenterCode: safeText(
+      data.costCenterCode || data.portalCostCenterCode || ""
+    ),
 
     internalReference: safeText(data.internalReference || ""),
     note: safeText(data.note || ""),
@@ -176,8 +179,9 @@ async function findOrCreateOrderUser(data) {
     data.customerEmail ||
     `gast-${Date.now()}@letmebowl.local`;
 
-  const usernameBase =
-    email.includes("@") ? email.split("@")[0] : `gast-${Date.now()}`;
+  const usernameBase = email.includes("@")
+    ? email.split("@")[0]
+    : `gast-${Date.now()}`;
 
   let username = usernameBase.toLowerCase().replace(/[^a-z0-9._-]/g, "-");
 
@@ -198,7 +202,11 @@ async function findOrCreateOrderUser(data) {
 
   const user = await prisma.portalUser.create({
     data: {
-      companyName: data.customerCompany || data.billingCompany || data.deliveryCompany || "Gastbestellung",
+      companyName:
+        data.customerCompany ||
+        data.billingCompany ||
+        data.deliveryCompany ||
+        "Gastbestellung",
       firstName,
       lastName,
       username,
@@ -220,9 +228,9 @@ async function findOrCreateOrderUser(data) {
 function buildOwnerEmailText(data, orderNumber) {
   const itemsText = data.items
     .map((item) => {
-      return `- ${safeText(item.title)} | Menge: ${item.quantity || 1} | Summe: ${euroText(
-        centsToEuro(item.totalPriceCents || 0)
-      )}`;
+      return `- ${safeText(item.title)} | Menge: ${
+        item.quantity || 1
+      } | Summe: ${euroText(centsToEuro(item.totalPriceCents || 0))}`;
     })
     .join("\n");
 
@@ -244,7 +252,9 @@ Zeit: ${data.deliveryTime || "-"}
 Eventbeginn: ${data.eventTime || "-"}
 
 Kostenstelle:
-${data.costCenterName || "-"} ${data.costCenterCode ? "· " + data.costCenterCode : ""}
+${data.costCenterName || "-"} ${
+    data.costCenterCode ? "· " + data.costCenterCode : ""
+  }
 
 Artikel:
 ${itemsText || "Keine Artikel übermittelt."}
@@ -275,9 +285,9 @@ ${data.note || "-"}
 function buildCustomerEmailText(data, orderNumber) {
   const itemsText = data.items
     .map((item) => {
-      return `- ${safeText(item.title)} | Menge: ${item.quantity || 1} | Summe: ${euroText(
-        centsToEuro(item.totalPriceCents || 0)
-      )}`;
+      return `- ${safeText(item.title)} | Menge: ${
+        item.quantity || 1
+      } | Summe: ${euroText(centsToEuro(item.totalPriceCents || 0))}`;
     })
     .join("\n");
 
@@ -362,11 +372,20 @@ export async function action({ request }) {
           data.deliveryDate ? `Datum: ${data.deliveryDate}` : "",
           data.deliveryTime ? `Zeit: ${data.deliveryTime}` : "",
           data.eventTime ? `Eventbeginn: ${data.eventTime}` : "",
+          data.invoiceAllowed ? "Rechnungskauf: Ja" : "Rechnungskauf: Nein",
           data.deliveryStreet || data.deliveryCity
-            ? `Lieferadresse: ${data.deliveryCompany || ""}, ${data.deliveryStreet || ""}, ${data.deliveryZip || ""} ${data.deliveryCity || ""}, ${data.deliveryExtra || ""}`
+            ? `Lieferadresse: ${data.deliveryCompany || ""}, ${
+                data.deliveryStreet || ""
+              }, ${data.deliveryZip || ""} ${data.deliveryCity || ""}, ${
+                data.deliveryExtra || ""
+              }`
             : "",
           data.billingStreet || data.billingCity
-            ? `Rechnungsadresse: ${data.billingCompany || ""}, ${data.billingStreet || ""}, ${data.billingZip || ""} ${data.billingCity || ""}, ${data.billingExtra || ""}`
+            ? `Rechnungsadresse: ${data.billingCompany || ""}, ${
+                data.billingStreet || ""
+              }, ${data.billingZip || ""} ${data.billingCity || ""}, ${
+                data.billingExtra || ""
+              }`
             : "",
         ]
           .filter(Boolean)
@@ -419,18 +438,23 @@ export async function action({ request }) {
         text: buildOwnerEmailText(data, order.orderNumber),
       });
 
-      if (data.contactEmail || data.customerEmail) {
+      const customerEmail = data.contactEmail || data.customerEmail;
+
+      if (customerEmail && customerEmail !== ownerEmail) {
         await sendMail({
-          to: data.contactEmail || data.customerEmail,
-          subject: "Deine Bestellung bei Let Me Bowl wurde erhalten",
+          to: customerEmail,
+          subject: `Deine Bestellung ${order.orderNumber} bei Let Me Bowl wurde erhalten`,
           text: buildCustomerEmailText(data, order.orderNumber),
         });
       }
     } catch (mailError) {
-      console.error("Bestellung wurde gespeichert, aber E-Mail konnte nicht gesendet werden:", mailError);
+      console.error(
+        "Bestellung wurde gespeichert, aber E-Mail konnte nicht gesendet werden:",
+        mailError
+      );
     }
 
-    return json({
+    return Response.json({
       ok: true,
       orderId: order.id,
       orderNumber: order.orderNumber,
@@ -438,7 +462,7 @@ export async function action({ request }) {
   } catch (error) {
     console.error("api.portal-order Fehler:", error);
 
-    return json(
+    return Response.json(
       {
         ok: false,
         error: "Bestellung konnte nicht gespeichert werden.",
