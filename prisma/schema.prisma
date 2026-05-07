@@ -231,26 +231,60 @@ model PortalOrder {
   status      PortalOrderStatus @default(OPEN)
   currency    String            @default("EUR")
 
+  source              String? @default("portal")
+  shopDomain          String?
+  shopifyCartToken    String?
+  shopifyCheckoutUrl  String?
+  shopifyOrderId      String?
+  shopifyOrderName    String?
+
   billingContactName String?
   billingEmail       String?
   billingPhone       String?
   billingCompanyName String?
+  billingStreet      String?
+  billingPostalCode  String?
+  billingCity        String?
+  billingCountry     String?
 
   deliveryAddressId String?
   locationId        String?
   contactId         String?
   costCenterId      String?
-  referenceNumber   String?
+
+  deliveryCompanyName String?
+  deliveryContactName String?
+  deliveryPhone       String?
+  deliveryStreet      String?
+  deliveryPostalCode  String?
+  deliveryCity        String?
+  deliveryCountry     String?
+  deliveryNotes       String?
+
+  deliveryType String?
+  deliveryDate DateTime?
+  deliveryTime String?
+  eventTime    String?
+
+  referenceNumber String?
+  internalNote    String?
+  customerNote    String?
+  notes           String?
+
+  invoicePurchase Boolean @default(false)
+  emailToOwnerSent Boolean @default(false)
+  emailToCustomerSent Boolean @default(false)
+  emailError String?
 
   subtotalAmount Decimal? @db.Decimal(10, 2)
   taxAmount      Decimal? @db.Decimal(10, 2)
   totalAmount    Decimal  @db.Decimal(10, 2)
 
-  notes        String?
-  deliveryDate DateTime?
-  orderedAt    DateTime  @default(now())
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  rawPayload Json?
+
+  orderedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user            PortalUser        @relation(fields: [userId], references: [id], onDelete: Cascade)
   deliveryAddress DeliveryAddress?  @relation(fields: [deliveryAddressId], references: [id], onDelete: SetNull)
@@ -264,6 +298,10 @@ model PortalOrder {
   @@index([locationId])
   @@index([contactId])
   @@index([costCenterId])
+  @@index([orderNumber])
+  @@index([status])
+  @@index([deliveryDate])
+  @@index([orderedAt])
 }
 
 model PortalOrderItem {
@@ -282,6 +320,8 @@ model PortalOrderItem {
   shopifyHandle    String?
   variantTitle     String?
   sku              String?
+
+  rawPayload Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
