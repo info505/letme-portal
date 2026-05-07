@@ -38,7 +38,7 @@ export default function AdminLayout({ title, subtitle, user, children }) {
   {
     label: "Bestellungen",
     shortLabel: "Bestellungen",
-    icon: "◉",
+    icon: "◫",
     href: "/admin/orders",
     match: pathname.startsWith("/admin/orders"),
   },
@@ -59,7 +59,7 @@ export default function AdminLayout({ title, subtitle, user, children }) {
     match: pathname.startsWith("/admin/invoices"),
   },
 ];
-  ];
+  
 
   return (
     <>
