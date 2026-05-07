@@ -11,7 +11,6 @@ import { getLocaleFromRequest, dict } from "../lib/i18n.js";
 import PortalLayout from "../components/PortalLayout.jsx";
 
 const colors = {
-  bg: "#f7f4ee",
   card: "#ffffff",
   soft: "#fbf8f2",
   text: "#171717",
@@ -31,10 +30,16 @@ export async function loader({ request }) {
   }
 
   const billing = await prisma.billingProfile.findUnique({
-    where: { userId: user.id },
+    where: {
+      userId: user.id,
+    },
   });
 
-  return { user, locale, billing };
+  return {
+    user,
+    locale,
+    billing,
+  };
 }
 
 export async function action({ request }) {
@@ -52,11 +57,13 @@ export async function action({ request }) {
   const contactName = String(formData.get("contactName") || "").trim();
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const phone = String(formData.get("phone") || "").trim();
+
   const street = String(formData.get("street") || "").trim();
   const houseNumber = String(formData.get("houseNumber") || "").trim();
   const postalCode = String(formData.get("postalCode") || "").trim();
   const city = String(formData.get("city") || "").trim();
   const country = String(formData.get("country") || "").trim();
+
   const vatId = String(formData.get("vatId") || "").trim();
   const invoiceEmail = String(formData.get("invoiceEmail") || "")
     .trim()
@@ -94,7 +101,9 @@ export async function action({ request }) {
   }
 
   await prisma.billingProfile.upsert({
-    where: { userId: user.id },
+    where: {
+      userId: user.id,
+    },
     update: {
       companyName,
       contactName,
@@ -158,20 +167,20 @@ export default function RechnungsadressePage() {
       <style>{`
         .lmbBillingPage {
           width: 100%;
-          max-width: 1040px;
+          max-width: 1120px;
           display: grid;
           gap: 18px;
         }
 
         .lmbBillingIntro {
           display: grid;
-          grid-template-columns: minmax(0, 1fr) auto;
+          grid-template-columns: minmax(0, 1fr) minmax(220px, 0.35fr);
           gap: 18px;
           align-items: center;
           background: ${colors.card};
           border: 1px solid ${colors.line};
-          border-radius: 26px;
-          padding: 24px;
+          border-radius: 28px;
+          padding: 26px;
           box-shadow: 0 18px 45px rgba(30,20,10,0.05);
         }
 
@@ -193,25 +202,25 @@ export default function RechnungsadressePage() {
         .lmbBillingIntroTitle {
           margin: 0;
           color: ${colors.text};
-          font-size: 26px;
-          line-height: 1.1;
-          letter-spacing: -0.035em;
+          font-size: clamp(26px, 3vw, 36px);
+          line-height: 1.06;
+          letter-spacing: -0.045em;
           font-weight: 950;
         }
 
         .lmbBillingIntroText {
-          margin: 9px 0 0;
+          margin: 10px 0 0;
           color: ${colors.muted};
-          font-size: 14.5px;
+          font-size: 15px;
           line-height: 1.7;
           font-weight: 600;
-          max-width: 680px;
+          max-width: 760px;
         }
 
         .lmbBillingStatusCard {
-          min-width: 210px;
-          padding: 16px;
-          border-radius: 20px;
+          min-width: 0;
+          padding: 18px;
+          border-radius: 22px;
           background: ${colors.soft};
           border: 1px solid ${colors.line};
           color: ${colors.text};
@@ -228,10 +237,10 @@ export default function RechnungsadressePage() {
 
         .lmbBillingStatusValue {
           font-size: 18px;
-          line-height: 1.25;
+          line-height: 1.35;
           font-weight: 950;
           color: ${colors.text};
-          word-break: break-word;
+          overflow-wrap: anywhere;
         }
 
         .lmbFeedback {
@@ -256,7 +265,7 @@ export default function RechnungsadressePage() {
         .lmbBillingCard {
           background: ${colors.card};
           border: 1px solid ${colors.line};
-          border-radius: 26px;
+          border-radius: 28px;
           padding: 28px;
           box-shadow: 0 18px 45px rgba(30,20,10,0.05);
         }
@@ -396,15 +405,11 @@ export default function RechnungsadressePage() {
           font-weight: 600;
         }
 
-        @media (max-width: 860px) {
+        @media (max-width: 900px) {
           .lmbBillingIntro {
             grid-template-columns: 1fr;
             padding: 20px;
             border-radius: 22px;
-          }
-
-          .lmbBillingStatusCard {
-            min-width: 0;
           }
 
           .lmbBillingCard {
@@ -447,7 +452,7 @@ export default function RechnungsadressePage() {
 
         @media (max-width: 460px) {
           .lmbBillingIntroTitle {
-            font-size: 23px;
+            font-size: 25px;
           }
 
           .lmbBillingCard {
@@ -480,7 +485,7 @@ export default function RechnungsadressePage() {
             <p className="lmbBillingIntroText">
               {locale === "en"
                 ? "These details are used for invoices, order documents and future checkout prefill."
-                : "Diese Daten werden für Rechnungen, Bestellunterlagen und spätere vorausgefüllte Checkouts verwendet."}
+                : "Diese Daten werden für Rechnungen, Bestellunterlagen und später vorausgefüllte Checkouts verwendet."}
             </p>
           </div>
 
@@ -496,7 +501,9 @@ export default function RechnungsadressePage() {
         </section>
 
         {actionData?.message ? (
-          <FeedbackBox success={actionData?.ok}>{actionData.message}</FeedbackBox>
+          <FeedbackBox success={actionData?.ok}>
+            {actionData.message}
+          </FeedbackBox>
         ) : null}
 
         <section className="lmbBillingCard">
@@ -508,7 +515,6 @@ export default function RechnungsadressePage() {
                   ? "Company name used on invoices and account documents."
                   : "Firmenname für Rechnungen und Kontounterlagen."
               }
-              locale={locale}
             >
               <div className="lmbFull">
                 <Field
@@ -527,7 +533,6 @@ export default function RechnungsadressePage() {
                   ? "Main contact details for invoice questions and order coordination."
                   : "Hauptkontakt für Rückfragen zu Rechnungen und Bestellungen."
               }
-              locale={locale}
             >
               <Field
                 label={t.contactPerson || "Ansprechpartner"}
@@ -536,7 +541,6 @@ export default function RechnungsadressePage() {
                   billing?.contactName ||
                   `${user.firstName || ""} ${user.lastName || ""}`.trim()
                 }
-                placeholder={t.contactPersonPlaceholder || ""}
                 required
               />
 
@@ -545,7 +549,6 @@ export default function RechnungsadressePage() {
                 name="email"
                 type="email"
                 defaultValue={billing?.email || user.email || ""}
-                placeholder={t.emailPlaceholder || ""}
                 required
               />
 
@@ -553,7 +556,6 @@ export default function RechnungsadressePage() {
                 label={t.phone || "Telefon"}
                 name="phone"
                 defaultValue={billing?.phone || user.phone || ""}
-                placeholder={t.phonePlaceholder || ""}
               />
             </FormSection>
 
@@ -564,43 +566,38 @@ export default function RechnungsadressePage() {
                   ? "Billing address used for invoice documents."
                   : "Rechnungsadresse für deine Rechnungsdokumente."
               }
-              locale={locale}
             >
               <Field
                 label={t.street || "Straße"}
                 name="street"
                 defaultValue={billing?.street || ""}
-                placeholder={t.streetPlaceholder || ""}
               />
 
               <Field
                 label={t.houseNumber || "Hausnummer"}
                 name="houseNumber"
                 defaultValue={billing?.houseNumber || ""}
-                placeholder={t.houseNumberPlaceholder || ""}
               />
 
               <Field
                 label={t.postalCode || "PLZ"}
                 name="postalCode"
                 defaultValue={billing?.postalCode || ""}
-                placeholder={t.postalCodePlaceholder || ""}
               />
 
               <Field
                 label={t.city || "Stadt"}
                 name="city"
                 defaultValue={billing?.city || ""}
-                placeholder={t.cityPlaceholder || ""}
               />
 
               <Field
                 label={t.country || "Land"}
                 name="country"
                 defaultValue={
-                  billing?.country || (locale === "en" ? "Germany" : "Deutschland")
+                  billing?.country ||
+                  (locale === "en" ? "Germany" : "Deutschland")
                 }
-                placeholder={t.countryPlaceholder || ""}
               />
             </FormSection>
 
@@ -611,7 +608,6 @@ export default function RechnungsadressePage() {
                   ? "Optional details for tax information and separate invoice delivery."
                   : "Optionale Angaben für Steuerdaten und separate Rechnungszustellung."
               }
-              locale={locale}
             >
               <Field
                 label={t.vatId || "USt-IdNr."}
@@ -643,7 +639,9 @@ export default function RechnungsadressePage() {
                 className="lmbPrimaryButton"
                 disabled={isSaving}
               >
-                {isSaving ? t.saving || "Speichert..." : t.save || "Speichern"}
+                {isSaving
+                  ? t.saving || "Speichert..."
+                  : t.save || "Speichern"}
               </button>
 
               <div className="lmbActionNote">
@@ -659,7 +657,7 @@ export default function RechnungsadressePage() {
   );
 }
 
-function FormSection({ title, text, children, locale = "de" }) {
+function FormSection({ title, text, children }) {
   return (
     <div className="lmbFormSection">
       <div className="lmbSectionHead">
@@ -668,9 +666,7 @@ function FormSection({ title, text, children, locale = "de" }) {
           {text ? <p className="lmbSectionText">{text}</p> : null}
         </div>
 
-        <div className="lmbRequiredHint">
-          {locale === "en" ? "* Required field" : "* Pflichtfeld"}
-        </div>
+        <div className="lmbRequiredHint">* Pflichtfeld</div>
       </div>
 
       <div className="lmbFormGrid">{children}</div>
@@ -682,7 +678,6 @@ function Field({
   label,
   name,
   type = "text",
-  placeholder = "",
   defaultValue = "",
   required = false,
   help = "",
@@ -697,7 +692,6 @@ function Field({
       <input
         name={name}
         type={type}
-        placeholder={placeholder}
         defaultValue={defaultValue || ""}
         required={required}
         className="lmbInput"
@@ -714,5 +708,4 @@ function FeedbackBox({ children, success = true }) {
       {children}
     </div>
   );
-}
 }
