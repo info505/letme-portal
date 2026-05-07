@@ -1,8 +1,10 @@
 import express from "express";
 import { createRequestHandler } from "@react-router/express";
+import { PrismaClient } from "@prisma/client";
 
 const app = express();
 const PORT = process.env.PORT || 8080;
+const prisma = new PrismaClient();
 
 // ===== CORS für Shopify / Let Me Bowl Frontend =====
 app.use((req, res, next) => {
@@ -61,6 +63,11 @@ function euroFromCents(cents) {
   }).format(value);
 }
 
+function centsToDecimal(cents) {
+  const value = Number(cents || 0) / 100;
+  return value.toFixed(2);
+}
+
 function parseItems(rawItems) {
   try {
     if (!rawItems) return [];
@@ -77,6 +84,102 @@ function parseItems(rawItems) {
 function isTruthy(value) {
   return value === true || value === "true" || value === "Ja" || value === "1";
 }
+
+function parseDeliveryDate(value) {
+  const text = safeText(value);
+  if (!text) return null;
+
+  const date = new Date(`${text}T00:00:00.000Z`);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date;
+}
+
+function normalizeOrderData(data) {
+  return {
+    ...data,
+
+    customerEmail:
+      data.customerEmail || data.portalCustomerEmail || data.contactEmail || "",
+
+    customerName:
+      data.customerName || data.portalCustomerName || data.contactName || "",
+
+    customerCompany:
+      data.customerCompany ||
+      data.portalCustomerCompany ||
+      data.deliveryCompany ||
+      data.billingCompany ||
+      "",
+
+    contactEmail:
+      data.contactEmail || data.customerEmail || data.portalCustomerEmail || "",
+
+    contactName:
+      data.contactName || data.customerName || data.portalCustomerName || "",
+
+    contactPhone: data.contactPhone || data.customerPhone || "",
+
+    deliveryCompany:
+      data.deliveryCompany ||
+      data.customerCompany ||
+      data.portalCustomerCompany ||
+      "",
+
+    billingCompany:
+      data.billingCompany ||
+      data.customerCompany ||
+      data.portalCustomerCompany ||
+      "",
+
+    totalAmountCents:
+      data.totalAmountCents ||
+      data.cartTotalCents ||
+      data.subtotalAmountCents ||
+      0,
+
+    items: Array.isArray(data.items) ? JSON.stringify(data.items) : data.items,
+  };
+}
+
+// ===== DUPLIKATE BESTELL-E-MAILS VERHINDERN =====
+
+const recentOrderEmailKeys = new Map();
+
+function buildOrderEmailKey(data) {
+  return [
+    safeText(data.contactEmail || data.customerEmail || data.portalCustomerEmail).toLowerCase(),
+    safeText(data.deliveryDate),
+    safeText(data.deliveryTime),
+    safeText(data.totalAmountCents || data.cartTotalCents || data.subtotalAmountCents),
+    safeText(data.items),
+  ].join("|");
+}
+
+function shouldSkipDuplicateOrder(data) {
+  const key = buildOrderEmailKey(data);
+  const now = Date.now();
+  const lastSentAt = recentOrderEmailKeys.get(key);
+
+  if (lastSentAt && now - lastSentAt < 2 * 60 * 1000) {
+    return true;
+  }
+
+  recentOrderEmailKeys.set(key, now);
+
+  for (const [storedKey, storedAt] of recentOrderEmailKeys.entries()) {
+    if (now - storedAt > 10 * 60 * 1000) {
+      recentOrderEmailKeys.delete(storedKey);
+    }
+  }
+
+  return false;
+}
+
+// ===== MAILJET CONFIG =====
 
 function getMailjetConfig() {
   const apiKey =
@@ -95,9 +198,7 @@ function getMailjetConfig() {
     "info@letmebowl-catering.de";
 
   const fromName =
-    process.env.MAIL_FROM_NAME ||
-    process.env.MAILJET_FROM_NAME ||
-    "Let Me Bowl";
+    process.env.MAIL_FROM_NAME || process.env.MAILJET_FROM_NAME || "Let Me Bowl";
 
   const ownerEmail =
     process.env.ORDER_NOTIFICATION_EMAIL ||
@@ -168,9 +269,62 @@ async function sendMailjetMessages(messages) {
   };
 }
 
+// ===== BESTELLNUMMER =====
+
+async function generatePortalOrderNumber() {
+  const now = new Date();
+
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+
+  const prefix = `LMB-${year}${month}${day}`;
+
+  const countToday = await prisma.portalOrder.count({
+    where: {
+      orderNumber: {
+        startsWith: prefix,
+      },
+    },
+  });
+
+  const nextNumber = String(countToday + 1).padStart(4, "0");
+
+  return `${prefix}-${nextNumber}`;
+}
+
+async function findPortalUserForOrder(data) {
+  const portalCustomerId = safeText(data.portalCustomerId || data.portalUserId);
+  const email = safeText(
+    data.contactEmail || data.customerEmail || data.portalCustomerEmail
+  ).toLowerCase();
+
+  if (portalCustomerId) {
+    const userById = await prisma.portalUser.findUnique({
+      where: {
+        id: portalCustomerId,
+      },
+    });
+
+    if (userById) return userById;
+  }
+
+  if (email) {
+    const userByEmail = await prisma.portalUser.findUnique({
+      where: {
+        email,
+      },
+    });
+
+    if (userByEmail) return userByEmail;
+  }
+
+  return null;
+}
+
 // ===== E-MAIL TEMPLATES =====
 
-function buildOwnerEmailHtml(data) {
+function buildOwnerEmailHtml(data, savedOrder = null) {
   const items = parseItems(data.items);
 
   const itemRows = items
@@ -187,16 +341,12 @@ function buildOwnerEmailHtml(data) {
             <strong>${escapeHtml(title)}</strong>
             ${
               variantTitle
-                ? `<br><span style="color:#666;">${escapeHtml(
-                    variantTitle
-                  )}</span>`
+                ? `<br><span style="color:#666;">${escapeHtml(variantTitle)}</span>`
                 : ""
             }
             ${
               sku
-                ? `<br><span style="color:#999;">SKU: ${escapeHtml(
-                    sku
-                  )}</span>`
+                ? `<br><span style="color:#999;">SKU: ${escapeHtml(sku)}</span>`
                 : ""
             }
           </td>
@@ -252,47 +402,46 @@ function buildOwnerEmailHtml(data) {
     data.totalAmountCents || data.cartTotalCents || data.subtotalAmountCents || 0
   );
 
+  const adminOrderUrl = "https://konto.letmebowl-catering.de/admin/orders";
+
   return `
 <!doctype html>
 <html>
   <body style="margin:0;padding:0;background:#f5f2ec;font-family:Arial,sans-serif;color:#1f2430;">
     <div style="max-width:780px;margin:0 auto;padding:28px;">
       <div style="background:#fff;border-radius:22px;padding:28px;border:1px solid #e7dfd2;">
-        <h1 style="margin:0 0 8px;font-size:28px;">Neue Let Me Bowl Bestellung</h1>
+        <h1 style="margin:0 0 8px;font-size:28px;">🚨 Neue Bestellung eingegangen</h1>
         <p style="margin:0 0 24px;color:#666;">Eine neue Firmenbestellung wurde über Website / Firmenkonto übermittelt.</p>
+
+        ${
+          savedOrder?.orderNumber
+            ? `
+              <div style="background:#edf7ee;border:1px solid #cfe8d4;border-radius:16px;padding:18px;margin-bottom:22px;">
+                <p style="margin:4px 0;"><strong>Bestellnummer:</strong> ${escapeHtml(
+                  savedOrder.orderNumber
+                )}</p>
+                <p style="margin:4px 0;"><strong>Admin:</strong> <a href="${adminOrderUrl}">Bestellungen öffnen</a></p>
+              </div>
+            `
+            : ""
+        }
 
         <div style="background:#f8f3e8;border-radius:16px;padding:18px;margin-bottom:22px;">
           <h2 style="margin:0 0 12px;font-size:18px;">Bestellübersicht</h2>
-          <p style="margin:4px 0;"><strong>Lieferart:</strong> ${escapeHtml(
-            deliveryType
-          )}</p>
-          <p style="margin:4px 0;"><strong>Datum:</strong> ${escapeHtml(
-            deliveryDate
-          )}</p>
-          <p style="margin:4px 0;"><strong>Zeit:</strong> ${escapeHtml(
-            deliveryTime
-          )}</p>
-          <p style="margin:4px 0;"><strong>Eventbeginn:</strong> ${escapeHtml(
-            eventTime
-          )}</p>
-          <p style="margin:4px 0;"><strong>Gesamt:</strong> ${escapeHtml(
-            total
-          )}</p>
+          <p style="margin:4px 0;"><strong>Lieferart:</strong> ${escapeHtml(deliveryType)}</p>
+          <p style="margin:4px 0;"><strong>Datum:</strong> ${escapeHtml(deliveryDate)}</p>
+          <p style="margin:4px 0;"><strong>Zeit:</strong> ${escapeHtml(deliveryTime)}</p>
+          <p style="margin:4px 0;"><strong>Eventbeginn:</strong> ${escapeHtml(eventTime)}</p>
+          <p style="margin:4px 0;"><strong>Gesamt:</strong> ${escapeHtml(total)}</p>
         </div>
 
         <h2 style="font-size:18px;margin:0 0 12px;">Kundendaten</h2>
         <p style="margin:4px 0;"><strong>Firma:</strong> ${escapeHtml(
           portalCustomerCompany || deliveryCompany || billingCompany || "-"
         )}</p>
-        <p style="margin:4px 0;"><strong>Name:</strong> ${escapeHtml(
-          contactName
-        )}</p>
-        <p style="margin:4px 0;"><strong>E-Mail:</strong> ${escapeHtml(
-          contactEmail
-        )}</p>
-        <p style="margin:4px 0;"><strong>Telefon:</strong> ${escapeHtml(
-          contactPhone
-        )}</p>
+        <p style="margin:4px 0;"><strong>Name:</strong> ${escapeHtml(contactName)}</p>
+        <p style="margin:4px 0;"><strong>E-Mail:</strong> ${escapeHtml(contactEmail)}</p>
+        <p style="margin:4px 0;"><strong>Telefon:</strong> ${escapeHtml(contactPhone)}</p>
         <p style="margin:4px 0;"><strong>Firmenkonto erkannt:</strong> ${
           customerIsLoggedIn ? "Ja" : "Nein"
         }</p>
@@ -408,7 +557,7 @@ function buildOwnerEmailHtml(data) {
   `;
 }
 
-function buildOwnerEmailText(data) {
+function buildOwnerEmailText(data, savedOrder = null) {
   const items = parseItems(data.items);
 
   const itemText = items
@@ -420,7 +569,9 @@ function buildOwnerEmailText(data) {
     .join("\n");
 
   return `
-Neue Let Me Bowl Bestellung
+Neue Let Me Bowl Bestellung eingegangen
+
+Bestellnummer: ${savedOrder?.orderNumber || "-"}
 
 Lieferart: ${safeText(data.deliveryType)}
 Datum: ${safeText(data.deliveryDate)}
@@ -456,18 +607,6 @@ Gesamt: ${euroFromCents(
     data.totalAmountCents || data.cartTotalCents || data.subtotalAmountCents || 0
   )}
 
-Lieferadresse:
-Firma: ${safeText(data.deliveryCompany || data.customerCompany)}
-Straße: ${safeText(data.deliveryStreet)}
-PLZ/Ort: ${safeText(data.deliveryZip)} ${safeText(data.deliveryCity)}
-Zusatz: ${safeText(data.deliveryExtra)}
-
-Rechnungsadresse:
-Firma: ${safeText(data.billingCompany || data.customerCompany)}
-Straße: ${safeText(data.billingStreet)}
-PLZ/Ort: ${safeText(data.billingZip)} ${safeText(data.billingCity)}
-Zusatz: ${safeText(data.billingExtra)}
-
 Hinweise:
 ${safeText(data.internalReference)}
 
@@ -476,7 +615,7 @@ ${safeText(data.note)}
   `.trim();
 }
 
-function buildCustomerEmailHtml(data) {
+function buildCustomerEmailHtml(data, savedOrder = null) {
   const items = parseItems(data.items);
 
   const itemRows = items
@@ -511,6 +650,14 @@ function buildCustomerEmailHtml(data) {
         <p style="margin:0 0 22px;color:#555;line-height:1.6;">
           Wir haben deine Firmenbestellung erhalten und prüfen die Angaben.
         </p>
+
+        ${
+          savedOrder?.orderNumber
+            ? `<p style="margin:0 0 18px;"><strong>Bestellnummer:</strong> ${escapeHtml(
+                savedOrder.orderNumber
+              )}</p>`
+            : ""
+        }
 
         <div style="background:#f8f3e8;border-radius:16px;padding:18px;margin-bottom:22px;">
           <p style="margin:4px 0;"><strong>Firma:</strong> ${escapeHtml(
@@ -562,7 +709,7 @@ function buildCustomerEmailHtml(data) {
   `;
 }
 
-function buildCustomerEmailText(data) {
+function buildCustomerEmailText(data, savedOrder = null) {
   const items = parseItems(data.items);
 
   const itemText = items
@@ -577,6 +724,8 @@ function buildCustomerEmailText(data) {
 Vielen Dank für deine Bestellung.
 
 Wir haben deine Firmenbestellung erhalten und prüfen die Angaben.
+
+Bestellnummer: ${savedOrder?.orderNumber || "-"}
 
 Firma: ${safeText(
     data.portalCustomerCompany ||
@@ -601,15 +750,182 @@ Die Rechnung folgt separat.
   `.trim();
 }
 
-async function sendOrderEmails(data) {
+// ===== BESTELLUNG IN DATENBANK SPEICHERN =====
+
+async function savePortalOrderToDatabase(data) {
+  const user = await findPortalUserForOrder(data);
+
+  if (!user) {
+    console.warn("Keine PortalUser-Zuordnung gefunden. Bestellung wird nicht gespeichert.", {
+      portalCustomerId: data.portalCustomerId,
+      portalUserId: data.portalUserId,
+      contactEmail: data.contactEmail,
+      customerEmail: data.customerEmail,
+      portalCustomerEmail: data.portalCustomerEmail,
+    });
+
+    return {
+      saved: false,
+      reason: "Kein passender PortalUser gefunden",
+    };
+  }
+
+  const items = parseItems(data.items);
+  const orderNumber = await generatePortalOrderNumber();
+
+  const subtotalAmount = centsToDecimal(
+    data.subtotalAmountCents || data.totalAmountCents || data.cartTotalCents || 0
+  );
+
+  const taxAmount = centsToDecimal(data.taxAmountCents || 0);
+
+  const totalAmount = centsToDecimal(
+    data.totalAmountCents || data.cartTotalCents || data.subtotalAmountCents || 0
+  );
+
+  const referenceNumber =
+    safeText(data.portalCostCenterCode) ||
+    safeText(data.costCenterCode) ||
+    safeText(data.referenceNumber) ||
+    safeText(data.portalCostCenterName) ||
+    "";
+
+  let notes = "";
+  notes += `Quelle: ${safeText(data.source) || "shopify_portal"}\n`;
+  notes += `Shop: ${safeText(data.shopDomain) || "-"}\n`;
+  notes += `Rechnungskauf: ${
+    isTruthy(data.invoiceAllowed || data.invoiceApproved) ? "Ja" : "Nein"
+  }\n`;
+  notes += `Lieferart: ${safeText(data.deliveryType) || "-"}\n`;
+  notes += `Lieferdatum: ${safeText(data.deliveryDate) || "-"}\n`;
+  notes += `Lieferzeit: ${safeText(data.deliveryTime) || "-"}\n`;
+  notes += `Eventbeginn: ${safeText(data.eventTime) || "-"}\n\n`;
+
+  notes += `Lieferadresse:\n`;
+  if (safeText(data.deliveryType).toLowerCase().includes("abhol")) {
+    notes += `Abholung im Geschäft\n\n`;
+  } else {
+    notes += `${safeText(data.deliveryCompany || data.customerCompany)}\n`;
+    notes += `${safeText(data.deliveryStreet)}\n`;
+    notes += `${safeText(data.deliveryZip)} ${safeText(data.deliveryCity)}\n`;
+    notes += `${safeText(data.deliveryExtra)}\n\n`;
+  }
+
+  notes += `Rechnungsadresse:\n`;
+  notes += `${safeText(data.billingCompany || data.customerCompany)}\n`;
+  notes += `${safeText(data.billingStreet)}\n`;
+  notes += `${safeText(data.billingZip)} ${safeText(data.billingCity)}\n`;
+  notes += `${safeText(data.billingExtra)}\n\n`;
+
+  notes += `Portal:\n`;
+  notes += `Portal-Kunde-ID: ${safeText(data.portalCustomerId || data.portalUserId)}\n`;
+  notes += `Portal-Firma: ${safeText(data.portalCustomerCompany)}\n`;
+  notes += `Lieferadresse: ${safeText(data.portalDeliveryAddressLabel)}\n`;
+  notes += `Kostenstelle: ${safeText(data.portalCostCenterName)} ${safeText(
+    data.portalCostCenterCode
+  )}\n\n`;
+
+  notes += `Hinweise / interne Referenz:\n`;
+  notes += `${safeText(data.internalReference) || "-"}\n\n`;
+
+  if (safeText(data.note)) {
+    notes += `Technische Bestellnotiz:\n${safeText(data.note)}\n`;
+  }
+
+  const order = await prisma.portalOrder.create({
+    data: {
+      userId: user.id,
+      orderNumber,
+      orderType: safeText(data.deliveryType) || "Firmenbestellung",
+      status: "OPEN",
+      currency: safeText(data.currency) || "EUR",
+
+      billingContactName: safeText(data.contactName || data.customerName),
+      billingEmail: safeText(data.contactEmail || data.customerEmail),
+      billingPhone: safeText(data.contactPhone || data.customerPhone),
+      billingCompanyName: safeText(
+        data.billingCompany ||
+          data.customerCompany ||
+          data.portalCustomerCompany ||
+          user.companyName
+      ),
+
+      referenceNumber: referenceNumber || null,
+
+      subtotalAmount,
+      taxAmount,
+      totalAmount,
+
+      notes,
+      deliveryDate: parseDeliveryDate(data.deliveryDate),
+
+      items: {
+        create: items.map((item) => {
+          const unitPrice = centsToDecimal(item.unitPriceCents || 0);
+          const totalPrice = centsToDecimal(item.totalPriceCents || 0);
+
+          return {
+            title: safeText(item.title) || "Artikel",
+            quantity: Number(item.quantity || 1),
+            unit: safeText(item.unit),
+            unitPrice,
+            totalPrice,
+            notes: safeText(item.notes),
+
+            shopifyProductId: safeText(item.productId),
+            shopifyVariantId: safeText(item.variantId),
+            shopifyHandle: safeText(item.handle),
+            variantTitle: safeText(item.variantTitle),
+            sku: safeText(item.sku),
+          };
+        }),
+      },
+    },
+    include: {
+      items: true,
+      user: true,
+    },
+  });
+
+  console.log("PortalOrder gespeichert:", {
+    id: order.id,
+    orderNumber: order.orderNumber,
+    userId: order.userId,
+    items: order.items.length,
+  });
+
+  return {
+    saved: true,
+    orderId: order.id,
+    orderNumber: order.orderNumber,
+  };
+}
+
+// ===== E-MAIL SENDEN =====
+
+async function sendOrderEmails(data, savedOrder = null) {
   const config = getMailjetConfig();
 
-  const customerEmail = safeText(data.contactEmail || data.customerEmail);
-  const contactName = safeText(data.contactName || data.customerName) || "Kunde";
+  const ownerEmail = safeText(config.ownerEmail).toLowerCase();
+  const bccEmail = safeText(config.bccEmail).toLowerCase();
+
+  const customerEmail = safeText(
+    data.contactEmail || data.customerEmail || data.portalCustomerEmail
+  ).toLowerCase();
+
+  const contactName =
+    safeText(data.contactName || data.customerName || data.portalCustomerName) ||
+    "Kunde";
+
   const deliveryDate = safeText(data.deliveryDate) || "ohne Datum";
 
-  const ownerSubject = `Neue Bestellung: ${contactName} – ${deliveryDate}`;
-  const customerSubject = "Deine Bestellung bei Let Me Bowl wurde erhalten";
+  const ownerSubject = savedOrder?.orderNumber
+    ? `🚨 Neue Bestellung eingegangen ${savedOrder.orderNumber}: ${contactName} – ${deliveryDate}`
+    : `🚨 Neue Bestellung eingegangen: ${contactName} – ${deliveryDate}`;
+
+  const customerSubject = savedOrder?.orderNumber
+    ? `Deine Bestellung ${savedOrder.orderNumber} bei Let Me Bowl wurde erhalten`
+    : "Deine Bestellung bei Let Me Bowl wurde erhalten";
 
   const messages = [];
 
@@ -625,30 +941,21 @@ async function sendOrderEmails(data) {
       },
     ],
     Subject: ownerSubject,
-    TextPart: buildOwnerEmailText(data),
-    HTMLPart: buildOwnerEmailHtml(data),
+    TextPart: buildOwnerEmailText(data, savedOrder),
+    HTMLPart: buildOwnerEmailHtml(data, savedOrder),
   };
 
-  if (customerEmail) {
+  if (customerEmail && customerEmail !== ownerEmail) {
     ownerMessage.ReplyTo = {
       Email: customerEmail,
       Name: contactName,
     };
   }
 
-  if (config.bccEmail) {
-    ownerMessage.Bcc = [
-      {
-        Email: config.bccEmail,
-        Name: "Let Me Bowl BCC",
-      },
-    ];
-  }
-
   messages.push(ownerMessage);
 
-  if (customerEmail) {
-    messages.push({
+  if (customerEmail && customerEmail !== ownerEmail) {
+    const customerMessage = {
       From: {
         Email: config.fromEmail,
         Name: config.fromName,
@@ -660,63 +967,34 @@ async function sendOrderEmails(data) {
         },
       ],
       Subject: customerSubject,
-      TextPart: buildCustomerEmailText(data),
-      HTMLPart: buildCustomerEmailHtml(data),
-    });
+      TextPart: buildCustomerEmailText(data, savedOrder),
+      HTMLPart: buildCustomerEmailHtml(data, savedOrder),
+    };
+
+    if (bccEmail && bccEmail !== ownerEmail && bccEmail !== customerEmail) {
+      customerMessage.Bcc = [
+        {
+          Email: config.bccEmail,
+          Name: "Let Me Bowl BCC",
+        },
+      ];
+    }
+
+    messages.push(customerMessage);
   }
+
+  console.log("MAIL DEBUG:", {
+    ownerEmail,
+    customerEmail,
+    bccEmail,
+    messagesCount: messages.length,
+    subjects: messages.map((message) => message.Subject),
+  });
 
   return await sendMailjetMessages(messages);
 }
 
-function normalizeOrderData(data) {
-  return {
-    ...data,
-
-    customerEmail:
-      data.customerEmail || data.portalCustomerEmail || data.contactEmail || "",
-
-    customerName:
-      data.customerName || data.portalCustomerName || data.contactName || "",
-
-    customerCompany:
-      data.customerCompany ||
-      data.portalCustomerCompany ||
-      data.deliveryCompany ||
-      data.billingCompany ||
-      "",
-
-    contactEmail:
-      data.contactEmail || data.customerEmail || data.portalCustomerEmail || "",
-
-    contactName:
-      data.contactName || data.customerName || data.portalCustomerName || "",
-
-    contactPhone: data.contactPhone || data.customerPhone || "",
-
-    deliveryCompany:
-      data.deliveryCompany ||
-      data.customerCompany ||
-      data.portalCustomerCompany ||
-      "",
-
-    billingCompany:
-      data.billingCompany ||
-      data.customerCompany ||
-      data.portalCustomerCompany ||
-      "",
-
-    totalAmountCents:
-      data.totalAmountCents ||
-      data.cartTotalCents ||
-      data.subtotalAmountCents ||
-      0,
-
-    items: Array.isArray(data.items) ? JSON.stringify(data.items) : data.items,
-  };
-}
-
-// ===== API: Portal-Bestellung speichern / E-Mail senden =====
-// WICHTIG: express.urlencoded nur hier, nicht global.
+// ===== API: Portal-Bestellung speichern + E-Mail senden =====
 
 app.post(
   "/api/portal-order",
@@ -725,6 +1003,21 @@ app.post(
     try {
       const data = req.body || {};
       const normalizedData = normalizeOrderData(data);
+
+      if (shouldSkipDuplicateOrder(normalizedData)) {
+        console.log("Doppelte Portal-Bestellung übersprungen:", {
+          contactEmail: normalizedData.contactEmail,
+          deliveryDate: normalizedData.deliveryDate,
+          deliveryTime: normalizedData.deliveryTime,
+          totalAmountCents: normalizedData.totalAmountCents,
+        });
+
+        return res.json({
+          ok: true,
+          skippedDuplicate: true,
+          message: "Doppelte Bestellung wurde übersprungen.",
+        });
+      }
 
       console.log("Neue Portal-Bestellung empfangen:", {
         contactName: normalizedData.contactName,
@@ -735,7 +1028,9 @@ app.post(
         totalAmountCents: normalizedData.totalAmountCents,
       });
 
-      const emailResult = await sendOrderEmails(normalizedData);
+      const savedOrder = await savePortalOrderToDatabase(normalizedData);
+
+      const emailResult = await sendOrderEmails(normalizedData, savedOrder);
 
       console.log("Bestell-E-Mail Ergebnis:", {
         sent: emailResult.sent,
@@ -744,6 +1039,7 @@ app.post(
 
       return res.json({
         ok: true,
+        order: savedOrder,
         email: emailResult,
       });
     } catch (error) {
@@ -758,9 +1054,6 @@ app.post(
   }
 );
 
-// Optional: falls die Danke-Seite diese Route noch mit JSON aufruft.
-// WICHTIG: express.json nur hier, nicht global.
-
 app.post(
   "/api/portal-order-email",
   express.json({ limit: "10mb" }),
@@ -768,6 +1061,21 @@ app.post(
     try {
       const data = req.body || {};
       const normalizedData = normalizeOrderData(data);
+
+      if (shouldSkipDuplicateOrder(normalizedData)) {
+        console.log("Doppelte Portal-Order-E-Mail übersprungen:", {
+          contactEmail: normalizedData.contactEmail,
+          deliveryDate: normalizedData.deliveryDate,
+          deliveryTime: normalizedData.deliveryTime,
+          totalAmountCents: normalizedData.totalAmountCents,
+        });
+
+        return res.json({
+          ok: true,
+          skippedDuplicate: true,
+          message: "Doppelte Bestell-E-Mail wurde übersprungen.",
+        });
+      }
 
       console.log("Portal Order E-Mail Request empfangen:", {
         contactName: normalizedData.contactName,
@@ -778,7 +1086,19 @@ app.post(
         totalAmountCents: normalizedData.totalAmountCents,
       });
 
-      const emailResult = await sendOrderEmails(normalizedData);
+      let savedOrder = null;
+
+      try {
+        savedOrder = await savePortalOrderToDatabase(normalizedData);
+      } catch (saveError) {
+        console.warn("Speichern über portal-order-email fehlgeschlagen:", saveError);
+        savedOrder = {
+          saved: false,
+          reason: String(saveError?.message || saveError),
+        };
+      }
+
+      const emailResult = await sendOrderEmails(normalizedData, savedOrder);
 
       console.log("Bestell-E-Mail Ergebnis:", {
         sent: emailResult.sent,
@@ -787,6 +1107,7 @@ app.post(
 
       return res.json({
         ok: true,
+        order: savedOrder,
         email: emailResult,
       });
     } catch (error) {
@@ -814,11 +1135,11 @@ app.get("/api/health", (req, res) => {
     ownerEmail: config.ownerEmail,
     hasApiKey: Boolean(config.apiKey),
     hasSecretKey: Boolean(config.secretKey),
+    database: "prisma",
   });
 });
 
 // ===== Passwort vergessen =====
-// WICHTIG: express.json nur hier, nicht global.
 
 app.post(
   "/api/password-forgot",
@@ -855,12 +1176,12 @@ app.post(
           Subject: "Passwort zurücksetzen",
           TextPart: `Passwort zurücksetzen\n\nFür diese E-Mail wurde ein Passwort-Reset angefragt:\n${email}\n\n${resetLink}`,
           HTMLPart: `
-          <h2>Passwort zurücksetzen</h2>
-          <p>Für diese E-Mail wurde ein Passwort-Reset angefragt:</p>
-          <p><strong>${escapeHtml(email)}</strong></p>
-          <p>Klicke auf den Link:</p>
-          <a href="${escapeHtml(resetLink)}">${escapeHtml(resetLink)}</a>
-        `,
+            <h2>Passwort zurücksetzen</h2>
+            <p>Für diese E-Mail wurde ein Passwort-Reset angefragt:</p>
+            <p><strong>${escapeHtml(email)}</strong></p>
+            <p>Klicke auf den Link:</p>
+            <a href="${escapeHtml(resetLink)}">${escapeHtml(resetLink)}</a>
+          `,
         },
       ]);
 
@@ -893,15 +1214,11 @@ app.post(
 
 const build = await import("./build/server/index.js");
 
-// Hochgeladene PDFs öffentlich machen
 app.use("/uploads", express.static("uploads"));
-
-// Statische React-App
 app.use(express.static("build/client"));
 
-// Catch-all für React Router
 app.all("*", createRequestHandler({ build }));
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server läuft auf Port ${PORT} - Mailjet API aktiv`);
+  console.log(`Server läuft auf Port ${PORT} - Mailjet API + PortalOrder aktiv`);
 });

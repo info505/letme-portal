@@ -1,5 +1,5 @@
 import { redirect, useLoaderData, Form, useNavigation } from "react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import path from "path";
 import fs from "fs/promises";
 import { getUserFromRequest } from "../lib/auth.server.js";
@@ -22,6 +22,16 @@ function euro(value) {
     style: "currency",
     currency: "EUR",
   });
+}
+
+function normalizeAmount(value) {
+  const clean = String(value || "").trim().replace(",", ".");
+  if (!clean) return null;
+
+  const num = Number(clean);
+  if (Number.isNaN(num)) return null;
+
+  return num;
 }
 
 function statusLabel(status) {
@@ -49,6 +59,7 @@ function errorText(error) {
   if (error === "missing_fields") return "Bitte alle Pflichtfelder prüfen.";
   if (error === "missing_invoice") return "Rechnung wurde nicht gefunden.";
   if (error === "server") return "Aktion konnte nicht ausgeführt werden.";
+  if (error === "missing_customer") return "Bitte einen Firmenkunden auswählen.";
   return "Aktion konnte nicht ausgeführt werden. Bitte Pflichtfelder prüfen.";
 }
 
@@ -88,7 +99,7 @@ async function deleteUploadedFile(pdfUrl) {
   try {
     await fs.unlink(filepath);
   } catch {
-    // Railway kann Dateien nach Redeploy verlieren. Dann ignorieren.
+    // Bei Railway können Upload-Dateien nach Redeploy fehlen. Dann einfach ignorieren.
   }
 }
 
@@ -119,8 +130,12 @@ export async function loader({ request }) {
     include: {
       user: {
         select: {
+          id: true,
           companyName: true,
           email: true,
+          firstName: true,
+          lastName: true,
+          isActive: true,
         },
       },
     },
@@ -128,6 +143,7 @@ export async function loader({ request }) {
 
   const openInvoices = invoices.filter((inv) => inv.status !== "BEZAHLT");
   const paidCount = invoices.filter((inv) => inv.status === "BEZAHLT").length;
+  const overdueCount = invoices.filter((inv) => inv.status === "UEBERFAELLIG").length;
 
   const openAmount = openInvoices.reduce((sum, inv) => {
     return sum + Number(inv.amountGross || 0);
@@ -141,6 +157,7 @@ export async function loader({ request }) {
     invoices: invoices.map((inv) => ({
       ...inv,
       createdAt: inv.createdAt.toISOString(),
+      updatedAt: inv.updatedAt.toISOString(),
       issueDate: inv.issueDate ? inv.issueDate.toISOString() : null,
       dueDate: inv.dueDate ? inv.dueDate.toISOString() : null,
       amountGross: inv.amountGross ? inv.amountGross.toString() : "",
@@ -149,6 +166,7 @@ export async function loader({ request }) {
       totalCount: invoices.length,
       paidCount,
       openCount: openInvoices.length,
+      overdueCount,
       openAmount,
     },
   };
@@ -167,16 +185,23 @@ export async function action({ request }) {
     if (intent === "delete") {
       const invoiceId = String(formData.get("invoiceId") || "");
 
-      if (!invoiceId) return redirect("/admin/invoices?error=missing_invoice");
+      if (!invoiceId) {
+        return redirect("/admin/invoices?error=missing_invoice");
+      }
 
       const invoice = await prisma.portalInvoice.findUnique({
         where: { id: invoiceId },
       });
 
-      if (invoice) {
-        await deleteUploadedFile(invoice.pdfUrl);
-        await prisma.portalInvoice.delete({ where: { id: invoiceId } });
+      if (!invoice) {
+        return redirect("/admin/invoices?error=missing_invoice");
       }
+
+      await deleteUploadedFile(invoice.pdfUrl);
+
+      await prisma.portalInvoice.delete({
+        where: { id: invoiceId },
+      });
 
       return redirect("/admin/invoices?success=deleted");
     }
@@ -204,7 +229,7 @@ export async function action({ request }) {
 
       const updateData = {
         invoiceNumber,
-        amountGross: amountGross ? Number(amountGross.replace(",", ".")) : null,
+        amountGross: normalizeAmount(amountGross),
         issueDate: issueDate ? new Date(issueDate) : null,
         dueDate: dueDate ? new Date(dueDate) : null,
         status,
@@ -217,6 +242,7 @@ export async function action({ request }) {
 
         if (saved) {
           await deleteUploadedFile(oldInvoice.pdfUrl);
+
           updateData.pdfUrl = saved.pdfUrl;
           updateData.originalName = saved.originalName;
           replacedPdf = true;
@@ -233,7 +259,7 @@ export async function action({ request }) {
       );
     }
 
-    const userId = formData.get("userId");
+    const userId = String(formData.get("userId") || "");
     const invoiceNumber = String(formData.get("invoiceNumber") || "").trim();
     const amountGross = String(formData.get("amountGross") || "").trim();
     const issueDate = String(formData.get("issueDate") || "").trim();
@@ -241,18 +267,26 @@ export async function action({ request }) {
     const status = String(formData.get("status") || "OFFEN");
     const file = formData.get("pdf");
 
-    if (!userId || !invoiceNumber || !(file instanceof File) || file.size === 0) {
+    if (!userId) {
+      return redirect("/admin/invoices?error=missing_customer");
+    }
+
+    if (!invoiceNumber || !(file instanceof File) || file.size === 0) {
       return redirect("/admin/invoices?error=missing_fields");
     }
 
     const saved = await savePdf(file);
 
+    if (!saved) {
+      return redirect("/admin/invoices?error=missing_fields");
+    }
+
     await prisma.portalInvoice.create({
       data: {
-        userId: String(userId),
+        userId,
         invoiceNumber,
         pdfUrl: saved.pdfUrl,
-        amountGross: amountGross ? Number(amountGross.replace(",", ".")) : null,
+        amountGross: normalizeAmount(amountGross),
         issueDate: issueDate ? new Date(issueDate) : null,
         dueDate: dueDate ? new Date(dueDate) : null,
         status,
@@ -270,6 +304,41 @@ export async function action({ request }) {
 
     return redirect("/admin/invoices?error=server");
   }
+}
+
+function Field({
+  label,
+  name,
+  type = "text",
+  step,
+  defaultValue = "",
+  placeholder = "",
+  required = false,
+}) {
+  return (
+    <div className="lmbField">
+      <label className="lmbLabel">{label}</label>
+      <input
+        name={name}
+        type={type}
+        step={step}
+        defaultValue={defaultValue}
+        placeholder={placeholder}
+        required={required}
+        className="lmbInput"
+      />
+    </div>
+  );
+}
+
+function Stat({ label, value, text }) {
+  return (
+    <div className="lmbStat">
+      <div className="lmbStatLabel">{label}</div>
+      <div className="lmbStatValue">{value}</div>
+      {text ? <div className="lmbStatText">{text}</div> : null}
+    </div>
+  );
 }
 
 function EditInvoiceForm({ inv, navigation, onClose }) {
@@ -293,6 +362,7 @@ function EditInvoiceForm({ inv, navigation, onClose }) {
             type="number"
             step="0.01"
             defaultValue={inv.amountGross || ""}
+            placeholder="z. B. 149.90"
           />
 
           <div className="lmbField">
@@ -379,6 +449,11 @@ function InvoiceRow({ inv, navigation }) {
             </div>
 
             <div>
+              <span>Hochgeladen</span>
+              <strong>{formatDate(inv.createdAt)}</strong>
+            </div>
+
+            <div>
               <span>Datei</span>
               <strong>{inv.originalName || "-"}</strong>
             </div>
@@ -447,7 +522,27 @@ function InvoiceRow({ inv, navigation }) {
 export default function AdminInvoicesPage() {
   const { user, portalUsers, invoices, stats, success, error } = useLoaderData();
   const [showUpload, setShowUpload] = useState(false);
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const navigation = useNavigation();
+
+  const filteredInvoices = useMemo(() => {
+    const q = query.trim().toLowerCase();
+
+    return invoices.filter((inv) => {
+      const matchesQuery =
+        !q ||
+        inv.invoiceNumber?.toLowerCase().includes(q) ||
+        inv.user?.companyName?.toLowerCase().includes(q) ||
+        inv.user?.email?.toLowerCase().includes(q) ||
+        inv.originalName?.toLowerCase().includes(q);
+
+      const matchesStatus =
+        statusFilter === "ALL" || inv.status === statusFilter;
+
+      return matchesQuery && matchesStatus;
+    });
+  }, [invoices, query, statusFilter]);
 
   return (
     <AdminLayout
@@ -555,6 +650,14 @@ export default function AdminInvoicesPage() {
           overflow-wrap: anywhere;
         }
 
+        .lmbStatText {
+          margin-top: 7px;
+          font-size: 13px;
+          line-height: 1.5;
+          color: #756b5f;
+          font-weight: 700;
+        }
+
         .lmbUploadBox,
         .lmbInvoiceEditBox {
           margin-top: 22px;
@@ -658,6 +761,13 @@ export default function AdminInvoicesPage() {
           min-height: 48px;
           padding: 0 18px;
           border-radius: 16px;
+        }
+
+        .lmbSearchBar {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 220px;
+          gap: 12px;
+          margin: 18px 0;
         }
 
         .lmbList {
@@ -862,6 +972,10 @@ export default function AdminInvoicesPage() {
             border-radius: 20px;
           }
 
+          .lmbSearchBar {
+            grid-template-columns: 1fr;
+          }
+
           .lmbInvoiceItem {
             padding: 16px;
             border-radius: 20px;
@@ -914,9 +1028,12 @@ export default function AdminInvoicesPage() {
         <div className="lmbTopGrid">
           <section className="lmbCard">
             <div className="lmbEyebrow">Rechnungsverwaltung</div>
+
             <h2 className="lmbH2">Neue Rechnung hochladen</h2>
+
             <p className="lmbText">
-              Lade eine PDF hoch und ordne sie direkt einem Firmenkunden zu. Der Kunde sieht danach nur seine eigenen Rechnungen im Kundenportal.
+              Lade eine PDF hoch und ordne sie direkt einem Firmenkunden zu. Der
+              Kunde sieht danach nur seine eigenen Rechnungen im Kundenportal.
             </p>
 
             <button
@@ -927,7 +1044,7 @@ export default function AdminInvoicesPage() {
               {showUpload ? "Upload schließen" : "Rechnung hochladen"}
             </button>
 
-            {showUpload && (
+            {showUpload ? (
               <div className="lmbUploadBox">
                 <Form method="post" encType="multipart/form-data">
                   <input type="hidden" name="intent" value="create" />
@@ -939,6 +1056,7 @@ export default function AdminInvoicesPage() {
                         <option value="" disabled>
                           Kunde wählen
                         </option>
+
                         {portalUsers.map((u) => (
                           <option key={u.id} value={u.id}>
                             {u.companyName || u.email} ({u.email})
@@ -1003,28 +1121,51 @@ export default function AdminInvoicesPage() {
                   </div>
                 </Form>
               </div>
-            )}
+            ) : null}
           </section>
 
           <aside className="lmbStats">
             <Stat label="Gesamt" value={stats.totalCount} />
             <Stat label="Bezahlt" value={stats.paidCount} />
             <Stat label="Offen" value={stats.openCount} />
+            <Stat label="Überfällig" value={stats.overdueCount} />
             <Stat label="Offener Betrag" value={euro(stats.openAmount)} />
           </aside>
         </div>
 
         <section className="lmbCard">
           <div className="lmbEyebrow">Alle Rechnungen</div>
+
           <h2 className="lmbH2">Rechnungsliste</h2>
 
-          {invoices.length === 0 ? (
+          <div className="lmbSearchBar">
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Suche nach Rechnungsnummer, Firma, E-Mail oder Datei"
+              className="lmbInput"
+            />
+
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="lmbInput"
+            >
+              <option value="ALL">Alle Status</option>
+              <option value="OFFEN">Offen</option>
+              <option value="BEZAHLT">Bezahlt</option>
+              <option value="UEBERFAELLIG">Überfällig</option>
+            </select>
+          </div>
+
+          {filteredInvoices.length === 0 ? (
             <div className="lmbEmpty">
-              Noch keine Rechnungen vorhanden. Sobald du eine PDF hochlädst, erscheint sie hier automatisch.
+              Keine passenden Rechnungen gefunden. Sobald du eine PDF hochlädst,
+              erscheint sie hier automatisch.
             </div>
           ) : (
             <div className="lmbList">
-              {invoices.map((inv) => (
+              {filteredInvoices.map((inv) => (
                 <InvoiceRow key={inv.id} inv={inv} navigation={navigation} />
               ))}
             </div>
@@ -1032,39 +1173,5 @@ export default function AdminInvoicesPage() {
         </section>
       </div>
     </AdminLayout>
-  );
-}
-
-function Field({
-  label,
-  name,
-  type = "text",
-  step,
-  defaultValue = "",
-  placeholder = "",
-  required = false,
-}) {
-  return (
-    <div className="lmbField">
-      <label className="lmbLabel">{label}</label>
-      <input
-        name={name}
-        type={type}
-        step={step}
-        defaultValue={defaultValue}
-        placeholder={placeholder}
-        required={required}
-        className="lmbInput"
-      />
-    </div>
-  );
-}
-
-function Stat({ label, value }) {
-  return (
-    <div className="lmbStat">
-      <div className="lmbStatLabel">{label}</div>
-      <div className="lmbStatValue">{value}</div>
-    </div>
   );
 }

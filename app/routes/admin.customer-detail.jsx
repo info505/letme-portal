@@ -28,19 +28,52 @@ function successText(success) {
   if (success === "costCenter") return "Kostenstelle wurde angelegt.";
   if (success === "deleted") return "Eintrag wurde gelöscht.";
   if (success === "invoicePurchase") return "Rechnungskauf-Freigabe wurde aktualisiert.";
-  if (success === "passwordReset") return "Temporäres Passwort wurde gesetzt. Der Kunde muss beim nächsten Login ein neues Passwort vergeben.";
+  if (success === "passwordReset") {
+    return "Temporäres Passwort wurde gesetzt. Der Kunde muss beim nächsten Login ein neues Passwort vergeben.";
+  }
   return null;
 }
 
 function errorText(error) {
-  if (error === "passwordTooShort") return "Das temporäre Passwort muss mindestens 8 Zeichen lang sein.";
+  if (error === "passwordTooShort") {
+    return "Das temporäre Passwort muss mindestens 8 Zeichen lang sein.";
+  }
   if (error === "passwordMissing") return "Bitte ein temporäres Passwort eingeben.";
-  if (error === "adminPasswordResetBlocked") return "Admin-Passwörter sollten hier nicht zurückgesetzt werden.";
+  if (error === "adminPasswordResetBlocked") {
+    return "Admin-Passwörter sollten hier nicht zurückgesetzt werden.";
+  }
   return null;
+}
+
+function invoiceLabel(status) {
+  if (status === "BEZAHLT") return "Bezahlt";
+  if (status === "UEBERFAELLIG") return "Überfällig";
+  return "Offen";
+}
+
+function invoiceClass(status) {
+  if (status === "BEZAHLT") return "paid";
+  if (status === "UEBERFAELLIG") return "overdue";
+  return "open";
+}
+
+function orderStatusLabel(status) {
+  if (status === "CONFIRMED") return "Bestätigt";
+  if (status === "IN_PREPARATION") return "In Vorbereitung";
+  if (status === "DELIVERED") return "Geliefert";
+  if (status === "CANCELLED") return "Storniert";
+  return "Offen";
+}
+
+function orderStatusClass(status) {
+  if (status === "DELIVERED") return "paid";
+  if (status === "CANCELLED") return "overdue";
+  return "open";
 }
 
 export async function loader({ request }) {
   const user = await getUserFromRequest(request);
+
   if (!user) throw redirect("/login");
   if (!user.isAdmin) throw redirect("/dashboard");
 
@@ -59,7 +92,14 @@ export async function loader({ request }) {
       contacts: { orderBy: { createdAt: "desc" } },
       costCenters: { orderBy: { createdAt: "desc" } },
       invoices: { orderBy: { createdAt: "desc" } },
-      orders: { orderBy: { createdAt: "desc" } },
+      orders: {
+        orderBy: { createdAt: "desc" },
+        include: {
+          items: true,
+          costCenter: true,
+          deliveryAddress: true,
+        },
+      },
     },
   });
 
@@ -74,19 +114,48 @@ export async function loader({ request }) {
       ...customer,
       createdAt: customer.createdAt.toISOString(),
       updatedAt: customer.updatedAt.toISOString(),
+
+      addresses: customer.addresses.map((a) => ({
+        ...a,
+        createdAt: a.createdAt.toISOString(),
+        updatedAt: a.updatedAt.toISOString(),
+      })),
+
+      contacts: customer.contacts.map((c) => ({
+        ...c,
+        createdAt: c.createdAt.toISOString(),
+        updatedAt: c.updatedAt.toISOString(),
+      })),
+
+      costCenters: customer.costCenters.map((c) => ({
+        ...c,
+        createdAt: c.createdAt.toISOString(),
+        updatedAt: c.updatedAt.toISOString(),
+      })),
+
       invoices: customer.invoices.map((i) => ({
         ...i,
         createdAt: i.createdAt.toISOString(),
+        updatedAt: i.updatedAt.toISOString(),
         issueDate: i.issueDate ? i.issueDate.toISOString() : null,
         dueDate: i.dueDate ? i.dueDate.toISOString() : null,
         amountGross: i.amountGross ? i.amountGross.toString() : null,
       })),
+
       orders: customer.orders.map((o) => ({
         ...o,
         createdAt: o.createdAt.toISOString(),
+        updatedAt: o.updatedAt.toISOString(),
         orderedAt: o.orderedAt ? o.orderedAt.toISOString() : null,
         deliveryDate: o.deliveryDate ? o.deliveryDate.toISOString() : null,
-        totalAmount: o.totalAmount ? o.totalAmount.toString() : null,
+        subtotalAmount: o.subtotalAmount ? o.subtotalAmount.toString() : null,
+        taxAmount: o.taxAmount ? o.taxAmount.toString() : null,
+        totalAmount: o.totalAmount ? o.totalAmount.toString() : "0",
+        items: o.items.map((item) => ({
+          ...item,
+          unitPrice: item.unitPrice ? item.unitPrice.toString() : null,
+          totalPrice: item.totalPrice ? item.totalPrice.toString() : null,
+        })),
       })),
     },
   };
@@ -94,6 +163,7 @@ export async function loader({ request }) {
 
 export async function action({ request }) {
   const user = await getUserFromRequest(request);
+
   if (!user) throw redirect("/login");
   if (!user.isAdmin) throw redirect("/dashboard");
 
@@ -254,19 +324,28 @@ export async function action({ request }) {
 export default function CustomerDetailPage() {
   const { user, customer, success, error } = useLoaderData();
   const navigation = useNavigation();
+
   const message = successText(success);
   const errorMessage = errorText(error);
 
   const openInvoices = customer.invoices.filter((i) => i.status !== "BEZAHLT");
-  const openAmount = openInvoices.reduce(
-    (sum, inv) => sum + Number(inv.amountGross || 0),
-    0
+
+  const openAmount = openInvoices.reduce((sum, inv) => {
+    return sum + Number(inv.amountGross || 0);
+  }, 0);
+
+  const openOrders = customer.orders.filter((order) =>
+    ["OPEN", "CONFIRMED", "IN_PREPARATION"].includes(order.status)
   );
+
+  const orderAmount = customer.orders.reduce((sum, order) => {
+    return sum + Number(order.totalAmount || 0);
+  }, 0);
 
   return (
     <AdminLayout
       title={customer.companyName}
-      subtitle="Kundendetails, Zugang, Zahlungsfreigaben, Rechnungen, Adressen, Ansprechpartner und Kostenstellen."
+      subtitle="Kundendetails, Zugang, Zahlungsfreigaben, Bestellungen, Rechnungen, Adressen, Ansprechpartner und Kostenstellen."
       user={user}
     >
       <style>{`
@@ -324,6 +403,13 @@ export default function CustomerDetailPage() {
           padding: 20px;
           box-shadow: 0 14px 35px rgba(30,20,10,0.04);
           min-width: 0;
+        }
+
+        .lmbStatGold {
+          background:
+            radial-gradient(circle at top right, rgba(200,169,106,0.16), transparent 34%),
+            linear-gradient(180deg, #fffaf0 0%, #fbf3e3 100%);
+          border-color: rgba(200,169,106,0.32);
         }
 
         .lmbStatLabel {
@@ -443,6 +529,12 @@ export default function CustomerDetailPage() {
           overflow-wrap: anywhere;
         }
 
+        .lmbItemOrder {
+          background:
+            radial-gradient(circle at top right, rgba(200,169,106,0.10), transparent 34%),
+            #fffdf8;
+        }
+
         .lmbItem strong {
           color: #171717;
           font-weight: 950;
@@ -453,6 +545,46 @@ export default function CustomerDetailPage() {
           align-items: flex-start;
           justify-content: space-between;
           gap: 14px;
+        }
+
+        .lmbItemFooter {
+          margin-top: 14px;
+          display: flex;
+          justify-content: space-between;
+          gap: 12px;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+
+        .lmbOrderGrid {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 10px;
+          margin-top: 14px;
+        }
+
+        .lmbOrderInfo {
+          padding: 12px;
+          border-radius: 16px;
+          background: #fff;
+          border: 1px solid #ece5d8;
+        }
+
+        .lmbOrderInfoLabel {
+          font-size: 10px;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: #756b5f;
+          font-weight: 950;
+          margin-bottom: 6px;
+        }
+
+        .lmbOrderInfoValue {
+          font-size: 13px;
+          color: #171717;
+          font-weight: 850;
+          line-height: 1.4;
+          overflow-wrap: anywhere;
         }
 
         .lmbBadge {
@@ -567,6 +699,21 @@ export default function CustomerDetailPage() {
           box-shadow: 0 12px 24px rgba(200,169,106,0.18);
         }
 
+        .lmbSmallLink {
+          text-decoration: none;
+          min-height: 38px;
+          padding: 0 13px;
+          border-radius: 999px;
+          background: #fff;
+          border: 1px solid #e8decd;
+          color: #171717;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 13px;
+          font-weight: 900;
+        }
+
         .lmbDanger {
           border: 1px solid #efcaca;
           background: #fff4f4;
@@ -607,6 +754,10 @@ export default function CustomerDetailPage() {
 
           .lmbGrid {
             grid-template-columns: 1fr;
+          }
+
+          .lmbOrderGrid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
           }
         }
 
@@ -666,7 +817,8 @@ export default function CustomerDetailPage() {
 
           .lmbBtn,
           .lmbDanger,
-          .lmbPdf {
+          .lmbPdf,
+          .lmbSmallLink {
             width: 100%;
           }
 
@@ -681,8 +833,17 @@ export default function CustomerDetailPage() {
             gap: 12px;
           }
 
+          .lmbItemFooter {
+            display: grid;
+            grid-template-columns: 1fr;
+          }
+
           .lmbBadge {
             justify-self: start;
+          }
+
+          .lmbOrderGrid {
+            grid-template-columns: 1fr;
           }
         }
 
@@ -699,19 +860,33 @@ export default function CustomerDetailPage() {
 
       <div className="lmbCustomerDetail">
         {message ? <div className="lmbAlert">{message}</div> : null}
-        {errorMessage ? <div className="lmbAlert lmbAlertError">{errorMessage}</div> : null}
+
+        {errorMessage ? (
+          <div className="lmbAlert lmbAlertError">{errorMessage}</div>
+        ) : null}
 
         <div className="lmbTopActions">
           <a href="/admin/customers" className="lmbBack">
             Zurück zur Firmenliste
           </a>
+
+          <a href="/admin/orders" className="lmbBack">
+            Zu allen Bestellungen
+          </a>
+        </div>
+
+        <div className="lmbStats">
+          <Stat label="Bestellungen" value={customer.orders.length} gold />
+          <Stat label="Offene Bestellungen" value={openOrders.length} />
+          <Stat label="Bestellwert" value={euro(orderAmount)} />
+          <Stat label="Offener Rechnungsbetrag" value={euro(openAmount)} />
         </div>
 
         <div className="lmbStats">
           <Stat label="Rechnungen" value={customer.invoices.length} />
-          <Stat label="Offen" value={openInvoices.length} />
-          <Stat label="Offener Betrag" value={euro(openAmount)} />
-          <Stat label="Bestellungen" value={customer.orders.length} />
+          <Stat label="Offene Rechnungen" value={openInvoices.length} />
+          <Stat label="Lieferadressen" value={customer.addresses.length} />
+          <Stat label="Kostenstellen" value={customer.costCenters.length} />
         </div>
 
         <div className="lmbGrid">
@@ -768,7 +943,9 @@ export default function CustomerDetailPage() {
               <br />
               Passwortstatus:{" "}
               <span className={`lmbBadge ${customer.mustResetPassword ? "open" : "active"}`}>
-                {customer.mustResetPassword ? "Kunde muss neues Passwort setzen" : "Kein Pflichtwechsel aktiv"}
+                {customer.mustResetPassword
+                  ? "Kunde muss neues Passwort setzen"
+                  : "Kein Pflichtwechsel aktiv"}
               </span>
             </div>
 
@@ -811,7 +988,8 @@ export default function CustomerDetailPage() {
               </Form>
             ) : (
               <div className="lmbNotice">
-                Dieses Konto ist ein Admin-Konto. Admin-Passwörter sollten nicht über die Kundenverwaltung zurückgesetzt werden.
+                Dieses Konto ist ein Admin-Konto. Admin-Passwörter sollten nicht über die
+                Kundenverwaltung zurückgesetzt werden.
               </div>
             )}
           </section>
@@ -851,9 +1029,7 @@ export default function CustomerDetailPage() {
 
               <button
                 type="submit"
-                className={`lmbBtn ${
-                  customer.invoicePurchaseEnabled ? "" : "lmbBtnGold"
-                }`}
+                className={`lmbBtn ${customer.invoicePurchaseEnabled ? "" : "lmbBtnGold"}`}
               >
                 {customer.invoicePurchaseEnabled
                   ? "Rechnungskauf sperren"
@@ -889,10 +1065,92 @@ export default function CustomerDetailPage() {
                     </div>
 
                     {inv.pdfUrl ? (
-                      <a href={inv.pdfUrl} target="_blank" rel="noreferrer" className="lmbPdf">
+                      <a
+                        href={inv.pdfUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="lmbPdf"
+                      >
                         PDF öffnen
                       </a>
                     ) : null}
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="lmbCard lmbFull">
+            <div className="lmbEyebrow">Bestellungen</div>
+            <h2 className="lmbH2">Letzte Bestellungen</h2>
+
+            {customer.orders.length === 0 ? (
+              <p className="lmbEmpty">Keine Bestellungen vorhanden.</p>
+            ) : (
+              <div className="lmbList">
+                {customer.orders.map((order) => (
+                  <div key={order.id} className="lmbItem lmbItemOrder">
+                    <div className="lmbItemTop">
+                      <div>
+                        <strong>{order.orderNumber || "Bestellung"}</strong>
+                        <br />
+                        Bestellt am: {formatDate(order.orderedAt || order.createdAt)}
+                        <br />
+                        Lieferung: {formatDate(order.deliveryDate)}
+                        <br />
+                        Betrag: {order.totalAmount ? euro(order.totalAmount) : "—"}
+                      </div>
+
+                      {order.status ? (
+                        <span className={`lmbBadge ${orderStatusClass(order.status)}`}>
+                          {orderStatusLabel(order.status)}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="lmbOrderGrid">
+                      <div className="lmbOrderInfo">
+                        <div className="lmbOrderInfoLabel">Positionen</div>
+                        <div className="lmbOrderInfoValue">
+                          {order.items?.length || 0}
+                        </div>
+                      </div>
+
+                      <div className="lmbOrderInfo">
+                        <div className="lmbOrderInfoLabel">Kostenstelle</div>
+                        <div className="lmbOrderInfoValue">
+                          {order.costCenter?.name || "-"}
+                        </div>
+                      </div>
+
+                      <div className="lmbOrderInfo">
+                        <div className="lmbOrderInfoLabel">Lieferadresse</div>
+                        <div className="lmbOrderInfoValue">
+                          {order.deliveryAddress?.label || "-"}
+                        </div>
+                      </div>
+
+                      <div className="lmbOrderInfo">
+                        <div className="lmbOrderInfoLabel">Typ</div>
+                        <div className="lmbOrderInfoValue">
+                          {order.orderType || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="lmbItemFooter">
+                      <div className="lmbMeta">
+                        {order.items?.slice(0, 2).map((item) => item.title).join(" · ") ||
+                          "Keine Positionen hinterlegt"}
+                        {order.items?.length > 2
+                          ? ` · +${order.items.length - 2} weitere`
+                          : ""}
+                      </div>
+
+                      <a href={`/admin/orders/${order.id}`} className="lmbSmallLink">
+                        Bestellung öffnen
+                      </a>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -907,22 +1165,71 @@ export default function CustomerDetailPage() {
               <input type="hidden" name="intent" value="saveBilling" />
 
               <div className="lmbFormGrid">
-                <Field label="Firma" name="companyName" defaultValue={customer.billing?.companyName || customer.companyName || ""} />
-                <Field label="Kontakt" name="contactName" defaultValue={customer.billing?.contactName || `${customer.firstName} ${customer.lastName || ""}`.trim()} />
-                <Field label="E-Mail" name="email" defaultValue={customer.billing?.email || customer.email || ""} />
-                <Field label="Rechnungs-E-Mail" name="invoiceEmail" defaultValue={customer.billing?.invoiceEmail || customer.email || ""} />
-                <Field label="Telefon" name="phone" defaultValue={customer.billing?.phone || customer.phone || ""} />
-                <Field label="USt-IdNr." name="vatId" defaultValue={customer.billing?.vatId || ""} />
-                <Field label="Straße" name="street" defaultValue={customer.billing?.street || ""} />
-                <Field label="Hausnummer" name="houseNumber" defaultValue={customer.billing?.houseNumber || ""} />
-                <Field label="PLZ" name="postalCode" defaultValue={customer.billing?.postalCode || ""} />
-                <Field label="Stadt" name="city" defaultValue={customer.billing?.city || ""} />
-                <Field label="Land" name="country" defaultValue={customer.billing?.country || "Deutschland"} />
+                <Field
+                  label="Firma"
+                  name="companyName"
+                  defaultValue={customer.billing?.companyName || customer.companyName || ""}
+                />
+                <Field
+                  label="Kontakt"
+                  name="contactName"
+                  defaultValue={
+                    customer.billing?.contactName ||
+                    `${customer.firstName} ${customer.lastName || ""}`.trim()
+                  }
+                />
+                <Field
+                  label="E-Mail"
+                  name="email"
+                  defaultValue={customer.billing?.email || customer.email || ""}
+                />
+                <Field
+                  label="Rechnungs-E-Mail"
+                  name="invoiceEmail"
+                  defaultValue={customer.billing?.invoiceEmail || customer.email || ""}
+                />
+                <Field
+                  label="Telefon"
+                  name="phone"
+                  defaultValue={customer.billing?.phone || customer.phone || ""}
+                />
+                <Field
+                  label="USt-IdNr."
+                  name="vatId"
+                  defaultValue={customer.billing?.vatId || ""}
+                />
+                <Field
+                  label="Straße"
+                  name="street"
+                  defaultValue={customer.billing?.street || ""}
+                />
+                <Field
+                  label="Hausnummer"
+                  name="houseNumber"
+                  defaultValue={customer.billing?.houseNumber || ""}
+                />
+                <Field
+                  label="PLZ"
+                  name="postalCode"
+                  defaultValue={customer.billing?.postalCode || ""}
+                />
+                <Field
+                  label="Stadt"
+                  name="city"
+                  defaultValue={customer.billing?.city || ""}
+                />
+                <Field
+                  label="Land"
+                  name="country"
+                  defaultValue={customer.billing?.country || "Deutschland"}
+                />
               </div>
 
               <div className="lmbActions">
                 <button type="submit" className="lmbBtn">
-                  {navigation.state === "submitting" ? "Speichert..." : "Rechnungsadresse speichern"}
+                  {navigation.state === "submitting"
+                    ? "Speichert..."
+                    : "Rechnungsadresse speichern"}
                 </button>
               </div>
             </Form>
@@ -1031,60 +1338,15 @@ export default function CustomerDetailPage() {
               )}
             </div>
           </section>
-
-          <section className="lmbCard lmbFull">
-            <div className="lmbEyebrow">Bestellungen</div>
-            <h2 className="lmbH2">Letzte Bestellungen</h2>
-
-            {customer.orders.length === 0 ? (
-              <p className="lmbEmpty">Keine Bestellungen vorhanden.</p>
-            ) : (
-              <div className="lmbList">
-                {customer.orders.map((order) => (
-                  <div key={order.id} className="lmbItem">
-                    <div className="lmbItemTop">
-                      <div>
-                        <strong>
-                          {order.orderNumber || order.shopifyOrderName || "Bestellung"}
-                        </strong>
-                        <br />
-                        Bestellt am: {formatDate(order.orderedAt || order.createdAt)}
-                        <br />
-                        Lieferung: {formatDate(order.deliveryDate)}
-                        <br />
-                        Betrag: {order.totalAmount ? euro(order.totalAmount) : "—"}
-                      </div>
-
-                      {order.status ? (
-                        <span className="lmbBadge open">{order.status}</span>
-                      ) : null}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
         </div>
       </div>
     </AdminLayout>
   );
 }
 
-function invoiceLabel(status) {
-  if (status === "BEZAHLT") return "Bezahlt";
-  if (status === "UEBERFAELLIG") return "Überfällig";
-  return "Offen";
-}
-
-function invoiceClass(status) {
-  if (status === "BEZAHLT") return "paid";
-  if (status === "UEBERFAELLIG") return "overdue";
-  return "open";
-}
-
-function Stat({ label, value }) {
+function Stat({ label, value, gold = false }) {
   return (
-    <div className="lmbStat">
+    <div className={`lmbStat ${gold ? "lmbStatGold" : ""}`}>
       <div className="lmbStatLabel">{label}</div>
       <div className="lmbStatValue">{value}</div>
     </div>

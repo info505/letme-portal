@@ -1,27 +1,53 @@
 import { redirect, useLoaderData } from "react-router";
 import { getUserFromRequest } from "../lib/auth.server.js";
-import { prisma } from "../lib/db.server.js";
+import { prisma } from "../lib/prisma.server.js";
+import { getLocaleFromRequest, dict } from "../lib/i18n.js";
+import { colors } from "../lib/ui.js";
+import PortalLayout from "../components/PortalLayout.jsx";
 
-function formatDate(date) {
+function formatDate(date, locale = "de") {
   if (!date) return "-";
-  return new Date(date).toLocaleDateString("de-DE");
+
+  return new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date(date));
 }
 
-function euro(value) {
+function formatMoney(value, locale = "de") {
   if (value === null || value === undefined) return "0,00 €";
+
   const num = Number(value);
-  if (Number.isNaN(num)) return "0,00 €";
-  return num.toLocaleString("de-DE", {
+
+  if (Number.isNaN(num)) {
+    return "0,00 €";
+  }
+
+  return new Intl.NumberFormat(locale === "en" ? "en-GB" : "de-DE", {
     style: "currency",
     currency: "EUR",
-  });
+  }).format(num);
+}
+
+function prettyStatus(status, locale = "de") {
+  if (status === "BEZAHLT") return locale === "en" ? "Paid" : "Bezahlt";
+  if (status === "UEBERFAELLIG") return locale === "en" ? "Overdue" : "Überfällig";
+  return locale === "en" ? "Open" : "Offen";
+}
+
+function statusClass(status) {
+  if (status === "BEZAHLT") return "paid";
+  if (status === "UEBERFAELLIG") return "overdue";
+  return "open";
 }
 
 export async function loader({ request }) {
+  const locale = getLocaleFromRequest(request);
   const user = await getUserFromRequest(request);
 
   if (!user) {
-    throw redirect("/login");
+    throw redirect(`/login?lang=${locale}`);
   }
 
   const invoices = await prisma.portalInvoice.findMany({
@@ -35,15 +61,16 @@ export async function loader({ request }) {
 
   const totalCount = invoices.length;
   const paidCount = invoices.filter((inv) => inv.status === "BEZAHLT").length;
+  const overdueCount = invoices.filter((inv) => inv.status === "UEBERFAELLIG").length;
   const openInvoices = invoices.filter((inv) => inv.status !== "BEZAHLT");
 
   const openAmount = openInvoices.reduce((sum, inv) => {
-    const value = inv.amountGross ? Number(inv.amountGross) : 0;
-    return sum + value;
+    return sum + Number(inv.amountGross || 0);
   }, 0);
 
   return {
     user,
+    locale,
     invoices: invoices.map((inv) => ({
       ...inv,
       createdAt: inv.createdAt.toISOString(),
@@ -54,522 +81,482 @@ export async function loader({ request }) {
     stats: {
       totalCount,
       paidCount,
+      overdueCount,
       openCount: openInvoices.length,
       openAmount,
     },
   };
 }
 
-const styles = {
-  page: {
-    minHeight: "100vh",
-    background: "#f7f4ee",
-    display: "grid",
-    gridTemplateColumns: "320px 1fr",
-    fontFamily: "Arial, sans-serif",
-    color: "#171717",
-  },
-  sidebar: {
-    background: "#fff",
-    borderRight: "1px solid #e7dfd1",
-    padding: "30px 22px",
-  },
-  logo: {
-    fontSize: "18px",
-    fontWeight: 800,
-    letterSpacing: "0.04em",
-    marginBottom: "24px",
-  },
-  profileCard: {
-    border: "1px solid #eadfcd",
-    borderRadius: "22px",
-    padding: "18px",
-    background: "#fbf8f2",
-    marginBottom: "28px",
-  },
-  avatar: {
-    width: "52px",
-    height: "52px",
-    borderRadius: "999px",
-    border: "1px solid #eadfcd",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: 800,
-    fontSize: "18px",
-    marginBottom: "14px",
-    color: "#7d6231",
-    background: "#fff",
-  },
-  profileName: {
-    fontSize: "16px",
-    fontWeight: 700,
-    marginBottom: "6px",
-  },
-  profileRole: {
-    fontSize: "14px",
-    color: "#6b655d",
-  },
-  nav: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-    marginBottom: "26px",
-  },
-  navItem: {
-    display: "block",
-    padding: "16px 18px",
-    borderRadius: "18px",
-    textDecoration: "none",
-    color: "#2b2b2b",
-    fontSize: "16px",
-    fontWeight: 600,
-  },
-  navItemActive: {
-    background: "#f5efe3",
-    border: "1px solid #e5d6bd",
-  },
-  actions: {
-    marginTop: "30px",
-    display: "grid",
-    gap: "14px",
-  },
-  primaryBtn: {
-    display: "block",
-    textAlign: "center",
-    textDecoration: "none",
-    background: "#111",
-    color: "#fff",
-    padding: "16px 20px",
-    borderRadius: "18px",
-    fontWeight: 700,
-  },
-  secondaryBtn: {
-    display: "block",
-    textAlign: "center",
-    textDecoration: "none",
-    background: "#fff",
-    color: "#8f2f1d",
-    padding: "16px 20px",
-    borderRadius: "18px",
-    fontWeight: 700,
-    border: "1px solid #eadfcd",
-  },
-  main: {
-    padding: "28px 30px",
-  },
-  topbar: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "26px",
-  },
-  titleWrap: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-  },
-  title: {
-    margin: 0,
-    fontSize: "52px",
-    lineHeight: 1.05,
-    fontWeight: 800,
-  },
-  subtitle: {
-    margin: 0,
-    fontSize: "18px",
-    color: "#666055",
-  },
-  langWrap: {
-    display: "flex",
-    gap: "10px",
-    background: "#f4efe6",
-    border: "1px solid #eadfcd",
-    padding: "6px",
-    borderRadius: "999px",
-  },
-  lang: {
-    padding: "12px 18px",
-    borderRadius: "999px",
-    fontWeight: 700,
-    color: "#5f574d",
-  },
-  langActive: {
-    background: "#fff",
-    color: "#171717",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-  },
-  contentGrid: {
-    display: "grid",
-    gridTemplateColumns: "1.2fr 0.95fr",
-    gap: "22px",
-    alignItems: "start",
-  },
-  card: {
-    background: "#fff",
-    border: "1px solid #e7dfd1",
-    borderRadius: "24px",
-    padding: "34px",
-  },
-  eyebrow: {
-    display: "inline-block",
-    fontSize: "14px",
-    letterSpacing: "0.12em",
-    textTransform: "uppercase",
-    color: "#b08b4f",
-    border: "1px solid #eadfcd",
-    borderRadius: "999px",
-    padding: "10px 16px",
-    marginBottom: "22px",
-    fontWeight: 700,
-    background: "#fbf8f2",
-  },
-  heroTitle: {
-    margin: "0 0 18px 0",
-    fontSize: "34px",
-    lineHeight: 1.15,
-    fontWeight: 800,
-  },
-  heroText: {
-    margin: "0 0 28px 0",
-    fontSize: "18px",
-    lineHeight: 1.7,
-    color: "#575247",
-  },
-  infoGrid: {
-    display: "grid",
-    gridTemplateColumns: "200px 1fr",
-    rowGap: "0",
-    columnGap: "0",
-    borderTop: "1px solid #ece5d8",
-    marginTop: "10px",
-  },
-  infoLabel: {
-    padding: "18px 0",
-    borderBottom: "1px solid #ece5d8",
-    color: "#696258",
-    fontWeight: 700,
-    fontSize: "14px",
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-  },
-  infoValue: {
-    padding: "18px 0",
-    borderBottom: "1px solid #ece5d8",
-    fontWeight: 700,
-    fontSize: "18px",
-  },
-  statCol: {
-    display: "grid",
-    gap: "18px",
-  },
-  statBox: {
-    border: "1px solid #e7dfd1",
-    borderRadius: "24px",
-    padding: "26px 24px",
-    background: "#fff",
-  },
-  statBoxGreen: {
-    background: "#edf6ed",
-    border: "1px solid #cfe7cf",
-  },
-  statBoxGold: {
-    background: "#fbf3e3",
-    border: "1px solid #efdcae",
-  },
-  statLabel: {
-    fontSize: "14px",
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-    color: "#666055",
-    fontWeight: 800,
-    marginBottom: "10px",
-  },
-  statValue: {
-    fontSize: "42px",
-    fontWeight: 800,
-    lineHeight: 1,
-    marginBottom: "10px",
-  },
-  statText: {
-    fontSize: "16px",
-    color: "#666055",
-    lineHeight: 1.5,
-  },
-  sectionCard: {
-    marginTop: "24px",
-    background: "#fff",
-    border: "1px solid #e7dfd1",
-    borderRadius: "24px",
-    padding: "34px",
-  },
-  sectionTitle: {
-    margin: "0 0 14px 0",
-    fontSize: "34px",
-    fontWeight: 800,
-  },
-  sectionText: {
-    margin: "0 0 26px 0",
-    fontSize: "18px",
-    lineHeight: 1.7,
-    color: "#666055",
-  },
-  invoiceList: {
-    display: "grid",
-    gap: "16px",
-  },
-  invoiceItem: {
-    border: "1px solid #ece5d8",
-    borderRadius: "20px",
-    padding: "22px",
-    background: "#fbf8f2",
-    display: "grid",
-    gridTemplateColumns: "1.3fr 1fr auto",
-    gap: "18px",
-    alignItems: "center",
-  },
-  invoiceMain: {
-    display: "grid",
-    gap: "8px",
-  },
-  invoiceNumber: {
-    fontSize: "22px",
-    fontWeight: 800,
-  },
-  invoiceMeta: {
-    fontSize: "15px",
-    color: "#666055",
-    lineHeight: 1.6,
-  },
-  badge: {
-    display: "inline-block",
-    padding: "8px 12px",
-    borderRadius: "999px",
-    fontSize: "13px",
-    fontWeight: 800,
-    letterSpacing: "0.04em",
-  },
-  badgeOpen: {
-    background: "#fbf3e3",
-    color: "#7a5a18",
-    border: "1px solid #efdcae",
-  },
-  badgePaid: {
-    background: "#edf6ed",
-    color: "#2f6b35",
-    border: "1px solid #cfe7cf",
-  },
-  badgeOverdue: {
-    background: "#fbeaea",
-    color: "#8a2d2d",
-    border: "1px solid #efc9c9",
-  },
-  invoiceAmount: {
-    fontSize: "26px",
-    fontWeight: 800,
-    textAlign: "right",
-  },
-  openLink: {
-    display: "inline-block",
-    textDecoration: "none",
-    background: "#111",
-    color: "#fff",
-    padding: "14px 18px",
-    borderRadius: "16px",
-    fontWeight: 700,
-    whiteSpace: "nowrap",
-  },
-  emptyBox: {
-    border: "1px dashed #e1d8ca",
-    borderRadius: "22px",
-    padding: "26px",
-    background: "#fffdfa",
-  },
-  emptyTitle: {
-    margin: "0 0 12px 0",
-    fontSize: "24px",
-    fontWeight: 800,
-  },
-  emptyText: {
-    margin: 0,
-    fontSize: "18px",
-    lineHeight: 1.7,
-    color: "#666055",
-  },
-};
-
-function statusLabel(status) {
-  if (status === "BEZAHLT") return "Bezahlt";
-  if (status === "UEBERFAELLIG") return "Überfällig";
-  return "Offen";
-}
-
-function statusStyle(status) {
-  if (status === "BEZAHLT") {
-    return { ...styles.badge, ...styles.badgePaid };
-  }
-  if (status === "UEBERFAELLIG") {
-    return { ...styles.badge, ...styles.badgeOverdue };
-  }
-  return { ...styles.badge, ...styles.badgeOpen };
-}
-
 export default function RechnungenPage() {
-  const { user, invoices, stats } = useLoaderData();
+  const { locale, invoices, stats } = useLoaderData();
+  const t = dict[locale] || dict.de;
 
   return (
-    <div style={styles.page}>
-      <aside style={styles.sidebar}>
-        <div style={styles.logo}>LET ME BOWL</div>
+    <PortalLayout
+      title={t.invoices || (locale === "en" ? "Invoices" : "Rechnungen")}
+      subtitle={
+        locale === "en"
+          ? "Here you can view and download all invoices assigned to your business account."
+          : "Hier findest du alle Rechnungen, die deinem Firmenkonto zugeordnet sind."
+      }
+    >
+      <style>{`
+        .lmbInvoicesPage {
+          display: grid;
+          gap: 18px;
+          max-width: 1180px;
+        }
 
-        <div style={styles.profileCard}>
-          <div style={styles.avatar}>
-            {(user.firstName?.[0] || user.companyName?.[0] || "A").toUpperCase()}
-          </div>
-          <div style={styles.profileName}>
-            {user.firstName} {user.lastName}
-          </div>
-          <div style={styles.profileRole}>{user.companyName}</div>
-        </div>
+        .lmbInvoicesHero {
+          position: relative;
+          overflow: hidden;
+          padding: 30px;
+          border-radius: 28px;
+          background:
+            radial-gradient(circle at top left, rgba(200,169,106,0.13), transparent 32%),
+            linear-gradient(180deg, #fcfaf6 0%, #f7f2e8 100%);
+          border: 1px solid rgba(226,218,203,0.95);
+          box-shadow: 0 18px 50px rgba(24,24,24,0.05);
+        }
 
-        <nav style={styles.nav}>
-          <a href="/konto?lang=de" style={styles.navItem}>Konto</a>
-          <a href="/bestellungen?lang=de" style={styles.navItem}>Bestellungen</a>
-          <a href="/rechnungsadresse?lang=de" style={styles.navItem}>Rechnungsadresse</a>
-          <a href="/lieferadressen?lang=de" style={styles.navItem}>Lieferadressen</a>
-          <a href="/kostenstellen?lang=de" style={styles.navItem}>Kostenstellen</a>
-          <a href="/rechnungen?lang=de" style={{ ...styles.navItem, ...styles.navItemActive }}>
-            Rechnungen
-          </a>
-        </nav>
+        .lmbInvoicesHero::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          background: linear-gradient(180deg, rgba(255,255,255,0.32), transparent 32%);
+        }
 
-        <div style={styles.actions}>
-          <a href="https://letmebowl-catering.de" style={styles.primaryBtn}>
-            Jetzt bestellen
-          </a>
-          <a href="/logout" style={styles.secondaryBtn}>
-            Abmelden
-          </a>
-        </div>
-      </aside>
+        .lmbInvoicesHeroInner {
+          position: relative;
+          z-index: 1;
+        }
 
-      <main style={styles.main}>
-        <div style={styles.topbar}>
-          <div style={styles.titleWrap}>
-            <h1 style={styles.title}>Rechnungen</h1>
-            <p style={styles.subtitle}>
-              Alle Rechnungen und Zahlungsstände deines Firmenkontos.
+        .lmbInvoicesEyebrow {
+          display: inline-flex;
+          align-items: center;
+          width: fit-content;
+          padding: 8px 12px;
+          border-radius: 999px;
+          border: 1px solid rgba(200,169,106,0.28);
+          background: rgba(255,255,255,0.72);
+          color: #b8934f;
+          font-size: 12px;
+          font-weight: 900;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          margin-bottom: 16px;
+        }
+
+        .lmbInvoicesTitle {
+          margin: 0;
+          font-size: clamp(34px, 5vw, 54px);
+          line-height: 0.98;
+          letter-spacing: -0.045em;
+          color: ${colors.text};
+          max-width: 760px;
+        }
+
+        .lmbInvoicesText {
+          margin: 14px 0 0;
+          max-width: 760px;
+          color: ${colors.muted};
+          line-height: 1.75;
+          font-size: 15px;
+          font-weight: 600;
+        }
+
+        .lmbInvoiceStats {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 14px;
+        }
+
+        .lmbInvoiceStat {
+          background: #fff;
+          border: 1px solid ${colors.border};
+          border-radius: 22px;
+          padding: 20px;
+          box-shadow: 0 12px 34px rgba(24,24,24,0.035);
+          min-width: 0;
+        }
+
+        .lmbInvoiceStat.isOpen {
+          background: #fff8e8;
+          border-color: #efdcae;
+        }
+
+        .lmbInvoiceStat.isPaid {
+          background: #edf7ee;
+          border-color: #cfe8d4;
+        }
+
+        .lmbInvoiceStatLabel {
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: ${colors.muted};
+          margin-bottom: 9px;
+        }
+
+        .lmbInvoiceStatValue {
+          font-size: 32px;
+          line-height: 1.05;
+          font-weight: 900;
+          color: ${colors.text};
+          letter-spacing: -0.04em;
+          overflow-wrap: anywhere;
+        }
+
+        .lmbInvoicesCard {
+          background: #fff;
+          border: 1px solid ${colors.border};
+          border-radius: 26px;
+          padding: 28px;
+          box-shadow: 0 18px 45px rgba(24,24,24,0.05);
+        }
+
+        .lmbInvoicesCardTitle {
+          margin: 0 0 8px;
+          font-size: 26px;
+          line-height: 1.1;
+          letter-spacing: -0.03em;
+          color: ${colors.text};
+        }
+
+        .lmbInvoicesCardText {
+          margin: 0 0 20px;
+          color: ${colors.muted};
+          font-size: 14px;
+          line-height: 1.65;
+          font-weight: 600;
+        }
+
+        .lmbInvoicesList {
+          display: grid;
+          gap: 14px;
+        }
+
+        .lmbInvoiceItem {
+          border: 1px solid #ece3d6;
+          border-radius: 22px;
+          padding: 20px;
+          background: #fcfaf6;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 18px;
+          align-items: start;
+        }
+
+        .lmbInvoiceNumber {
+          font-size: 21px;
+          line-height: 1.15;
+          font-weight: 900;
+          letter-spacing: -0.025em;
+          color: ${colors.text};
+          margin-bottom: 12px;
+          word-break: break-word;
+        }
+
+        .lmbInvoiceMeta {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px 18px;
+        }
+
+        .lmbInvoiceMetaItem span {
+          display: block;
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #9a8d7d;
+          margin-bottom: 4px;
+        }
+
+        .lmbInvoiceMetaItem strong {
+          display: block;
+          font-size: 14px;
+          color: #332f2a;
+          line-height: 1.45;
+          word-break: break-word;
+        }
+
+        .lmbInvoiceSide {
+          display: grid;
+          justify-items: end;
+          gap: 10px;
+        }
+
+        .lmbInvoiceAmount {
+          font-size: 24px;
+          line-height: 1.1;
+          font-weight: 900;
+          letter-spacing: -0.035em;
+          color: ${colors.text};
+          text-align: right;
+        }
+
+        .lmbInvoiceBadge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 7px 11px;
+          border-radius: 999px;
+          font-size: 12px;
+          font-weight: 900;
+          white-space: nowrap;
+        }
+
+        .lmbInvoiceBadge.open {
+          background: #fbf3e3;
+          color: #7a5a18;
+          border: 1px solid #efdcae;
+        }
+
+        .lmbInvoiceBadge.paid {
+          background: #edf6ed;
+          color: #2f6b35;
+          border: 1px solid #cfe7cf;
+        }
+
+        .lmbInvoiceBadge.overdue {
+          background: #fbeaea;
+          color: #8a2d2d;
+          border: 1px solid #efc9c9;
+        }
+
+        .lmbPdfButton {
+          text-decoration: none;
+          background: #111;
+          color: #fff;
+          padding: 12px 14px;
+          border-radius: 14px;
+          font-size: 14px;
+          font-weight: 900;
+          white-space: nowrap;
+        }
+
+        .lmbEmptyInvoices {
+          border: 1px dashed ${colors.border};
+          border-radius: 22px;
+          padding: 34px 20px;
+          background: #fffdfa;
+          color: ${colors.muted};
+          font-weight: 700;
+          line-height: 1.65;
+          text-align: center;
+        }
+
+        .lmbEmptyInvoices strong {
+          display: block;
+          color: ${colors.text};
+          font-size: 20px;
+          margin-bottom: 8px;
+        }
+
+        @media (max-width: 980px) {
+          .lmbInvoiceStats {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+
+          .lmbInvoiceItem {
+            grid-template-columns: 1fr;
+          }
+
+          .lmbInvoiceSide {
+            justify-items: start;
+          }
+
+          .lmbInvoiceAmount {
+            text-align: left;
+          }
+        }
+
+        @media (max-width: 700px) {
+          .lmbInvoicesHero,
+          .lmbInvoicesCard {
+            padding: 20px 16px;
+            border-radius: 22px;
+          }
+
+          .lmbInvoiceStats {
+            grid-template-columns: 1fr;
+          }
+
+          .lmbInvoiceMeta {
+            grid-template-columns: 1fr;
+          }
+
+          .lmbInvoiceItem {
+            padding: 16px;
+            border-radius: 20px;
+          }
+
+          .lmbPdfButton {
+            width: 100%;
+            text-align: center;
+          }
+        }
+      `}</style>
+
+      <div className="lmbInvoicesPage">
+        <section className="lmbInvoicesHero">
+          <div className="lmbInvoicesHeroInner">
+            <div className="lmbInvoicesEyebrow">
+              {locale === "en" ? "Invoices" : "Rechnungen"}
+            </div>
+
+            <h1 className="lmbInvoicesTitle">
+              {locale === "en"
+                ? "Your invoices at a glance."
+                : "Deine Rechnungen auf einen Blick."}
+            </h1>
+
+            <p className="lmbInvoicesText">
+              {locale === "en"
+                ? "All invoices assigned to your business account are listed here. You can open and download each PDF directly."
+                : "Alle deinem Firmenkonto zugeordneten Rechnungen werden hier angezeigt. Du kannst jede PDF direkt öffnen und herunterladen."}
             </p>
           </div>
+        </section>
 
-          <div style={styles.langWrap}>
-            <div style={{ ...styles.lang, ...styles.langActive }}>DE</div>
-            <div style={styles.lang}>EN</div>
-          </div>
-        </div>
+        <section className="lmbInvoiceStats">
+          <Stat
+            label={locale === "en" ? "Total" : "Gesamt"}
+            value={String(stats.totalCount)}
+          />
 
-        <div style={styles.contentGrid}>
-          <div style={styles.card}>
-            <div style={styles.eyebrow}>Rechnungsbereich</div>
-            <h2 style={styles.heroTitle}>
-              Rechnungen sauber pro Firmenkonto bereitstellen.
-            </h2>
-            <p style={styles.heroText}>
-              Hier erscheinen ausschließlich Rechnungen, die deinem aktuellen
-              Kundenkonto direkt zugeordnet wurden.
-            </p>
+          <Stat
+            label={locale === "en" ? "Open" : "Offen"}
+            value={String(stats.openCount)}
+            className="isOpen"
+          />
 
-            <div style={styles.infoGrid}>
-              <div style={styles.infoLabel}>Firma</div>
-              <div style={styles.infoValue}>{user.companyName}</div>
+          <Stat
+            label={locale === "en" ? "Paid" : "Bezahlt"}
+            value={String(stats.paidCount)}
+            className="isPaid"
+          />
 
-              <div style={styles.infoLabel}>Kontakt</div>
-              <div style={styles.infoValue}>
-                {user.firstName} {user.lastName}
-              </div>
+          <Stat
+            label={locale === "en" ? "Open amount" : "Offener Betrag"}
+            value={formatMoney(stats.openAmount, locale)}
+          />
+        </section>
 
-              <div style={styles.infoLabel}>E-Mail</div>
-              <div style={styles.infoValue}>{user.email}</div>
-            </div>
-          </div>
+        <section className="lmbInvoicesCard">
+          <h2 className="lmbInvoicesCardTitle">
+            {locale === "en" ? "Invoice list" : "Rechnungsliste"}
+          </h2>
 
-          <div style={styles.statCol}>
-            <div style={styles.statBox}>
-              <div style={styles.statLabel}>Gesamt</div>
-              <div style={styles.statValue}>{stats.totalCount}</div>
-              <div style={styles.statText}>Aktuell sichtbare Rechnungen.</div>
-            </div>
-
-            <div style={{ ...styles.statBox, ...styles.statBoxGreen }}>
-              <div style={styles.statLabel}>Bezahlt</div>
-              <div style={styles.statValue}>{stats.paidCount}</div>
-              <div style={styles.statText}>Bereits beglichene Rechnungen.</div>
-            </div>
-
-            <div style={{ ...styles.statBox, ...styles.statBoxGold }}>
-              <div style={styles.statLabel}>Offen</div>
-              <div style={styles.statValue}>{stats.openCount}</div>
-              <div style={styles.statText}>Noch nicht bezahlte Rechnungen.</div>
-            </div>
-
-            <div style={styles.statBox}>
-              <div style={styles.statLabel}>Offener Betrag</div>
-              <div style={styles.statValue}>{euro(stats.openAmount)}</div>
-              <div style={styles.statText}>Noch ausstehender Gesamtbetrag.</div>
-            </div>
-          </div>
-        </div>
-
-        <section style={styles.sectionCard}>
-          <h2 style={styles.sectionTitle}>Rechnungen</h2>
-          <p style={styles.sectionText}>
-            Hier findest du alle deinem Firmenkonto zugeordneten PDF-Rechnungen.
+          <p className="lmbInvoicesCardText">
+            {locale === "en"
+              ? "Open, paid and overdue invoices are shown here with due date and amount."
+              : "Offene, bezahlte und überfällige Rechnungen werden hier mit Fälligkeit und Betrag angezeigt."}
           </p>
 
           {invoices.length === 0 ? (
-            <div style={styles.emptyBox}>
-              <h3 style={styles.emptyTitle}>Noch keine Rechnungen hinterlegt</h3>
-              <p style={styles.emptyText}>
-                Sobald deinem Konto Rechnungen zugeordnet wurden, erscheinen sie
-                genau hier.
-              </p>
+            <div className="lmbEmptyInvoices">
+              <strong>
+                {locale === "en"
+                  ? "No invoices available yet"
+                  : "Noch keine Rechnungen vorhanden"}
+              </strong>
+
+              {locale === "en"
+                ? "As soon as invoices are assigned to your account, they will appear here."
+                : "Sobald deinem Konto Rechnungen zugeordnet wurden, erscheinen sie hier."}
             </div>
           ) : (
-            <div style={styles.invoiceList}>
-              {invoices.map((inv) => (
-                <div key={inv.id} style={styles.invoiceItem}>
-                  <div style={styles.invoiceMain}>
-                    <div style={styles.invoiceNumber}>{inv.invoiceNumber}</div>
-                    <div style={styles.invoiceMeta}>
-                      Rechnungsdatum: {formatDate(inv.issueDate || inv.createdAt)}
-                      <br />
-                      Fällig am: {formatDate(inv.dueDate)}
-                      <br />
-                      Status:{" "}
-                      <span style={statusStyle(inv.status)}>
-                        {statusLabel(inv.status)}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div style={styles.invoiceAmount}>
-                    {inv.amountGross ? euro(inv.amountGross) : "—"}
-                  </div>
-
-                  <a
-                    href={inv.pdfUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={styles.openLink}
-                  >
-                    PDF öffnen
-                  </a>
-                </div>
+            <div className="lmbInvoicesList">
+              {invoices.map((invoice) => (
+                <InvoiceItem key={invoice.id} invoice={invoice} locale={locale} />
               ))}
             </div>
           )}
         </section>
-      </main>
+      </div>
+    </PortalLayout>
+  );
+}
+
+function Stat({ label, value, className = "" }) {
+  return (
+    <div className={`lmbInvoiceStat ${className}`}>
+      <div className="lmbInvoiceStatLabel">{label}</div>
+      <div className="lmbInvoiceStatValue">{value}</div>
+    </div>
+  );
+}
+
+function InvoiceItem({ invoice, locale }) {
+  return (
+    <article className="lmbInvoiceItem">
+      <div>
+        <div className="lmbInvoiceNumber">
+          {invoice.title || invoice.invoiceNumber}
+        </div>
+
+        <div className="lmbInvoiceMeta">
+          <Meta
+            label={locale === "en" ? "Invoice number" : "Rechnungsnummer"}
+            value={invoice.invoiceNumber}
+          />
+          <Meta
+            label={locale === "en" ? "Status" : "Status"}
+            value={prettyStatus(invoice.status, locale)}
+          />
+          <Meta
+            label={locale === "en" ? "Invoice date" : "Rechnungsdatum"}
+            value={formatDate(invoice.issueDate || invoice.createdAt, locale)}
+          />
+          <Meta
+            label={locale === "en" ? "Due date" : "Fällig am"}
+            value={formatDate(invoice.dueDate, locale)}
+          />
+          <Meta
+            label={locale === "en" ? "Uploaded" : "Hochgeladen"}
+            value={formatDate(invoice.createdAt, locale)}
+          />
+          <Meta
+            label={locale === "en" ? "File" : "Datei"}
+            value={invoice.originalName || "PDF"}
+          />
+        </div>
+      </div>
+
+      <div className="lmbInvoiceSide">
+        <div className="lmbInvoiceAmount">
+          {invoice.amountGross ? formatMoney(invoice.amountGross, locale) : "—"}
+        </div>
+
+        <span className={`lmbInvoiceBadge ${statusClass(invoice.status)}`}>
+          {prettyStatus(invoice.status, locale)}
+        </span>
+
+        {invoice.pdfUrl ? (
+          <a
+            href={invoice.pdfUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="lmbPdfButton"
+          >
+            {locale === "en" ? "Open PDF" : "PDF öffnen"}
+          </a>
+        ) : null}
+      </div>
+    </article>
+  );
+}
+
+function Meta({ label, value }) {
+  return (
+    <div className="lmbInvoiceMetaItem">
+      <span>{label}</span>
+      <strong>{value || "-"}</strong>
     </div>
   );
 }

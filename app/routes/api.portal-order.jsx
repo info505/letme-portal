@@ -1,224 +1,450 @@
+import { json } from "@react-router/node";
 import { prisma } from "../lib/prisma.server.js";
-import { getUserFromRequest } from "../lib/auth.server.js";
+import { sendMail } from "../lib/mail.server.js";
 
-function getCorsHeaders(origin) {
-  const allowedOrigins = new Set([
-    "https://letmebowl-catering.de",
-    "https://www.letmebowl-catering.de",
-  ]);
+function safeText(value) {
+  if (value === null || value === undefined) return "";
+  return String(value).trim();
+}
 
-  const safeOrigin = allowedOrigins.has(origin)
-    ? origin
-    : "https://letmebowl-catering.de";
+function parseItems(rawItems) {
+  try {
+    if (!rawItems) return [];
+    if (Array.isArray(rawItems)) return rawItems;
+
+    const parsed = JSON.parse(rawItems);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.error("Items konnten nicht gelesen werden:", error);
+    return [];
+  }
+}
+
+function centsToEuro(cents) {
+  const value = Number(cents || 0) / 100;
+  if (Number.isNaN(value)) return 0;
+  return value;
+}
+
+function euroText(value) {
+  return new Intl.NumberFormat("de-DE", {
+    style: "currency",
+    currency: "EUR",
+  }).format(Number(value || 0));
+}
+
+function isTruthy(value) {
+  return value === true || value === "true" || value === "Ja" || value === "1";
+}
+
+function makeOrderNumber() {
+  const now = new Date();
+
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+
+  const random = Math.random().toString(36).slice(2, 7).toUpperCase();
+
+  return `LMB-${yyyy}${mm}${dd}-${random}`;
+}
+
+function parseDeliveryDate(dateValue, timeValue) {
+  const date = safeText(dateValue);
+  const time = safeText(timeValue) || "00:00";
+
+  if (!date) return null;
+
+  const parsed = new Date(`${date}T${time}:00`);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return parsed;
+}
+
+function normalizeOrderData(data) {
+  const customerEmail =
+    data.customerEmail ||
+    data.portalCustomerEmail ||
+    data.contactEmail ||
+    "";
+
+  const customerName =
+    data.customerName ||
+    data.portalCustomerName ||
+    data.contactName ||
+    "";
+
+  const customerCompany =
+    data.customerCompany ||
+    data.portalCustomerCompany ||
+    data.deliveryCompany ||
+    data.billingCompany ||
+    "";
 
   return {
-    "Access-Control-Allow-Origin": safeOrigin,
-    "Access-Control-Allow-Credentials": "true",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-    Vary: "Origin",
+    ...data,
+
+    portalCustomerId: safeText(data.portalCustomerId || data.portalUserId || ""),
+
+    customerEmail: safeText(customerEmail).toLowerCase(),
+    customerName: safeText(customerName),
+    customerCompany: safeText(customerCompany),
+
+    contactEmail: safeText(
+      data.contactEmail || data.customerEmail || data.portalCustomerEmail || ""
+    ).toLowerCase(),
+
+    contactName: safeText(
+      data.contactName || data.customerName || data.portalCustomerName || ""
+    ),
+
+    contactPhone: safeText(data.contactPhone || data.customerPhone || ""),
+
+    deliveryType: safeText(data.deliveryType || ""),
+    deliveryDate: safeText(data.deliveryDate || ""),
+    deliveryTime: safeText(data.deliveryTime || ""),
+    eventTime: safeText(data.eventTime || ""),
+
+    deliveryCompany: safeText(data.deliveryCompany || customerCompany),
+    deliveryStreet: safeText(data.deliveryStreet || ""),
+    deliveryZip: safeText(data.deliveryZip || ""),
+    deliveryCity: safeText(data.deliveryCity || ""),
+    deliveryExtra: safeText(data.deliveryExtra || ""),
+
+    billingCompany: safeText(data.billingCompany || customerCompany),
+    billingStreet: safeText(data.billingStreet || ""),
+    billingZip: safeText(data.billingZip || ""),
+    billingCity: safeText(data.billingCity || ""),
+    billingExtra: safeText(data.billingExtra || ""),
+
+    costCenterName: safeText(data.costCenterName || data.portalCostCenterName || ""),
+    costCenterCode: safeText(data.costCenterCode || data.portalCostCenterCode || ""),
+
+    internalReference: safeText(data.internalReference || ""),
+    note: safeText(data.note || ""),
+
+    invoiceAllowed: isTruthy(data.invoiceAllowed || data.invoiceApproved),
+
+    subtotalAmountCents:
+      data.subtotalAmountCents ||
+      data.cartTotalCents ||
+      data.totalAmountCents ||
+      0,
+
+    taxAmountCents: data.taxAmountCents || 0,
+
+    totalAmountCents:
+      data.totalAmountCents ||
+      data.cartTotalCents ||
+      data.subtotalAmountCents ||
+      0,
+
+    currency: safeText(data.currency || "EUR"),
+
+    items: parseItems(data.items),
   };
 }
 
-function jsonResponse(data, init = {}) {
-  const headers = new Headers(init.headers || {});
-  headers.set("Content-Type", "application/json");
-  return new Response(JSON.stringify(data), {
-    ...init,
-    headers,
+async function findOrCreateOrderUser(data) {
+  if (data.portalCustomerId) {
+    const userById = await prisma.portalUser.findUnique({
+      where: {
+        id: data.portalCustomerId,
+      },
+    });
+
+    if (userById) return userById;
+  }
+
+  if (data.contactEmail || data.customerEmail) {
+    const email = data.contactEmail || data.customerEmail;
+
+    const userByEmail = await prisma.portalUser.findFirst({
+      where: {
+        email,
+      },
+    });
+
+    if (userByEmail) return userByEmail;
+  }
+
+  const email =
+    data.contactEmail ||
+    data.customerEmail ||
+    `gast-${Date.now()}@letmebowl.local`;
+
+  const usernameBase =
+    email.includes("@") ? email.split("@")[0] : `gast-${Date.now()}`;
+
+  let username = usernameBase.toLowerCase().replace(/[^a-z0-9._-]/g, "-");
+
+  const existingUsername = await prisma.portalUser.findUnique({
+    where: {
+      username,
+    },
   });
-}
 
-function toDecimal(valueInCents) {
-  const num = Number(valueInCents || 0);
-  return Number((num / 100).toFixed(2));
-}
+  if (existingUsername) {
+    username = `${username}-${Date.now()}`;
+  }
 
-function clean(value) {
-  const v = String(value ?? "").trim();
-  return v || null;
-}
+  const nameParts = safeText(data.contactName || data.customerName).split(" ");
 
-function buildOrderNumber() {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  const h = String(now.getHours()).padStart(2, "0");
-  const min = String(now.getMinutes()).padStart(2, "0");
-  const s = String(now.getSeconds()).padStart(2, "0");
-  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+  const firstName = nameParts[0] || "Gast";
+  const lastName = nameParts.slice(1).join(" ") || "Bestellung";
 
-  return `LMB-${y}${m}${d}-${h}${min}${s}-${rand}`;
-}
+  const user = await prisma.portalUser.create({
+    data: {
+      companyName: data.customerCompany || data.billingCompany || data.deliveryCompany || "Gastbestellung",
+      firstName,
+      lastName,
+      username,
+      email,
+      phone: data.contactPhone || "",
+      passwordHash: "NO_LOGIN_ORDER_USER",
 
-export async function loader({ request }) {
-  const origin = request.headers.get("Origin") || "";
-  return new Response(null, {
-    status: 204,
-    headers: getCorsHeaders(origin),
+      isActive: false,
+      isAdmin: false,
+      role: "ORDERER",
+      mustResetPassword: false,
+      invoicePurchaseEnabled: false,
+    },
   });
+
+  return user;
+}
+
+function buildOwnerEmailText(data, orderNumber) {
+  const itemsText = data.items
+    .map((item) => {
+      return `- ${safeText(item.title)} | Menge: ${item.quantity || 1} | Summe: ${euroText(
+        centsToEuro(item.totalPriceCents || 0)
+      )}`;
+    })
+    .join("\n");
+
+  return `
+Neue Let Me Bowl Bestellung
+
+Bestellnummer: ${orderNumber}
+
+Kunde:
+Firma: ${data.customerCompany || "-"}
+Kontakt: ${data.contactName || data.customerName || "-"}
+E-Mail: ${data.contactEmail || data.customerEmail || "-"}
+Telefon: ${data.contactPhone || "-"}
+
+Termin:
+Lieferart: ${data.deliveryType || "-"}
+Datum: ${data.deliveryDate || "-"}
+Zeit: ${data.deliveryTime || "-"}
+Eventbeginn: ${data.eventTime || "-"}
+
+Kostenstelle:
+${data.costCenterName || "-"} ${data.costCenterCode ? "· " + data.costCenterCode : ""}
+
+Artikel:
+${itemsText || "Keine Artikel übermittelt."}
+
+Gesamt:
+${euroText(centsToEuro(data.totalAmountCents))}
+
+Lieferadresse:
+Firma: ${data.deliveryCompany || "-"}
+Straße: ${data.deliveryStreet || "-"}
+PLZ/Ort: ${data.deliveryZip || "-"} ${data.deliveryCity || ""}
+Zusatz: ${data.deliveryExtra || "-"}
+
+Rechnungsadresse:
+Firma: ${data.billingCompany || "-"}
+Straße: ${data.billingStreet || "-"}
+PLZ/Ort: ${data.billingZip || "-"} ${data.billingCity || ""}
+Zusatz: ${data.billingExtra || "-"}
+
+Hinweise:
+${data.internalReference || "-"}
+
+Technische Notiz:
+${data.note || "-"}
+  `.trim();
+}
+
+function buildCustomerEmailText(data, orderNumber) {
+  const itemsText = data.items
+    .map((item) => {
+      return `- ${safeText(item.title)} | Menge: ${item.quantity || 1} | Summe: ${euroText(
+        centsToEuro(item.totalPriceCents || 0)
+      )}`;
+    })
+    .join("\n");
+
+  return `
+Vielen Dank für deine Bestellung.
+
+Wir haben deine Firmenbestellung erhalten und prüfen die Angaben.
+
+Bestellnummer: ${orderNumber}
+
+Übersicht:
+Firma: ${data.customerCompany || "-"}
+Kontakt: ${data.contactName || data.customerName || "-"}
+Lieferart: ${data.deliveryType || "-"}
+Datum: ${data.deliveryDate || "-"}
+Zeit: ${data.deliveryTime || "-"}
+Eventbeginn: ${data.eventTime || "-"}
+
+Artikel:
+${itemsText || "Keine Artikel übermittelt."}
+
+Gesamt:
+${euroText(centsToEuro(data.totalAmountCents))}
+
+Die Rechnung folgt separat nach dem vereinbarten Abrechnungsprozess.
+  `.trim();
 }
 
 export async function action({ request }) {
-  const origin = request.headers.get("Origin") || "";
-  const corsHeaders = getCorsHeaders(origin);
-
   try {
-    const user = await getUserFromRequest(request);
+    const contentType = request.headers.get("content-type") || "";
 
-    if (!user) {
-      return jsonResponse(
-        { ok: false, message: "Nicht eingeloggt." },
-        { status: 401, headers: corsHeaders }
-      );
-    }
+    let rawData = {};
 
-    const formData = await request.formData();
+    if (contentType.includes("application/json")) {
+      rawData = await request.json();
+    } else {
+      const formData = await request.formData();
 
-    const currency = String(formData.get("currency") || "EUR");
-    const deliveryType = String(formData.get("deliveryType") || "").trim();
-
-    const deliveryDate = String(formData.get("deliveryDate") || "").trim();
-    const deliveryTime = String(formData.get("deliveryTime") || "").trim();
-    const eventTime = String(formData.get("eventTime") || "").trim();
-
-    const contactName = String(formData.get("contactName") || "").trim();
-    const contactFirstName = String(formData.get("contactFirstName") || "").trim();
-    const contactLastName = String(formData.get("contactLastName") || "").trim();
-    const contactEmail = String(formData.get("contactEmail") || "").trim();
-    const contactPhone = String(formData.get("contactPhone") || "").trim();
-
-    const internalReference = String(formData.get("internalReference") || "").trim();
-    const note = String(formData.get("note") || "").trim();
-
-    const deliveryAddressId = clean(formData.get("portalDeliveryAddressId"));
-    const deliveryAddressLabel = String(formData.get("portalDeliveryAddressLabel") || "").trim();
-    const deliveryAddressFull = String(formData.get("portalDeliveryAddressFull") || "").trim();
-
-    const costCenterId = clean(formData.get("portalCostCenterId"));
-    const costCenterName = String(formData.get("portalCostCenterName") || "").trim();
-    const costCenterCode = String(formData.get("portalCostCenterCode") || "").trim();
-
-    const deliveryCompany = String(formData.get("deliveryCompany") || "").trim();
-    const deliveryStreet = String(formData.get("deliveryStreet") || "").trim();
-    const deliveryZip = String(formData.get("deliveryZip") || "").trim();
-    const deliveryCity = String(formData.get("deliveryCity") || "").trim();
-    const deliveryExtra = String(formData.get("deliveryExtra") || "").trim();
-
-    const billingCompany = String(formData.get("billingCompany") || "").trim();
-    const billingStreet = String(formData.get("billingStreet") || "").trim();
-    const billingZip = String(formData.get("billingZip") || "").trim();
-    const billingCity = String(formData.get("billingCity") || "").trim();
-    const billingExtra = String(formData.get("billingExtra") || "").trim();
-
-    const subtotalAmount = toDecimal(formData.get("subtotalAmountCents"));
-    const taxAmount = toDecimal(formData.get("taxAmountCents"));
-    const totalAmount = toDecimal(formData.get("totalAmountCents"));
-
-    const rawItems = String(formData.get("items") || "[]");
-    const items = JSON.parse(rawItems);
-
-    if (!Array.isArray(items) || items.length === 0) {
-      return jsonResponse(
-        { ok: false, message: "Keine Positionen gefunden." },
-        { status: 400, headers: corsHeaders }
-      );
-    }
-
-    let parsedDeliveryDate = null;
-    if (deliveryDate) {
-      parsedDeliveryDate = new Date(`${deliveryDate}T12:00:00`);
-      if (Number.isNaN(parsedDeliveryDate.getTime())) {
-        parsedDeliveryDate = null;
+      for (const [key, value] of formData.entries()) {
+        rawData[key] = value;
       }
     }
+
+    const data = normalizeOrderData(rawData);
+
+    const user = await findOrCreateOrderUser(data);
+
+    const orderNumber = makeOrderNumber();
+
+    const deliveryDate = parseDeliveryDate(data.deliveryDate, data.deliveryTime);
+
+    const referenceParts = [];
+
+    if (data.costCenterName) referenceParts.push(data.costCenterName);
+    if (data.costCenterCode) referenceParts.push(data.costCenterCode);
+    if (data.internalReference) referenceParts.push(data.internalReference);
 
     const order = await prisma.portalOrder.create({
       data: {
         userId: user.id,
-        orderNumber: buildOrderNumber(),
-        orderType: deliveryType || null,
-        currency: currency || "EUR",
+        orderNumber,
+        orderType: data.deliveryType || null,
+        status: "OPEN",
+        currency: data.currency || "EUR",
 
-        billingContactName: contactName || null,
-        billingEmail: contactEmail || null,
-        billingPhone: contactPhone || null,
-        billingCompanyName:
-          billingCompany || deliveryCompany || user.companyName || null,
+        billingContactName: data.contactName || data.customerName || null,
+        billingEmail: data.contactEmail || data.customerEmail || null,
+        billingPhone: data.contactPhone || null,
+        billingCompanyName: data.billingCompany || data.customerCompany || null,
 
-        deliveryAddressId,
-        costCenterId,
-        referenceNumber: internalReference || null,
+        referenceNumber: referenceParts.filter(Boolean).join(" · ") || null,
 
-        subtotalAmount,
-        taxAmount,
-        totalAmount,
+        subtotalAmount: centsToEuro(data.subtotalAmountCents),
+        taxAmount: centsToEuro(data.taxAmountCents),
+        totalAmount: centsToEuro(data.totalAmountCents),
 
-        notes: note || null,
-        deliveryDate: parsedDeliveryDate,
+        notes: [
+          data.note || "",
+          data.internalReference ? `Hinweis: ${data.internalReference}` : "",
+          data.deliveryType ? `Lieferart: ${data.deliveryType}` : "",
+          data.deliveryDate ? `Datum: ${data.deliveryDate}` : "",
+          data.deliveryTime ? `Zeit: ${data.deliveryTime}` : "",
+          data.eventTime ? `Eventbeginn: ${data.eventTime}` : "",
+          data.deliveryStreet || data.deliveryCity
+            ? `Lieferadresse: ${data.deliveryCompany || ""}, ${data.deliveryStreet || ""}, ${data.deliveryZip || ""} ${data.deliveryCity || ""}, ${data.deliveryExtra || ""}`
+            : "",
+          data.billingStreet || data.billingCity
+            ? `Rechnungsadresse: ${data.billingCompany || ""}, ${data.billingStreet || ""}, ${data.billingZip || ""} ${data.billingCity || ""}, ${data.billingExtra || ""}`
+            : "",
+        ]
+          .filter(Boolean)
+          .join("\n\n"),
+
+        deliveryDate,
 
         items: {
-          create: items.map((item) => ({
-            title: String(item.title || "").trim() || "Produkt",
+          create: data.items.map((item) => ({
+            title: safeText(item.title) || "Artikel",
             quantity: Number(item.quantity || 1),
-            unit: clean(item.unit),
-            unitPrice:
-              item.unitPriceCents != null ? toDecimal(item.unitPriceCents) : null,
-            totalPrice:
-              item.totalPriceCents != null ? toDecimal(item.totalPriceCents) : null,
-            notes: clean(item.notes),
+            unit: safeText(item.unit || ""),
+            unitPrice: centsToEuro(item.unitPriceCents || 0),
+            totalPrice: centsToEuro(item.totalPriceCents || 0),
+            notes: safeText(item.notes || ""),
 
             shopifyProductId:
-              item.productId != null ? String(item.productId) : null,
+              item.productId !== null && item.productId !== undefined
+                ? String(item.productId)
+                : null,
+
             shopifyVariantId:
-              item.variantId != null ? String(item.variantId) : null,
-            shopifyHandle: clean(item.handle),
-            variantTitle: clean(item.variantTitle),
-            sku: clean(item.sku),
+              item.variantId !== null && item.variantId !== undefined
+                ? String(item.variantId)
+                : null,
+
+            shopifyHandle: safeText(item.handle || ""),
+            variantTitle: safeText(item.variantTitle || ""),
+            sku: safeText(item.sku || ""),
           })),
         },
       },
       include: {
         items: true,
+        user: true,
       },
     });
 
-    return jsonResponse(
-      {
-        ok: true,
-        orderId: order.id,
-        orderNumber: order.orderNumber,
-        meta: {
-          deliveryAddressLabel,
-          deliveryAddressFull,
-          costCenterName,
-          costCenterCode,
-          contactFirstName,
-          contactLastName,
-          eventTime,
-          deliveryTime,
-          deliveryStreet,
-          deliveryZip,
-          deliveryCity,
-          deliveryExtra,
-          billingStreet,
-          billingZip,
-          billingCity,
-          billingExtra,
-        },
-      },
-      { headers: corsHeaders }
-    );
-  } catch (error) {
-    console.error("portal-order create error", error);
+    try {
+      const ownerEmail =
+        process.env.ORDER_NOTIFICATION_EMAIL ||
+        process.env.ORDER_MAIL_TO ||
+        "info@letmebowl-catering.de";
 
-    return jsonResponse(
+      await sendMail({
+        to: ownerEmail,
+        subject: `Neue Bestellung: ${order.orderNumber} – ${
+          data.customerCompany || data.contactName || "Kunde"
+        }`,
+        text: buildOwnerEmailText(data, order.orderNumber),
+      });
+
+      if (data.contactEmail || data.customerEmail) {
+        await sendMail({
+          to: data.contactEmail || data.customerEmail,
+          subject: "Deine Bestellung bei Let Me Bowl wurde erhalten",
+          text: buildCustomerEmailText(data, order.orderNumber),
+        });
+      }
+    } catch (mailError) {
+      console.error("Bestellung wurde gespeichert, aber E-Mail konnte nicht gesendet werden:", mailError);
+    }
+
+    return json({
+      ok: true,
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+    });
+  } catch (error) {
+    console.error("api.portal-order Fehler:", error);
+
+    return json(
       {
         ok: false,
-        message: "Portal-Bestellung konnte nicht gespeichert werden.",
+        error: "Bestellung konnte nicht gespeichert werden.",
+        detail: String(error?.message || error),
       },
-      { status: 500, headers: corsHeaders }
+      { status: 500 }
     );
   }
 }

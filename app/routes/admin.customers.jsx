@@ -1,49 +1,186 @@
 import { redirect, useLoaderData, Form } from "react-router";
 import { useMemo, useState } from "react";
 import bcrypt from "bcryptjs";
-import { Resend } from "resend";
 import { getUserFromRequest } from "../lib/auth.server.js";
 import { prisma } from "../lib/prisma.server.js";
 import AdminLayout from "../components/AdminLayout.jsx";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function safeText(value) {
+  if (value === null || value === undefined) return "";
+  return String(value).trim();
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function getMailjetConfig() {
+  const apiKey =
+    process.env.MAILJET_API_KEY ||
+    process.env.MJ_APIKEY_PUBLIC ||
+    process.env.SMTP_USER;
+
+  const secretKey =
+    process.env.MAILJET_SECRET_KEY ||
+    process.env.MJ_APIKEY_PRIVATE ||
+    process.env.SMTP_PASS;
+
+  const fromEmail =
+    process.env.MAIL_FROM_EMAIL ||
+    process.env.MAILJET_FROM_EMAIL ||
+    "info@letmebowl-catering.de";
+
+  const fromName =
+    process.env.MAIL_FROM_NAME ||
+    process.env.MAILJET_FROM_NAME ||
+    "Let Me Bowl Catering";
+
+  const bccEmail = process.env.MAIL_BCC || "";
+
+  return {
+    apiKey,
+    secretKey,
+    fromEmail,
+    fromName,
+    bccEmail,
+    configured: Boolean(apiKey && secretKey && fromEmail),
+  };
+}
+
+async function sendMailjetMessages(messages) {
+  const config = getMailjetConfig();
+
+  if (!config.configured) {
+    console.warn("Mailjet ist nicht vollständig konfiguriert.");
+    return {
+      sent: false,
+      reason: "Mailjet Variablen fehlen",
+    };
+  }
+
+  const auth = Buffer.from(`${config.apiKey}:${config.secretKey}`).toString(
+    "base64"
+  );
+
+  const response = await fetch("https://api.mailjet.com/v3.1/send", {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${auth}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      Messages: messages,
+    }),
+  });
+
+  const result = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    console.error("Mailjet API Fehler:", result);
+
+    return {
+      sent: false,
+      status: response.status,
+      reason: result,
+    };
+  }
+
+  return {
+    sent: true,
+    result,
+  };
+}
 
 async function sendApprovalEmail(customer) {
   if (!customer?.email) return;
 
-  await resend.emails.send({
-    from:
-      process.env.MAIL_FROM ||
-      "Let Me Bowl Catering <onboarding@resend.dev>",
-    to: customer.email,
-    bcc: process.env.MAIL_BCC || undefined,
-    subject: "Ihr Let Me Bowl Firmenkonto wurde freigeschaltet",
-    html: `
+  const config = getMailjetConfig();
+
+  const customerName =
+    `${safeText(customer.firstName)} ${safeText(customer.lastName)}`.trim() ||
+    customer.email;
+
+  const message = {
+    From: {
+      Email: config.fromEmail,
+      Name: config.fromName,
+    },
+    To: [
+      {
+        Email: customer.email,
+        Name: customerName,
+      },
+    ],
+    Subject: "Ihr Let Me Bowl Firmenkonto wurde freigeschaltet",
+    TextPart: `
+Ihr Let Me Bowl Firmenkonto wurde freigeschaltet
+
+Guten Tag ${safeText(customer.firstName)},
+
+vielen Dank für Ihre Registrierung. Ihr Let Me Bowl Firmenkonto wurde geprüft und ist nun freigeschaltet.
+
+Sie können sich ab sofort im Portal anmelden:
+https://konto.letmebowl-catering.de/login
+
+Hinweis: Rechnungskauf ist nicht automatisch verfügbar. Diese Zahlungsart wird separat nach Prüfung freigegeben.
+
+Mit freundlichen Grüßen
+Let Me Bowl Catering
+    `.trim(),
+    HTMLPart: `
       <div style="font-family: Arial, sans-serif; color:#171717; line-height:1.6;">
         <h2>Ihr Firmenkonto wurde freigeschaltet</h2>
-        <p>Guten Tag ${customer.firstName || ""},</p>
+
+        <p>Guten Tag ${escapeHtml(customer.firstName || "")},</p>
+
         <p>
           vielen Dank für Ihre Registrierung. Ihr Let Me Bowl Firmenkonto wurde geprüft
           und ist nun freigeschaltet.
         </p>
+
         <p>
           Sie können sich ab sofort im Portal anmelden und Ihre Firmendaten,
           Rechnungen und Bestellungen verwalten.
         </p>
+
         <p style="padding:14px 16px;background:#fff8e8;border:1px solid #efdcae;border-radius:14px;">
           Hinweis: Rechnungskauf ist nicht automatisch verfügbar. Diese Zahlungsart wird
           separat nach Prüfung freigegeben.
         </p>
+
         <p>
           <a href="https://konto.letmebowl-catering.de/login"
              style="display:inline-block;padding:12px 18px;background:#111;color:#fff;text-decoration:none;border-radius:12px;font-weight:700;">
             Zum Portal
           </a>
         </p>
+
         <p>Mit freundlichen Grüßen<br/>Let Me Bowl Catering</p>
       </div>
     `,
-  });
+  };
+
+  if (config.bccEmail) {
+    message.Bcc = [
+      {
+        Email: config.bccEmail,
+        Name: "Let Me Bowl BCC",
+      },
+    ];
+  }
+
+  const result = await sendMailjetMessages([message]);
+
+  if (!result.sent) {
+    throw new Error("Freigabe-E-Mail konnte nicht über Mailjet gesendet werden.");
+  }
+
+  return result;
 }
 
 export async function loader({ request }) {
@@ -57,7 +194,11 @@ export async function loader({ request }) {
   const error = url.searchParams.get("error");
 
   const customers = await prisma.portalUser.findMany({
-    orderBy: [{ isActive: "asc" }, { createdAt: "desc" }, { companyName: "asc" }],
+    orderBy: [
+      { isActive: "asc" },
+      { createdAt: "desc" },
+      { companyName: "asc" },
+    ],
     select: {
       id: true,
       companyName: true,
@@ -109,11 +250,19 @@ export async function action({ request }) {
         return redirect("/admin/customers?error=missing_fields");
       }
 
+      if (password.length < 8) {
+        return redirect("/admin/customers?error=password_short");
+      }
+
       const existing = await prisma.portalUser.findFirst({
-        where: { OR: [{ email }, { username }] },
+        where: {
+          OR: [{ email }, { username }],
+        },
       });
 
-      if (existing) return redirect("/admin/customers?error=exists");
+      if (existing) {
+        return redirect("/admin/customers?error=exists");
+      }
 
       const passwordHash = await bcrypt.hash(password, 12);
 
@@ -148,7 +297,9 @@ export async function action({ request }) {
     if (intent === "approveCustomer") {
       const customerId = String(formData.get("customerId") || "");
 
-      if (!customerId) return redirect("/admin/customers?error=missing_customer");
+      if (!customerId) {
+        return redirect("/admin/customers?error=missing_customer");
+      }
 
       const customer = await prisma.portalUser.update({
         where: { id: customerId },
@@ -173,12 +324,19 @@ export async function action({ request }) {
       const customerId = String(formData.get("customerId") || "");
       const currentValue = String(formData.get("currentValue") || "false");
 
-      if (!customerId) return redirect("/admin/customers?error=missing_customer");
-      if (customerId === user.id) return redirect("/admin/customers?error=self_block");
+      if (!customerId) {
+        return redirect("/admin/customers?error=missing_customer");
+      }
+
+      if (customerId === user.id) {
+        return redirect("/admin/customers?error=self_block");
+      }
 
       await prisma.portalUser.update({
         where: { id: customerId },
-        data: { isActive: currentValue !== "true" },
+        data: {
+          isActive: currentValue !== "true",
+        },
       });
 
       return redirect("/admin/customers?success=status");
@@ -187,17 +345,29 @@ export async function action({ request }) {
     if (intent === "deleteCustomer") {
       const customerId = String(formData.get("customerId") || "");
 
-      if (!customerId) return redirect("/admin/customers?error=missing_customer");
-      if (customerId === user.id) return redirect("/admin/customers?error=self_delete");
+      if (!customerId) {
+        return redirect("/admin/customers?error=missing_customer");
+      }
+
+      if (customerId === user.id) {
+        return redirect("/admin/customers?error=self_delete");
+      }
 
       const customer = await prisma.portalUser.findUnique({
         where: { id: customerId },
       });
 
-      if (!customer) return redirect("/admin/customers?error=missing_customer");
-      if (customer.isAdmin) return redirect("/admin/customers?error=admin_delete");
+      if (!customer) {
+        return redirect("/admin/customers?error=missing_customer");
+      }
 
-      await prisma.portalUser.delete({ where: { id: customerId } });
+      if (customer.isAdmin) {
+        return redirect("/admin/customers?error=admin_delete");
+      }
+
+      await prisma.portalUser.delete({
+        where: { id: customerId },
+      });
 
       return redirect("/admin/customers?success=deleted");
     }
@@ -215,22 +385,39 @@ function formatDate(date) {
 }
 
 function getSuccessMessage(success) {
-  if (success === "created") return "Firma wurde erfolgreich angelegt. Rechnungskauf ist standardmäßig nicht freigegeben.";
-  if (success === "approved") return "Kundenkonto wurde freigegeben und der Kunde wurde per E-Mail informiert.";
-  if (success === "approved_mail_failed") return "Kundenkonto wurde freigegeben. Die E-Mail konnte jedoch nicht versendet werden.";
-  if (success === "status") return "Status wurde erfolgreich geändert.";
-  if (success === "deleted") return "Kundenkonto wurde gelöscht.";
+  if (success === "created") {
+    return "Firma wurde erfolgreich angelegt. Rechnungskauf ist standardmäßig nicht freigegeben.";
+  }
+
+  if (success === "approved") {
+    return "Kundenkonto wurde freigegeben und der Kunde wurde per E-Mail informiert.";
+  }
+
+  if (success === "approved_mail_failed") {
+    return "Kundenkonto wurde freigegeben. Die E-Mail konnte jedoch nicht versendet werden.";
+  }
+
+  if (success === "status") {
+    return "Status wurde erfolgreich geändert.";
+  }
+
+  if (success === "deleted") {
+    return "Kundenkonto wurde gelöscht.";
+  }
+
   return null;
 }
 
 function getErrorMessage(error) {
   if (error === "missing_fields") return "Bitte alle Pflichtfelder ausfüllen.";
+  if (error === "password_short") return "Das Passwort muss mindestens 8 Zeichen lang sein.";
   if (error === "exists") return "Diese E-Mail oder dieser Benutzername existiert bereits.";
   if (error === "missing_customer") return "Kundenkonto wurde nicht gefunden.";
   if (error === "self_block") return "Du kannst dein eigenes Admin-Konto nicht deaktivieren.";
   if (error === "self_delete") return "Du kannst dein eigenes Admin-Konto nicht löschen.";
   if (error === "admin_delete") return "Admin-Konten können hier nicht gelöscht werden.";
   if (error === "server") return "Aktion konnte nicht ausgeführt werden.";
+  if (error === "unknown") return "Unbekannte Aktion.";
   return null;
 }
 
@@ -282,19 +469,29 @@ function CustomerCard({ customer }) {
         </div>
 
         <div className="lmbCustomerSide">
-          <div className="lmbRolePill">{customer.isAdmin ? "ADMIN" : customer.role}</div>
+          <div className="lmbRolePill">
+            {customer.isAdmin ? "ADMIN" : customer.role}
+          </div>
 
           <span
             className={`lmbStatusPill ${
               isPending ? "pending" : customer.isActive ? "active" : "inactive"
             }`}
           >
-            {isPending ? "Wartet auf Freigabe" : customer.isActive ? "Aktiv" : "Gesperrt"}
+            {isPending
+              ? "Wartet auf Freigabe"
+              : customer.isActive
+              ? "Aktiv"
+              : "Gesperrt"}
           </span>
 
           <span className={`lmbStatusPill ${invoiceAllowed ? "active" : "invoiceLocked"}`}>
             {invoiceAllowed ? "Rechnung frei" : "Rechnung gesperrt"}
           </span>
+
+          {customer.mustResetPassword ? (
+            <span className="lmbStatusPill pending">Passwortwechsel offen</span>
+          ) : null}
 
           <div className="lmbCreatedText">
             {isPending ? "Neue Registrierung" : "Kundenkonto"}
@@ -329,7 +526,11 @@ function CustomerCard({ customer }) {
           <Form method="post" className="lmbActionForm">
             <input type="hidden" name="intent" value="toggleActive" />
             <input type="hidden" name="customerId" value={customer.id} />
-            <input type="hidden" name="currentValue" value={String(customer.isActive)} />
+            <input
+              type="hidden"
+              name="currentValue"
+              value={String(customer.isActive)}
+            />
             <button type="submit" className="lmbBtn lmbBtnLight">
               {customer.isActive ? "Konto sperren" : "Konto aktivieren"}
             </button>
@@ -364,6 +565,7 @@ function CustomerCard({ customer }) {
 
 export default function AdminCustomersPage() {
   const { user, customers, success, error } = useLoaderData();
+
   const [showCreate, setShowCreate] = useState(false);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -892,19 +1094,26 @@ export default function AdminCustomersPage() {
 
       <div className="lmbAdminCustomers">
         {getSuccessMessage(success) ? (
-          <div className="lmbAlert lmbAlertSuccess">{getSuccessMessage(success)}</div>
+          <div className="lmbAlert lmbAlertSuccess">
+            {getSuccessMessage(success)}
+          </div>
         ) : null}
 
         {getErrorMessage(error) ? (
-          <div className="lmbAlert lmbAlertError">{getErrorMessage(error)}</div>
+          <div className="lmbAlert lmbAlertError">
+            {getErrorMessage(error)}
+          </div>
         ) : null}
 
         <div className="lmbTopGrid">
           <section className="lmbCard">
             <div className="lmbEyebrow">Kundenverwaltung</div>
+
             <h2 className="lmbH2">Neue Firma manuell anlegen</h2>
+
             <p className="lmbText">
-              Hier kannst du Firmenkunden selbst anlegen. Registrierungen über die Website erscheinen automatisch als „Wartet auf Freigabe“.
+              Hier kannst du Firmenkunden selbst anlegen. Registrierungen über die
+              Website erscheinen automatisch als „Wartet auf Freigabe“.
             </p>
 
             <button
@@ -916,10 +1125,11 @@ export default function AdminCustomersPage() {
             </button>
 
             <div className="lmbInfoBox">
-              Hinweis: Rechnungskauf wird nicht automatisch aktiviert. Die Freigabe erfolgt separat im jeweiligen Kundendetail.
+              Hinweis: Rechnungskauf wird nicht automatisch aktiviert. Die Freigabe
+              erfolgt separat im jeweiligen Kundendetail.
             </div>
 
-            {showCreate && (
+            {showCreate ? (
               <div className="lmbCreateBox">
                 <Form method="post">
                   <input type="hidden" name="intent" value="create" />
@@ -942,7 +1152,12 @@ export default function AdminCustomersPage() {
 
                     <div className="lmbField">
                       <label className="lmbLabel">E-Mail</label>
-                      <input name="email" type="email" className="lmbInput" required />
+                      <input
+                        name="email"
+                        type="email"
+                        className="lmbInput"
+                        required
+                      />
                     </div>
 
                     <div className="lmbField">
@@ -957,7 +1172,14 @@ export default function AdminCustomersPage() {
 
                     <div className="lmbField">
                       <label className="lmbLabel">Start-Passwort</label>
-                      <input name="password" type="text" className="lmbInput" required />
+                      <input
+                        name="password"
+                        type="text"
+                        className="lmbInput"
+                        required
+                        minLength={8}
+                        placeholder="Mindestens 8 Zeichen"
+                      />
                     </div>
                   </div>
 
@@ -976,7 +1198,7 @@ export default function AdminCustomersPage() {
                   </div>
                 </Form>
               </div>
-            )}
+            ) : null}
           </section>
 
           <aside className="lmbStats">
@@ -1009,6 +1231,7 @@ export default function AdminCustomersPage() {
 
         <section className="lmbCard">
           <div className="lmbEyebrow">Firmenliste</div>
+
           <h2 className="lmbH2">Alle Firmenkunden</h2>
 
           <div className="lmbSearchBar">
@@ -1036,7 +1259,9 @@ export default function AdminCustomersPage() {
 
           <div className="lmbCustomerList">
             {filteredCustomers.length === 0 ? (
-              <div className="lmbEmptyState">Keine passenden Firmenkunden gefunden.</div>
+              <div className="lmbEmptyState">
+                Keine passenden Firmenkunden gefunden.
+              </div>
             ) : (
               filteredCustomers.map((customer) => (
                 <CustomerCard key={customer.id} customer={customer} />

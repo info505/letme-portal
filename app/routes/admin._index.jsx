@@ -16,6 +16,33 @@ function formatDate(date) {
   return new Date(date).toLocaleDateString("de-DE");
 }
 
+function orderStatusLabel(status) {
+  if (status === "CONFIRMED") return "Bestätigt";
+  if (status === "IN_PREPARATION") return "In Vorbereitung";
+  if (status === "DELIVERED") return "Geliefert";
+  if (status === "CANCELLED") return "Storniert";
+  return "Offen";
+}
+
+function orderStatusClass(status) {
+  if (status === "DELIVERED") return "paid";
+  if (status === "CANCELLED") return "overdue";
+  if (status === "CONFIRMED" || status === "IN_PREPARATION") return "open";
+  return "open";
+}
+
+function invoiceLabel(status) {
+  if (status === "BEZAHLT") return "Bezahlt";
+  if (status === "UEBERFAELLIG") return "Überfällig";
+  return "Offen";
+}
+
+function invoiceStatusClass(status) {
+  if (status === "BEZAHLT") return "paid";
+  if (status === "UEBERFAELLIG") return "overdue";
+  return "open";
+}
+
 export async function loader({ request }) {
   const user = await getUserFromRequest(request);
 
@@ -49,12 +76,41 @@ export async function loader({ request }) {
     },
   });
 
+  const orders = await prisma.portalOrder.findMany({
+    orderBy: { createdAt: "desc" },
+    take: 6,
+    include: {
+      user: {
+        select: {
+          companyName: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+        },
+      },
+      items: true,
+      costCenter: true,
+      deliveryAddress: true,
+    },
+  });
+
   const customerCount = await prisma.portalUser.count();
+
   const activeCustomerCount = await prisma.portalUser.count({
     where: { isActive: true },
   });
 
   const invoiceCount = await prisma.portalInvoice.count();
+
+  const orderCount = await prisma.portalOrder.count();
+
+  const openOrderCount = await prisma.portalOrder.count({
+    where: {
+      status: {
+        in: ["OPEN", "CONFIRMED", "IN_PREPARATION"],
+      },
+    },
+  });
 
   const openInvoices = await prisma.portalInvoice.findMany({
     where: {
@@ -71,6 +127,16 @@ export async function loader({ request }) {
     return sum + Number(inv.amountGross || 0);
   }, 0);
 
+  const orderAmountRaw = await prisma.portalOrder.findMany({
+    select: {
+      totalAmount: true,
+    },
+  });
+
+  const orderAmount = orderAmountRaw.reduce((sum, order) => {
+    return sum + Number(order.totalAmount || 0);
+  }, 0);
+
   return {
     user,
     stats: {
@@ -79,6 +145,9 @@ export async function loader({ request }) {
       inactiveCustomerCount: customerCount - activeCustomerCount,
       invoiceCount,
       openAmount,
+      orderCount,
+      openOrderCount,
+      orderAmount,
     },
     customers: customers.map((c) => ({
       ...c,
@@ -89,28 +158,30 @@ export async function loader({ request }) {
       createdAt: i.createdAt.toISOString(),
       amountGross: i.amountGross ? i.amountGross.toString() : null,
     })),
+    orders: orders.map((o) => ({
+      ...o,
+      createdAt: o.createdAt.toISOString(),
+      orderedAt: o.orderedAt ? o.orderedAt.toISOString() : null,
+      deliveryDate: o.deliveryDate ? o.deliveryDate.toISOString() : null,
+      subtotalAmount: o.subtotalAmount ? o.subtotalAmount.toString() : null,
+      taxAmount: o.taxAmount ? o.taxAmount.toString() : null,
+      totalAmount: o.totalAmount ? o.totalAmount.toString() : "0",
+      items: o.items.map((item) => ({
+        ...item,
+        unitPrice: item.unitPrice ? item.unitPrice.toString() : null,
+        totalPrice: item.totalPrice ? item.totalPrice.toString() : null,
+      })),
+    })),
   };
 }
 
-function invoiceLabel(status) {
-  if (status === "BEZAHLT") return "Bezahlt";
-  if (status === "UEBERFAELLIG") return "Überfällig";
-  return "Offen";
-}
-
-function invoiceStatusClass(status) {
-  if (status === "BEZAHLT") return "paid";
-  if (status === "UEBERFAELLIG") return "overdue";
-  return "open";
-}
-
 export default function AdminDashboardPage() {
-  const { user, stats, customers, invoices } = useLoaderData();
+  const { user, stats, customers, invoices, orders } = useLoaderData();
 
   return (
     <AdminLayout
       title="Dashboard"
-      subtitle="Überblick über Firmenkunden, Rechnungen und offene Beträge."
+      subtitle="Überblick über Firmenkunden, Bestellungen, Rechnungen und offene Beträge."
       user={user}
     >
       <style>{`
@@ -132,6 +203,13 @@ export default function AdminDashboardPage() {
           padding: 22px;
           box-shadow: 0 18px 45px rgba(30,20,10,0.05);
           min-width: 0;
+        }
+
+        .lmbStatBox.isImportant {
+          background:
+            radial-gradient(circle at top right, rgba(200,169,106,0.18), transparent 36%),
+            linear-gradient(180deg, #fffdf8 0%, #f8f1e6 100%);
+          border-color: rgba(200,169,106,0.32);
         }
 
         .lmbStatLabel {
@@ -207,7 +285,7 @@ export default function AdminDashboardPage() {
 
         .lmbQuickLinks {
           display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+          grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 12px;
         }
 
@@ -226,6 +304,10 @@ export default function AdminDashboardPage() {
           box-shadow: 0 14px 30px rgba(17,17,17,0.08);
         }
 
+        .lmbQuickLink.isGold {
+          background: linear-gradient(135deg, #c8a96a, #a9823c);
+        }
+
         .lmbQuickLink span {
           opacity: 0.7;
           font-size: 18px;
@@ -242,6 +324,12 @@ export default function AdminDashboardPage() {
           padding: 18px;
           background: #fbf8f2;
           min-width: 0;
+        }
+
+        .lmbItem.isOrder {
+          background:
+            radial-gradient(circle at top right, rgba(200,169,106,0.10), transparent 34%),
+            #fffdf8;
         }
 
         .lmbItemTop {
@@ -268,6 +356,30 @@ export default function AdminDashboardPage() {
           overflow-wrap: anywhere;
         }
 
+        .lmbItemFooter {
+          margin-top: 14px;
+          display: flex;
+          justify-content: space-between;
+          gap: 12px;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+
+        .lmbSmallLink {
+          text-decoration: none;
+          min-height: 38px;
+          padding: 0 13px;
+          border-radius: 999px;
+          background: #fff;
+          border: 1px solid #e8decd;
+          color: #171717;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 13px;
+          font-weight: 900;
+        }
+
         .lmbBadge {
           display: inline-flex;
           align-items: center;
@@ -280,13 +392,15 @@ export default function AdminDashboardPage() {
           flex-shrink: 0;
         }
 
-        .lmbBadge.active {
+        .lmbBadge.active,
+        .lmbBadge.paid {
           background: #edf6ed;
           color: #2f6b35;
           border: 1px solid #cfe7cf;
         }
 
-        .lmbBadge.inactive {
+        .lmbBadge.inactive,
+        .lmbBadge.overdue {
           background: #fbeaea;
           color: #8a2d2d;
           border: 1px solid #efc9c9;
@@ -298,16 +412,35 @@ export default function AdminDashboardPage() {
           border: 1px solid #efdcae;
         }
 
-        .lmbBadge.paid {
-          background: #edf6ed;
-          color: #2f6b35;
-          border: 1px solid #cfe7cf;
+        .lmbOrderGrid {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 10px;
+          margin-top: 14px;
         }
 
-        .lmbBadge.overdue {
-          background: #fbeaea;
-          color: #8a2d2d;
-          border: 1px solid #efc9c9;
+        .lmbOrderInfo {
+          padding: 12px;
+          border-radius: 16px;
+          background: #fff;
+          border: 1px solid #ece5d8;
+        }
+
+        .lmbOrderInfoLabel {
+          font-size: 10px;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: #756b5f;
+          font-weight: 950;
+          margin-bottom: 6px;
+        }
+
+        .lmbOrderInfoValue {
+          font-size: 13px;
+          color: #171717;
+          font-weight: 850;
+          line-height: 1.4;
+          overflow-wrap: anywhere;
         }
 
         .lmbEmptyText {
@@ -321,13 +454,21 @@ export default function AdminDashboardPage() {
           text-align: center;
         }
 
-        @media (max-width: 1100px) {
+        @media (max-width: 1180px) {
           .lmbStatsGrid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
 
           .lmbContentGrid {
             grid-template-columns: 1fr;
+          }
+
+          .lmbQuickLinks {
+            grid-template-columns: 1fr;
+          }
+
+          .lmbOrderGrid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
           }
         }
 
@@ -371,10 +512,6 @@ export default function AdminDashboardPage() {
             font-size: 14px;
           }
 
-          .lmbQuickLinks {
-            grid-template-columns: 1fr;
-          }
-
           .lmbQuickLink {
             min-height: 54px;
           }
@@ -392,6 +529,10 @@ export default function AdminDashboardPage() {
 
           .lmbBadge {
             justify-self: start;
+          }
+
+          .lmbOrderGrid {
+            grid-template-columns: 1fr;
           }
         }
 
@@ -416,6 +557,26 @@ export default function AdminDashboardPage() {
             <div className="lmbStatText">Aktiv nutzbare Firmenkonten.</div>
           </div>
 
+          <div className="lmbStatBox isImportant">
+            <div className="lmbStatLabel">Offene Bestellungen</div>
+            <div className="lmbStatValue">{stats.openOrderCount}</div>
+            <div className="lmbStatText">Neue oder laufende Kundenbestellungen.</div>
+          </div>
+
+          <div className="lmbStatBox">
+            <div className="lmbStatLabel">Bestellwert</div>
+            <div className="lmbStatValue">{euro(stats.orderAmount)}</div>
+            <div className="lmbStatText">Gesamtwert aller Portalbestellungen.</div>
+          </div>
+        </section>
+
+        <section className="lmbStatsGrid">
+          <div className="lmbStatBox">
+            <div className="lmbStatLabel">Bestellungen</div>
+            <div className="lmbStatValue">{stats.orderCount}</div>
+            <div className="lmbStatText">Alle gespeicherten Portalbestellungen.</div>
+          </div>
+
           <div className="lmbStatBox">
             <div className="lmbStatLabel">Rechnungen</div>
             <div className="lmbStatValue">{stats.invoiceCount}</div>
@@ -423,9 +584,15 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="lmbStatBox">
-            <div className="lmbStatLabel">Offen</div>
+            <div className="lmbStatLabel">Offene Beträge</div>
             <div className="lmbStatValue">{euro(stats.openAmount)}</div>
-            <div className="lmbStatText">Ausstehender Gesamtbetrag.</div>
+            <div className="lmbStatText">Ausstehender Rechnungsbetrag.</div>
+          </div>
+
+          <div className="lmbStatBox">
+            <div className="lmbStatLabel">Nicht aktiv</div>
+            <div className="lmbStatValue">{stats.inactiveCustomerCount}</div>
+            <div className="lmbStatText">Noch nicht freigegebene Firmenkonten.</div>
           </div>
         </section>
 
@@ -433,11 +600,15 @@ export default function AdminDashboardPage() {
           <div className="lmbEyebrow">Schnellzugriff</div>
           <h2 className="lmbH2">Admin-Aktionen</h2>
           <p className="lmbText">
-            Von hier aus kannst du Firmenkonten verwalten, Freigaben prüfen,
-            Rechnungen hochladen und Zahlungsstatus kontrollieren.
+            Von hier aus kannst du neue Bestellungen prüfen, Firmenkonten verwalten,
+            Freigaben prüfen, Rechnungen hochladen und Zahlungsstatus kontrollieren.
           </p>
 
           <div className="lmbQuickLinks">
+            <a href="/admin/orders" className="lmbQuickLink isGold">
+              Bestellungen prüfen <span>→</span>
+            </a>
+
             <a href="/admin/customers" className="lmbQuickLink">
               Firmenkunden verwalten <span>→</span>
             </a>
@@ -446,6 +617,84 @@ export default function AdminDashboardPage() {
               Rechnungen verwalten <span>→</span>
             </a>
           </div>
+        </section>
+
+        <section className="lmbCard lmbCardWide">
+          <div className="lmbEyebrow">Neue Bestellungen</div>
+          <h2 className="lmbH2">Letzte Portalbestellungen</h2>
+          <p className="lmbText">
+            Sobald eine Rechnungskauf- oder Portalbestellung eingeht, erscheint sie hier
+            und du erhältst zusätzlich eine E-Mail-Benachrichtigung.
+          </p>
+
+          {orders.length === 0 ? (
+            <p className="lmbEmptyText">Noch keine Bestellungen vorhanden.</p>
+          ) : (
+            <div className="lmbList">
+              {orders.map((order) => (
+                <article key={order.id} className="lmbItem isOrder">
+                  <div className="lmbItemTop">
+                    <div>
+                      <div className="lmbItemTitle">{order.orderNumber}</div>
+                      <div className="lmbItemMeta">
+                        Firma: {order.user?.companyName || order.billingCompanyName || "-"}
+                        <br />
+                        E-Mail: {order.user?.email || order.billingEmail || "-"}
+                        <br />
+                        Eingegangen am {formatDate(order.createdAt)}
+                      </div>
+                    </div>
+
+                    <span className={`lmbBadge ${orderStatusClass(order.status)}`}>
+                      {orderStatusLabel(order.status)}
+                    </span>
+                  </div>
+
+                  <div className="lmbOrderGrid">
+                    <div className="lmbOrderInfo">
+                      <div className="lmbOrderInfoLabel">Betrag</div>
+                      <div className="lmbOrderInfoValue">
+                        {euro(order.totalAmount)}
+                      </div>
+                    </div>
+
+                    <div className="lmbOrderInfo">
+                      <div className="lmbOrderInfoLabel">Positionen</div>
+                      <div className="lmbOrderInfoValue">
+                        {order.items?.length || 0}
+                      </div>
+                    </div>
+
+                    <div className="lmbOrderInfo">
+                      <div className="lmbOrderInfoLabel">Kostenstelle</div>
+                      <div className="lmbOrderInfoValue">
+                        {order.costCenter?.name || "-"}
+                      </div>
+                    </div>
+
+                    <div className="lmbOrderInfo">
+                      <div className="lmbOrderInfoLabel">Lieferadresse</div>
+                      <div className="lmbOrderInfoValue">
+                        {order.deliveryAddress?.label || "-"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="lmbItemFooter">
+                    <div className="lmbItemMeta">
+                      {order.items?.slice(0, 2).map((item) => item.title).join(" · ") ||
+                        "Keine Positionen hinterlegt"}
+                      {order.items?.length > 2 ? ` · +${order.items.length - 2} weitere` : ""}
+                    </div>
+
+                    <a href={`/admin/orders/${order.id}`} className="lmbSmallLink">
+                      Bestellung öffnen
+                    </a>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
 
         <div className="lmbContentGrid">
