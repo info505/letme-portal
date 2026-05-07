@@ -84,7 +84,8 @@ export async function action({ request }) {
     return {
       ok: false,
       locale,
-      message: t.registerEmailInvalid || "Bitte gib eine gültige E-Mail-Adresse ein.",
+      message:
+        t.registerEmailInvalid || "Bitte gib eine gültige E-Mail-Adresse ein.",
       values,
     };
   }
@@ -93,7 +94,9 @@ export async function action({ request }) {
     return {
       ok: false,
       locale,
-      message: t.registerUsernameShort || "Der Benutzername muss mindestens 3 Zeichen lang sein.",
+      message:
+        t.registerUsernameShort ||
+        "Der Benutzername muss mindestens 3 Zeichen lang sein.",
       values,
     };
   }
@@ -102,7 +105,9 @@ export async function action({ request }) {
     return {
       ok: false,
       locale,
-      message: t.registerPasswordShort || "Das Passwort muss mindestens 8 Zeichen lang sein.",
+      message:
+        t.registerPasswordShort ||
+        "Das Passwort muss mindestens 8 Zeichen lang sein.",
       values,
     };
   }
@@ -111,7 +116,8 @@ export async function action({ request }) {
     return {
       ok: false,
       locale,
-      message: t.registerPasswordMismatch || "Die Passwörter stimmen nicht überein.",
+      message:
+        t.registerPasswordMismatch || "Die Passwörter stimmen nicht überein.",
       values,
     };
   }
@@ -147,72 +153,94 @@ export async function action({ request }) {
 
   const passwordHash = await hashPassword(password);
 
-  const user = await prisma.portalUser.create({
-    data: {
-      companyName,
-      firstName,
-      lastName,
-      username,
-      email,
-      phone,
-      passwordHash,
-
-      isActive: false,
-      isAdmin: false,
-      role: "ORDERER",
-      mustResetPassword: false,
-      invoicePurchaseEnabled: false,
-
-      billing: {
-        create: {
-          companyName,
-          contactName: `${firstName} ${lastName}`.trim(),
-          email,
-          phone,
-        },
-      },
-    },
-    include: {
-      billing: true,
-    },
-  });
+  let user;
 
   try {
-    const shopifyResult = await syncCustomerToShopify({
-      id: user.id,
-      companyName: user.companyName,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      username: user.username,
-      email: user.email,
-      phone: user.phone,
+    user = await prisma.portalUser.create({
+      data: {
+        companyName,
+        firstName,
+        lastName,
+        username,
+        email,
+        phone,
+        passwordHash,
 
-      billingAddress: user.billing
-        ? [
-            user.billing.companyName,
-            user.billing.contactName,
-            user.billing.street,
-            user.billing.zip,
-            user.billing.city,
-            user.billing.country,
-          ]
-            .filter(Boolean)
-            .join(", ")
-        : "",
-      billingStreet: user.billing?.street || "",
-      billingZip: user.billing?.zip || "",
-      billingCity: user.billing?.city || "",
-      billingCountry: user.billing?.country || "",
+        isActive: false,
+        isAdmin: false,
+        role: "ORDERER",
+        mustResetPassword: false,
+        invoicePurchaseEnabled: false,
+
+        billing: {
+          create: {
+            companyName,
+            contactName: `${firstName} ${lastName}`.trim(),
+            email,
+            phone,
+          },
+        },
+      },
+      include: {
+        billing: true,
+      },
     });
+  } catch (dbError) {
+    console.error("Registrierung DB-Fehler:", dbError);
 
-    console.log(
-      "Shopify Sync erfolgreich:",
-      shopifyResult.action,
-      shopifyResult.customer?.id
-    );
-  } catch (shopifyError) {
-    console.error("Shopify Sync fehlgeschlagen:", shopifyError);
+    return {
+      ok: false,
+      locale,
+      message:
+        locale === "en"
+          ? "The registration could not be saved. Please try again."
+          : "Die Registrierung konnte nicht gespeichert werden. Bitte versuche es erneut.",
+      values,
+    };
   }
+
+  // WICHTIG:
+  // Shopify-Sync darf die Registrierung nicht blockieren.
+  // Der Nutzer wird im Portal angelegt. Shopify läuft danach optional im Hintergrund.
+  syncCustomerToShopify({
+    id: user.id,
+    companyName: user.companyName,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    username: user.username,
+    email: user.email,
+    phone: user.phone,
+
+    billingAddress: user.billing
+      ? [
+          user.billing.companyName,
+          user.billing.contactName,
+          user.billing.street,
+          user.billing.zip,
+          user.billing.city,
+          user.billing.country,
+        ]
+          .filter(Boolean)
+          .join(", ")
+      : "",
+    billingStreet: user.billing?.street || "",
+    billingZip: user.billing?.zip || "",
+    billingCity: user.billing?.city || "",
+    billingCountry: user.billing?.country || "",
+  })
+    .then((shopifyResult) => {
+      console.log(
+        "Shopify Sync erfolgreich:",
+        shopifyResult.action,
+        shopifyResult.customer?.id
+      );
+    })
+    .catch((shopifyError) => {
+      console.error(
+        "Shopify Sync fehlgeschlagen, Registrierung bleibt trotzdem gültig:",
+        shopifyError
+      );
+    });
 
   return {
     ok: true,
