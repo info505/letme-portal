@@ -36,9 +36,6 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-
 // ===== HILFSFUNKTIONEN =====
 
 function safeText(value) {
@@ -125,6 +122,7 @@ async function sendMailjetMessages(messages) {
 
   if (!config.configured) {
     console.warn("Mailjet ist nicht vollständig konfiguriert.");
+
     return {
       sent: false,
       reason: "Mailjet Variablen fehlen",
@@ -189,12 +187,16 @@ function buildOwnerEmailHtml(data) {
             <strong>${escapeHtml(title)}</strong>
             ${
               variantTitle
-                ? `<br><span style="color:#666;">${escapeHtml(variantTitle)}</span>`
+                ? `<br><span style="color:#666;">${escapeHtml(
+                    variantTitle
+                  )}</span>`
                 : ""
             }
             ${
               sku
-                ? `<br><span style="color:#999;">SKU: ${escapeHtml(sku)}</span>`
+                ? `<br><span style="color:#999;">SKU: ${escapeHtml(
+                    sku
+                  )}</span>`
                 : ""
             }
           </td>
@@ -261,20 +263,42 @@ function buildOwnerEmailHtml(data) {
 
         <div style="background:#f8f3e8;border-radius:16px;padding:18px;margin-bottom:22px;">
           <h2 style="margin:0 0 12px;font-size:18px;">Bestellübersicht</h2>
-          <p style="margin:4px 0;"><strong>Lieferart:</strong> ${escapeHtml(deliveryType)}</p>
-          <p style="margin:4px 0;"><strong>Datum:</strong> ${escapeHtml(deliveryDate)}</p>
-          <p style="margin:4px 0;"><strong>Zeit:</strong> ${escapeHtml(deliveryTime)}</p>
-          <p style="margin:4px 0;"><strong>Eventbeginn:</strong> ${escapeHtml(eventTime)}</p>
-          <p style="margin:4px 0;"><strong>Gesamt:</strong> ${escapeHtml(total)}</p>
+          <p style="margin:4px 0;"><strong>Lieferart:</strong> ${escapeHtml(
+            deliveryType
+          )}</p>
+          <p style="margin:4px 0;"><strong>Datum:</strong> ${escapeHtml(
+            deliveryDate
+          )}</p>
+          <p style="margin:4px 0;"><strong>Zeit:</strong> ${escapeHtml(
+            deliveryTime
+          )}</p>
+          <p style="margin:4px 0;"><strong>Eventbeginn:</strong> ${escapeHtml(
+            eventTime
+          )}</p>
+          <p style="margin:4px 0;"><strong>Gesamt:</strong> ${escapeHtml(
+            total
+          )}</p>
         </div>
 
         <h2 style="font-size:18px;margin:0 0 12px;">Kundendaten</h2>
-        <p style="margin:4px 0;"><strong>Firma:</strong> ${escapeHtml(portalCustomerCompany || deliveryCompany || billingCompany || "-")}</p>
-        <p style="margin:4px 0;"><strong>Name:</strong> ${escapeHtml(contactName)}</p>
-        <p style="margin:4px 0;"><strong>E-Mail:</strong> ${escapeHtml(contactEmail)}</p>
-        <p style="margin:4px 0;"><strong>Telefon:</strong> ${escapeHtml(contactPhone)}</p>
-        <p style="margin:4px 0;"><strong>Firmenkonto erkannt:</strong> ${customerIsLoggedIn ? "Ja" : "Nein"}</p>
-        <p style="margin:4px 0 22px;"><strong>Rechnungskauf freigegeben:</strong> ${invoiceAllowed ? "Ja" : "Nein"}</p>
+        <p style="margin:4px 0;"><strong>Firma:</strong> ${escapeHtml(
+          portalCustomerCompany || deliveryCompany || billingCompany || "-"
+        )}</p>
+        <p style="margin:4px 0;"><strong>Name:</strong> ${escapeHtml(
+          contactName
+        )}</p>
+        <p style="margin:4px 0;"><strong>E-Mail:</strong> ${escapeHtml(
+          contactEmail
+        )}</p>
+        <p style="margin:4px 0;"><strong>Telefon:</strong> ${escapeHtml(
+          contactPhone
+        )}</p>
+        <p style="margin:4px 0;"><strong>Firmenkonto erkannt:</strong> ${
+          customerIsLoggedIn ? "Ja" : "Nein"
+        }</p>
+        <p style="margin:4px 0 22px;"><strong>Rechnungskauf freigegeben:</strong> ${
+          invoiceAllowed ? "Ja" : "Nein"
+        }</p>
 
         ${
           portalDeliveryAddressLabel || portalCostCenterName
@@ -283,18 +307,26 @@ function buildOwnerEmailHtml(data) {
                 <h2 style="font-size:18px;margin:0 0 12px;">Firmenkonto / Portal</h2>
                 ${
                   portalDeliveryAddressLabel
-                    ? `<p style="margin:4px 0;"><strong>Lieferadresse:</strong> ${escapeHtml(portalDeliveryAddressLabel)}</p>`
+                    ? `<p style="margin:4px 0;"><strong>Lieferadresse:</strong> ${escapeHtml(
+                        portalDeliveryAddressLabel
+                      )}</p>`
                     : ""
                 }
                 ${
                   portalDeliveryAddressFull
-                    ? `<p style="margin:4px 0;"><strong>Adresse voll:</strong> ${escapeHtml(portalDeliveryAddressFull)}</p>`
+                    ? `<p style="margin:4px 0;"><strong>Adresse voll:</strong> ${escapeHtml(
+                        portalDeliveryAddressFull
+                      )}</p>`
                     : ""
                 }
                 ${
                   portalCostCenterName
-                    ? `<p style="margin:4px 0;"><strong>Kostenstelle:</strong> ${escapeHtml(portalCostCenterName)} ${
-                        portalCostCenterCode ? "· " + escapeHtml(portalCostCenterCode) : ""
+                    ? `<p style="margin:4px 0;"><strong>Kostenstelle:</strong> ${escapeHtml(
+                        portalCostCenterName
+                      )} ${
+                        portalCostCenterCode
+                          ? "· " + escapeHtml(portalCostCenterCode)
+                          : ""
                       }</p>`
                     : ""
                 }
@@ -325,18 +357,34 @@ function buildOwnerEmailHtml(data) {
           deliveryType.toLowerCase().includes("abhol")
             ? `<p style="margin:4px 0 22px;">Abholung im Geschäft</p>`
             : `
-              <p style="margin:4px 0;"><strong>Firma:</strong> ${escapeHtml(deliveryCompany || "-")}</p>
-              <p style="margin:4px 0;"><strong>Straße:</strong> ${escapeHtml(deliveryStreet || "-")}</p>
-              <p style="margin:4px 0;"><strong>PLZ / Ort:</strong> ${escapeHtml(`${deliveryZip || "-"} ${deliveryCity || ""}`)}</p>
-              <p style="margin:4px 0 22px;"><strong>Zusatz:</strong> ${escapeHtml(deliveryExtra || "-")}</p>
+              <p style="margin:4px 0;"><strong>Firma:</strong> ${escapeHtml(
+                deliveryCompany || "-"
+              )}</p>
+              <p style="margin:4px 0;"><strong>Straße:</strong> ${escapeHtml(
+                deliveryStreet || "-"
+              )}</p>
+              <p style="margin:4px 0;"><strong>PLZ / Ort:</strong> ${escapeHtml(
+                `${deliveryZip || "-"} ${deliveryCity || ""}`
+              )}</p>
+              <p style="margin:4px 0 22px;"><strong>Zusatz:</strong> ${escapeHtml(
+                deliveryExtra || "-"
+              )}</p>
             `
         }
 
         <h2 style="font-size:18px;margin:0 0 12px;">Rechnungsadresse</h2>
-        <p style="margin:4px 0;"><strong>Firma:</strong> ${escapeHtml(billingCompany || "-")}</p>
-        <p style="margin:4px 0;"><strong>Straße:</strong> ${escapeHtml(billingStreet || "-")}</p>
-        <p style="margin:4px 0;"><strong>PLZ / Ort:</strong> ${escapeHtml(`${billingZip || "-"} ${billingCity || ""}`)}</p>
-        <p style="margin:4px 0 22px;"><strong>Zusatz:</strong> ${escapeHtml(billingExtra || "-")}</p>
+        <p style="margin:4px 0;"><strong>Firma:</strong> ${escapeHtml(
+          billingCompany || "-"
+        )}</p>
+        <p style="margin:4px 0;"><strong>Straße:</strong> ${escapeHtml(
+          billingStreet || "-"
+        )}</p>
+        <p style="margin:4px 0;"><strong>PLZ / Ort:</strong> ${escapeHtml(
+          `${billingZip || "-"} ${billingCity || ""}`
+        )}</p>
+        <p style="margin:4px 0 22px;"><strong>Zusatz:</strong> ${escapeHtml(
+          billingExtra || "-"
+        )}</p>
 
         <h2 style="font-size:18px;margin:0 0 12px;">Hinweise / interne Referenz</h2>
         <p style="white-space:pre-line;background:#fafafa;border:1px solid #eee;border-radius:14px;padding:14px;margin:0 0 18px;">
@@ -380,17 +428,26 @@ Zeit: ${safeText(data.deliveryTime)}
 Eventbeginn: ${safeText(data.eventTime)}
 
 Kunde:
-Firma: ${safeText(data.portalCustomerCompany || data.customerCompany || data.deliveryCompany || data.billingCompany)}
+Firma: ${safeText(
+    data.portalCustomerCompany ||
+      data.customerCompany ||
+      data.deliveryCompany ||
+      data.billingCompany
+  )}
 Name: ${safeText(data.contactName || data.customerName)}
 E-Mail: ${safeText(data.contactEmail || data.customerEmail)}
 Telefon: ${safeText(data.contactPhone || data.customerPhone)}
 
 Firmenkonto erkannt: ${isTruthy(data.customerIsLoggedIn) ? "Ja" : "Nein"}
-Rechnungskauf freigegeben: ${isTruthy(data.invoiceAllowed || data.invoiceApproved) ? "Ja" : "Nein"}
+Rechnungskauf freigegeben: ${
+    isTruthy(data.invoiceAllowed || data.invoiceApproved) ? "Ja" : "Nein"
+  }
 
 Portal:
 Lieferadresse: ${safeText(data.portalDeliveryAddressLabel)}
-Kostenstelle: ${safeText(data.portalCostCenterName || data.costCenterName)} ${safeText(data.portalCostCenterCode || data.costCenterCode)}
+Kostenstelle: ${safeText(data.portalCostCenterName || data.costCenterName)} ${safeText(
+    data.portalCostCenterCode || data.costCenterCode
+  )}
 
 Artikel:
 ${itemText || "Keine Artikeldaten übertragen."}
@@ -426,9 +483,15 @@ function buildCustomerEmailHtml(data) {
     .map((item) => {
       return `
         <tr>
-          <td style="padding:10px;border-bottom:1px solid #eee;">${escapeHtml(safeText(item.title) || "-")}</td>
-          <td style="padding:10px;border-bottom:1px solid #eee;text-align:center;">${item.quantity || 1}</td>
-          <td style="padding:10px;border-bottom:1px solid #eee;text-align:right;">${euroFromCents(item.totalPriceCents || 0)}</td>
+          <td style="padding:10px;border-bottom:1px solid #eee;">${escapeHtml(
+            safeText(item.title) || "-"
+          )}</td>
+          <td style="padding:10px;border-bottom:1px solid #eee;text-align:center;">${
+            item.quantity || 1
+          }</td>
+          <td style="padding:10px;border-bottom:1px solid #eee;text-align:right;">${euroFromCents(
+            item.totalPriceCents || 0
+          )}</td>
         </tr>
       `;
     })
@@ -450,12 +513,29 @@ function buildCustomerEmailHtml(data) {
         </p>
 
         <div style="background:#f8f3e8;border-radius:16px;padding:18px;margin-bottom:22px;">
-          <p style="margin:4px 0;"><strong>Firma:</strong> ${escapeHtml(safeText(data.portalCustomerCompany || data.customerCompany || data.billingCompany || data.deliveryCompany) || "-")}</p>
-          <p style="margin:4px 0;"><strong>Kontakt:</strong> ${escapeHtml(safeText(data.contactName || data.customerName) || "-")}</p>
-          <p style="margin:4px 0;"><strong>Lieferart:</strong> ${escapeHtml(safeText(data.deliveryType) || "-")}</p>
-          <p style="margin:4px 0;"><strong>Datum:</strong> ${escapeHtml(safeText(data.deliveryDate) || "-")}</p>
-          <p style="margin:4px 0;"><strong>Zeit:</strong> ${escapeHtml(safeText(data.deliveryTime) || "-")}</p>
-          <p style="margin:4px 0;"><strong>Eventbeginn:</strong> ${escapeHtml(safeText(data.eventTime) || "-")}</p>
+          <p style="margin:4px 0;"><strong>Firma:</strong> ${escapeHtml(
+            safeText(
+              data.portalCustomerCompany ||
+                data.customerCompany ||
+                data.billingCompany ||
+                data.deliveryCompany
+            ) || "-"
+          )}</p>
+          <p style="margin:4px 0;"><strong>Kontakt:</strong> ${escapeHtml(
+            safeText(data.contactName || data.customerName) || "-"
+          )}</p>
+          <p style="margin:4px 0;"><strong>Lieferart:</strong> ${escapeHtml(
+            safeText(data.deliveryType) || "-"
+          )}</p>
+          <p style="margin:4px 0;"><strong>Datum:</strong> ${escapeHtml(
+            safeText(data.deliveryDate) || "-"
+          )}</p>
+          <p style="margin:4px 0;"><strong>Zeit:</strong> ${escapeHtml(
+            safeText(data.deliveryTime) || "-"
+          )}</p>
+          <p style="margin:4px 0;"><strong>Eventbeginn:</strong> ${escapeHtml(
+            safeText(data.eventTime) || "-"
+          )}</p>
         </div>
 
         <h2 style="font-size:18px;margin:0 0 12px;">Artikel</h2>
@@ -498,7 +578,12 @@ Vielen Dank für deine Bestellung.
 
 Wir haben deine Firmenbestellung erhalten und prüfen die Angaben.
 
-Firma: ${safeText(data.portalCustomerCompany || data.customerCompany || data.billingCompany || data.deliveryCompany)}
+Firma: ${safeText(
+    data.portalCustomerCompany ||
+      data.customerCompany ||
+      data.billingCompany ||
+      data.deliveryCompany
+  )}
 Kontakt: ${safeText(data.contactName || data.customerName)}
 Lieferart: ${safeText(data.deliveryType)}
 Datum: ${safeText(data.deliveryDate)}
@@ -583,152 +668,138 @@ async function sendOrderEmails(data) {
   return await sendMailjetMessages(messages);
 }
 
+function normalizeOrderData(data) {
+  return {
+    ...data,
+
+    customerEmail:
+      data.customerEmail || data.portalCustomerEmail || data.contactEmail || "",
+
+    customerName:
+      data.customerName || data.portalCustomerName || data.contactName || "",
+
+    customerCompany:
+      data.customerCompany ||
+      data.portalCustomerCompany ||
+      data.deliveryCompany ||
+      data.billingCompany ||
+      "",
+
+    contactEmail:
+      data.contactEmail || data.customerEmail || data.portalCustomerEmail || "",
+
+    contactName:
+      data.contactName || data.customerName || data.portalCustomerName || "",
+
+    contactPhone: data.contactPhone || data.customerPhone || "",
+
+    deliveryCompany:
+      data.deliveryCompany ||
+      data.customerCompany ||
+      data.portalCustomerCompany ||
+      "",
+
+    billingCompany:
+      data.billingCompany ||
+      data.customerCompany ||
+      data.portalCustomerCompany ||
+      "",
+
+    totalAmountCents:
+      data.totalAmountCents ||
+      data.cartTotalCents ||
+      data.subtotalAmountCents ||
+      0,
+
+    items: Array.isArray(data.items) ? JSON.stringify(data.items) : data.items,
+  };
+}
+
 // ===== API: Portal-Bestellung speichern / E-Mail senden =====
+// WICHTIG: express.urlencoded nur hier, nicht global.
 
-app.post("/api/portal-order", async (req, res) => {
-  try {
-    const data = req.body || {};
+app.post(
+  "/api/portal-order",
+  express.urlencoded({ extended: true, limit: "10mb" }),
+  async (req, res) => {
+    try {
+      const data = req.body || {};
+      const normalizedData = normalizeOrderData(data);
 
-    const normalizedData = {
-      ...data,
+      console.log("Neue Portal-Bestellung empfangen:", {
+        contactName: normalizedData.contactName,
+        contactEmail: normalizedData.contactEmail,
+        deliveryType: normalizedData.deliveryType,
+        deliveryDate: normalizedData.deliveryDate,
+        deliveryTime: normalizedData.deliveryTime,
+        totalAmountCents: normalizedData.totalAmountCents,
+      });
 
-      customerEmail: data.customerEmail || data.portalCustomerEmail || data.contactEmail || "",
-      customerName: data.customerName || data.portalCustomerName || data.contactName || "",
-      customerCompany:
-        data.customerCompany ||
-        data.portalCustomerCompany ||
-        data.deliveryCompany ||
-        data.billingCompany ||
-        "",
+      const emailResult = await sendOrderEmails(normalizedData);
 
-      contactEmail: data.contactEmail || data.customerEmail || data.portalCustomerEmail || "",
-      contactName: data.contactName || data.customerName || data.portalCustomerName || "",
-      contactPhone: data.contactPhone || data.customerPhone || "",
+      console.log("Bestell-E-Mail Ergebnis:", {
+        sent: emailResult.sent,
+        status: emailResult.status || null,
+      });
 
-      deliveryCompany:
-        data.deliveryCompany ||
-        data.customerCompany ||
-        data.portalCustomerCompany ||
-        "",
+      return res.json({
+        ok: true,
+        email: emailResult,
+      });
+    } catch (error) {
+      console.error("Portal Order Fehler:", error);
 
-      billingCompany:
-        data.billingCompany ||
-        data.customerCompany ||
-        data.portalCustomerCompany ||
-        "",
-
-      totalAmountCents:
-        data.totalAmountCents ||
-        data.cartTotalCents ||
-        data.subtotalAmountCents ||
-        0,
-
-      items: Array.isArray(data.items) ? JSON.stringify(data.items) : data.items,
-    };
-
-    console.log("Neue Portal-Bestellung empfangen:", {
-      contactName: normalizedData.contactName,
-      contactEmail: normalizedData.contactEmail,
-      deliveryType: normalizedData.deliveryType,
-      deliveryDate: normalizedData.deliveryDate,
-      deliveryTime: normalizedData.deliveryTime,
-      totalAmountCents: normalizedData.totalAmountCents,
-    });
-
-    const emailResult = await sendOrderEmails(normalizedData);
-
-    console.log("Bestell-E-Mail Ergebnis:", {
-      sent: emailResult.sent,
-      status: emailResult.status || null,
-    });
-
-    return res.json({
-      ok: true,
-      email: emailResult,
-    });
-  } catch (error) {
-    console.error("Portal Order Fehler:", error);
-
-    return res.status(500).json({
-      ok: false,
-      error: "Bestellung konnte nicht verarbeitet werden.",
-      detail: String(error?.message || error),
-    });
+      return res.status(500).json({
+        ok: false,
+        error: "Bestellung konnte nicht verarbeitet werden.",
+        detail: String(error?.message || error),
+      });
+    }
   }
-});
+);
 
-// Optional: falls die Danke-Seite diese Route noch aufruft
-app.post("/api/portal-order-email", async (req, res) => {
-  try {
-    const data = req.body || {};
+// Optional: falls die Danke-Seite diese Route noch mit JSON aufruft.
+// WICHTIG: express.json nur hier, nicht global.
 
-    const normalizedData = {
-      ...data,
+app.post(
+  "/api/portal-order-email",
+  express.json({ limit: "10mb" }),
+  async (req, res) => {
+    try {
+      const data = req.body || {};
+      const normalizedData = normalizeOrderData(data);
 
-      customerEmail: data.customerEmail || data.portalCustomerEmail || data.contactEmail || "",
-      customerName: data.customerName || data.portalCustomerName || data.contactName || "",
-      customerCompany:
-        data.customerCompany ||
-        data.portalCustomerCompany ||
-        data.deliveryCompany ||
-        data.billingCompany ||
-        "",
+      console.log("Portal Order E-Mail Request empfangen:", {
+        contactName: normalizedData.contactName,
+        contactEmail: normalizedData.contactEmail,
+        deliveryType: normalizedData.deliveryType,
+        deliveryDate: normalizedData.deliveryDate,
+        deliveryTime: normalizedData.deliveryTime,
+        totalAmountCents: normalizedData.totalAmountCents,
+      });
 
-      contactEmail: data.contactEmail || data.customerEmail || data.portalCustomerEmail || "",
-      contactName: data.contactName || data.customerName || data.portalCustomerName || "",
-      contactPhone: data.contactPhone || data.customerPhone || "",
+      const emailResult = await sendOrderEmails(normalizedData);
 
-      deliveryCompany:
-        data.deliveryCompany ||
-        data.customerCompany ||
-        data.portalCustomerCompany ||
-        "",
+      console.log("Bestell-E-Mail Ergebnis:", {
+        sent: emailResult.sent,
+        status: emailResult.status || null,
+      });
 
-      billingCompany:
-        data.billingCompany ||
-        data.customerCompany ||
-        data.portalCustomerCompany ||
-        "",
+      return res.json({
+        ok: true,
+        email: emailResult,
+      });
+    } catch (error) {
+      console.error("portal-order-email error:", error);
 
-      totalAmountCents:
-        data.totalAmountCents ||
-        data.cartTotalCents ||
-        data.subtotalAmountCents ||
-        0,
-
-      items: Array.isArray(data.items) ? JSON.stringify(data.items) : data.items,
-    };
-
-    console.log("Portal Order E-Mail Request empfangen:", {
-      contactName: normalizedData.contactName,
-      contactEmail: normalizedData.contactEmail,
-      deliveryType: normalizedData.deliveryType,
-      deliveryDate: normalizedData.deliveryDate,
-      deliveryTime: normalizedData.deliveryTime,
-      totalAmountCents: normalizedData.totalAmountCents,
-    });
-
-    const emailResult = await sendOrderEmails(normalizedData);
-
-    console.log("Bestell-E-Mail Ergebnis:", {
-      sent: emailResult.sent,
-      status: emailResult.status || null,
-    });
-
-    return res.json({
-      ok: true,
-      email: emailResult,
-    });
-  } catch (error) {
-    console.error("portal-order-email error:", error);
-
-    return res.status(500).json({
-      ok: false,
-      error: "E-Mail konnte nicht gesendet werden.",
-      detail: String(error?.message || error),
-    });
+      return res.status(500).json({
+        ok: false,
+        error: "E-Mail konnte nicht gesendet werden.",
+        detail: String(error?.message || error),
+      });
+    }
   }
-});
+);
 
 // ===== Health Check =====
 
@@ -747,71 +818,76 @@ app.get("/api/health", (req, res) => {
 });
 
 // ===== Passwort vergessen =====
+// WICHTIG: express.json nur hier, nicht global.
 
-app.post("/api/password-forgot", async (req, res) => {
-  try {
-    const email = safeText(req.body?.email).toLowerCase();
+app.post(
+  "/api/password-forgot",
+  express.json({ limit: "10mb" }),
+  async (req, res) => {
+    try {
+      const email = safeText(req.body?.email).toLowerCase();
 
-    if (!email) {
-      return res.status(400).json({
-        ok: false,
-        message: "E-Mail fehlt",
-      });
-    }
+      if (!email) {
+        return res.status(400).json({
+          ok: false,
+          message: "E-Mail fehlt",
+        });
+      }
 
-    const resetLink = `${process.env.APP_URL}/passwort-zuruecksetzen?email=${encodeURIComponent(
-      email
-    )}`;
+      const resetLink = `${
+        process.env.APP_URL || "https://konto.letmebowl-catering.de"
+      }/passwort-zuruecksetzen?email=${encodeURIComponent(email)}`;
 
-    const config = getMailjetConfig();
+      const config = getMailjetConfig();
 
-    const emailResult = await sendMailjetMessages([
-      {
-        From: {
-          Email: config.fromEmail,
-          Name: config.fromName,
-        },
-        To: [
-          {
-            Email: email,
-            Name: email,
+      const emailResult = await sendMailjetMessages([
+        {
+          From: {
+            Email: config.fromEmail,
+            Name: config.fromName,
           },
-        ],
-        Subject: "Passwort zurücksetzen",
-        TextPart: `Passwort zurücksetzen\n\nFür diese E-Mail wurde ein Passwort-Reset angefragt:\n${email}\n\n${resetLink}`,
-        HTMLPart: `
+          To: [
+            {
+              Email: email,
+              Name: email,
+            },
+          ],
+          Subject: "Passwort zurücksetzen",
+          TextPart: `Passwort zurücksetzen\n\nFür diese E-Mail wurde ein Passwort-Reset angefragt:\n${email}\n\n${resetLink}`,
+          HTMLPart: `
           <h2>Passwort zurücksetzen</h2>
           <p>Für diese E-Mail wurde ein Passwort-Reset angefragt:</p>
           <p><strong>${escapeHtml(email)}</strong></p>
           <p>Klicke auf den Link:</p>
           <a href="${escapeHtml(resetLink)}">${escapeHtml(resetLink)}</a>
         `,
-      },
-    ]);
+        },
+      ]);
 
-    if (!emailResult.sent) {
-      return res.status(500).json({
-        ok: false,
-        message: "E-Mail konnte nicht gesendet werden.",
+      if (!emailResult.sent) {
+        return res.status(500).json({
+          ok: false,
+          message: "E-Mail konnte nicht gesendet werden.",
+          email: emailResult,
+        });
+      }
+
+      return res.json({
+        ok: true,
+        message: "E-Mail wurde gesendet",
         email: emailResult,
       });
+    } catch (error) {
+      console.error("Password forgot error:", error);
+
+      return res.status(500).json({
+        ok: false,
+        message: "Fehler beim Senden der E-Mail",
+        detail: String(error?.message || error),
+      });
     }
-
-    return res.json({
-      ok: true,
-      message: "E-Mail wurde gesendet",
-      email: emailResult,
-    });
-  } catch (error) {
-    console.error("Password forgot error:", error);
-
-    return res.status(500).json({
-      ok: false,
-      message: "Fehler beim Senden der E-Mail",
-      detail: String(error?.message || error),
-    });
   }
-});
+);
 
 // ===== React Router erst NACH allen API-Routen =====
 
