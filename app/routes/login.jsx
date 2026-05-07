@@ -18,6 +18,16 @@ export async function loader({ request }) {
   const locale = getLocaleFromRequest(request);
   const user = await getUserFromRequest(request);
 
+  console.log("LOGIN LOADER DEBUG:", {
+    hasUser: Boolean(user),
+    userId: user?.id || null,
+    email: user?.email || null,
+    username: user?.username || null,
+    isActive: user?.isActive || null,
+    isAdmin: user?.isAdmin || null,
+    mustResetPassword: user?.mustResetPassword || null,
+  });
+
   if (user) {
     if (user.mustResetPassword && !user.isAdmin) {
       throw redirect(`/passwort-aendern?lang=${locale}`);
@@ -38,34 +48,115 @@ export async function action({ request }) {
   const t = dict[locale] || dict.de;
   const formData = await request.formData();
 
-  const login = String(formData.get("login") || "").trim().toLowerCase();
+  const loginRaw = String(formData.get("login") || "").trim();
+  const login = loginRaw.toLowerCase();
   const password = String(formData.get("password") || "");
 
+  console.log("LOGIN ACTION START:", {
+    loginRaw,
+    login,
+    hasPassword: Boolean(password),
+    passwordLength: password.length,
+  });
+
   if (!login || !password) {
-    return { ok: false, message: t.loginFieldsMissing };
+    console.log("LOGIN FAILED: Felder fehlen");
+
+    return {
+      ok: false,
+      message: t.loginFieldsMissing || "Bitte E-Mail/Benutzername und Passwort eingeben.",
+    };
   }
 
   const user = await prisma.portalUser.findFirst({
     where: {
-      OR: [{ email: login }, { username: login }],
+      OR: [
+        { email: login },
+        { username: login },
+      ],
     },
   });
 
+  console.log("LOGIN USER LOOKUP:", {
+    login,
+    userFound: Boolean(user),
+    userId: user?.id || null,
+    email: user?.email || null,
+    username: user?.username || null,
+    isActive: user?.isActive || null,
+    isAdmin: user?.isAdmin || null,
+    mustResetPassword: user?.mustResetPassword || null,
+    hasPasswordHash: Boolean(user?.passwordHash),
+    role: user?.role || null,
+  });
+
   if (!user) {
-    return { ok: false, message: t.userNotFound };
+    console.log("LOGIN FAILED: Nutzer nicht gefunden", { login });
+
+    return {
+      ok: false,
+      message: t.userNotFound || "Benutzer wurde nicht gefunden.",
+    };
   }
 
   if (!user.isActive) {
-    return { ok: false, message: t.accessDisabled };
+    console.log("LOGIN FAILED: Nutzer nicht aktiv", {
+      userId: user.id,
+      email: user.email,
+      username: user.username,
+      isActive: user.isActive,
+    });
+
+    return {
+      ok: false,
+      message: t.accessDisabled || "Dieser Zugang ist noch nicht freigeschaltet.",
+    };
+  }
+
+  if (!user.passwordHash) {
+    console.log("LOGIN FAILED: Kein Passwort-Hash vorhanden", {
+      userId: user.id,
+      email: user.email,
+    });
+
+    return {
+      ok: false,
+      message: "Für diesen Nutzer ist kein Passwort gespeichert. Bitte Passwort zurücksetzen.",
+    };
   }
 
   const passwordOk = await verifyPassword(password, user.passwordHash);
 
+  console.log("LOGIN PASSWORD CHECK:", {
+    login,
+    userId: user.id,
+    passwordOk,
+  });
+
   if (!passwordOk) {
-    return { ok: false, message: t.passwordWrong };
+    console.log("LOGIN FAILED: Passwort falsch", {
+      userId: user.id,
+      email: user.email,
+      username: user.username,
+    });
+
+    return {
+      ok: false,
+      message: t.passwordWrong || "Das Passwort ist falsch.",
+    };
   }
 
   const { sessionToken, expiresAt } = await createPortalSession(user.id);
+  const cookie = createSessionCookie(sessionToken, expiresAt);
+
+  console.log("LOGIN SESSION CREATED:", {
+    userId: user.id,
+    email: user.email,
+    username: user.username,
+    expiresAt,
+    hasSessionToken: Boolean(sessionToken),
+    cookiePreview: String(cookie).slice(0, 80),
+  });
 
   let redirectTo = user.isAdmin
     ? `/admin?lang=${locale}`
@@ -75,9 +166,14 @@ export async function action({ request }) {
     redirectTo = `/passwort-aendern?lang=${locale}`;
   }
 
+  console.log("LOGIN SUCCESS REDIRECT:", {
+    userId: user.id,
+    redirectTo,
+  });
+
   return redirect(redirectTo, {
     headers: {
-      "Set-Cookie": createSessionCookie(sessionToken, expiresAt),
+      "Set-Cookie": cookie,
     },
   });
 }
@@ -115,9 +211,15 @@ export default function LoginPage() {
 
       <div style={styles.center}>
         <div style={styles.card}>
-          <div style={styles.eyebrow}>{t.brand}</div>
-          <h1 style={styles.title}>{t.loginTitle}</h1>
-          <p style={styles.text}>{t.loginText}</p>
+          <div style={styles.eyebrow}>{t.brand || "Let Me Bowl"}</div>
+
+          <h1 style={styles.title}>
+            {t.loginTitle || "Login"}
+          </h1>
+
+          <p style={styles.text}>
+            {t.loginText || "Melde dich mit deinem Firmenkonto an."}
+          </p>
 
           {actionData?.message ? (
             <div style={styles.error}>{actionData.message}</div>
@@ -125,26 +227,36 @@ export default function LoginPage() {
 
           <Form method="post">
             <label style={styles.field}>
-              <span style={styles.label}>{t.loginField}</span>
+              <span style={styles.label}>
+                {t.loginField || "E-Mail oder Benutzername"}
+              </span>
+
               <input
                 name="login"
-                placeholder={t.loginPlaceholder}
+                placeholder={t.loginPlaceholder || "E-Mail oder Benutzername"}
                 style={styles.input}
+                autoComplete="username"
               />
             </label>
 
             <label style={styles.field}>
-              <span style={styles.label}>{t.password}</span>
+              <span style={styles.label}>
+                {t.password || "Passwort"}
+              </span>
+
               <input
                 type="password"
                 name="password"
-                placeholder={t.passwordPlaceholder}
+                placeholder={t.passwordPlaceholder || "Passwort"}
                 style={styles.input}
+                autoComplete="current-password"
               />
             </label>
 
             <button type="submit" style={styles.button} disabled={isSubmitting}>
-              {isSubmitting ? t.signingIn : t.signInNow}
+              {isSubmitting
+                ? t.signingIn || "Wird angemeldet..."
+                : t.signInNow || "Jetzt anmelden"}
             </button>
           </Form>
 
@@ -153,14 +265,17 @@ export default function LoginPage() {
               href={withLang("/passwort-vergessen", locale)}
               style={styles.link}
             >
-              {t.forgotPassword}
+              {t.forgotPassword || "Passwort vergessen?"}
             </a>
           </div>
 
           <div style={styles.links}>
-            <span style={styles.muted}>{t.noAccountYet} </span>
+            <span style={styles.muted}>
+              {t.noAccountYet || "Noch kein Konto?"}{" "}
+            </span>
+
             <a href={withLang("/register", locale)} style={styles.linkStrong}>
-              {t.registerNow}
+              {t.registerNow || "Jetzt registrieren"}
             </a>
           </div>
         </div>
