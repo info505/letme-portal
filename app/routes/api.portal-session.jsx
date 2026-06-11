@@ -1,14 +1,36 @@
 import { getUserFromRequest } from "../lib/auth.server.js";
 
-const ALLOWED_ORIGINS = new Set([
+const EXACT_ALLOWED_ORIGINS = new Set([
   "https://letmebowl-catering.de",
   "https://www.letmebowl-catering.de",
   "https://ab3d1f.myshopify.com",
 ]);
 
+function isAllowedOrigin(origin) {
+  if (!origin) return false;
+
+  if (EXACT_ALLOWED_ORIGINS.has(origin)) {
+    return true;
+  }
+
+  try {
+    const url = new URL(origin);
+    const hostname = url.hostname.toLowerCase();
+
+    return (
+      hostname === "letmebowl-catering.de" ||
+      hostname.endsWith(".letmebowl-catering.de") ||
+      hostname.endsWith(".myshopify.com") ||
+      hostname.endsWith(".shopifypreview.com")
+    );
+  } catch {
+    return false;
+  }
+}
+
 function getCorsHeaders(request) {
   const origin = request.headers.get("Origin") || "";
-  const allowedOrigin = ALLOWED_ORIGINS.has(origin) ? origin : "";
+  const allowedOrigin = isAllowedOrigin(origin) ? origin : "";
 
   const headers = {
     "Content-Type": "application/json; charset=utf-8",
