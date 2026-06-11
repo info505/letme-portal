@@ -3,6 +3,7 @@ import { getUserFromRequest } from "../lib/auth.server.js";
 const ALLOWED_ORIGINS = new Set([
   "https://letmebowl-catering.de",
   "https://www.letmebowl-catering.de",
+  "https://ab3d1f.myshopify.com",
 ]);
 
 function getCorsHeaders(request) {
