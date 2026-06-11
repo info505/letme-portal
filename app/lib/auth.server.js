@@ -36,6 +36,7 @@ export function createSessionCookie(sessionToken, expiresAt) {
   return [
     `${SESSION_COOKIE}=${sessionToken}`,
     "Path=/",
+    "Domain=.letmebowl-catering.de",
     "HttpOnly",
     "SameSite=Lax",
     "Secure",
@@ -47,6 +48,7 @@ export function destroySessionCookie() {
   return [
     `${SESSION_COOKIE}=`,
     "Path=/",
+    "Domain=.letmebowl-catering.de",
     "HttpOnly",
     "SameSite=Lax",
     "Secure",
