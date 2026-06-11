@@ -44,16 +44,29 @@ export function createSessionCookie(sessionToken, expiresAt) {
   ].join("; ");
 }
 
-export function destroySessionCookie() {
-  return [
+export function destroySessionCookies() {
+  const sharedDomainCookie = [
     `${SESSION_COOKIE}=`,
     "Path=/",
     "Domain=.letmebowl-catering.de",
     "HttpOnly",
     "SameSite=Lax",
     "Secure",
+    "Expires=Thu, 01 Jan 1970 00:00:00 GMT",
     "Max-Age=0",
   ].join("; ");
+
+  const legacyHostCookie = [
+    `${SESSION_COOKIE}=`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+    "Secure",
+    "Expires=Thu, 01 Jan 1970 00:00:00 GMT",
+    "Max-Age=0",
+  ].join("; ");
+
+  return [sharedDomainCookie, legacyHostCookie];
 }
 
 export async function getUserFromRequest(request) {
@@ -106,5 +119,5 @@ export async function destroySessionFromRequest(request) {
     await prisma.portalSession.delete({ where: { sessionToken } }).catch(() => {});
   }
 
-  return destroySessionCookie();
+  return destroySessionCookies();
 }
