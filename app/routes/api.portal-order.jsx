@@ -36,16 +36,41 @@ function isTruthy(value) {
   return value === true || value === "true" || value === "Ja" || value === "1";
 }
 
-function makeOrderNumber() {
+async function makeOrderNumber() {
   const now = new Date();
 
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, "0");
-  const dd = String(now.getDate()).padStart(2, "0");
+  const dateParts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Berlin",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
 
-  const random = Math.random().toString(36).slice(2, 7).toUpperCase();
+  const getPart = (type) =>
+    dateParts.find((part) => part.type === type)?.value || "00";
 
-  return `LMB-${yyyy}${mm}${dd}-${random}`;
+  const yyyy = getPart("year");
+  const yy = yyyy.slice(-2);
+  const mm = getPart("month");
+  const dd = getPart("day");
+
+  const berlinDate = `${yyyy}-${mm}-${dd}`;
+
+  const startOfDay = new Date(`${berlinDate}T00:00:00+02:00`);
+  const endOfDay = new Date(`${berlinDate}T23:59:59.999+02:00`);
+
+  const countToday = await prisma.portalOrder.count({
+    where: {
+      createdAt: {
+        gte: startOfDay,
+        lte: endOfDay,
+      },
+    },
+  });
+
+  const sequence = String(countToday + 1).padStart(3, "0");
+
+  return `LMB-${yy}${mm}${dd}-${sequence}`;
 }
 
 function parseDeliveryDate(dateValue, timeValue) {
@@ -336,7 +361,7 @@ export async function action({ request }) {
 
     const user = await findOrCreateOrderUser(data);
 
-    const orderNumber = makeOrderNumber();
+    const orderNumber = await makeOrderNumber();
 
     const deliveryDate = parseDeliveryDate(data.deliveryDate, data.deliveryTime);
 
