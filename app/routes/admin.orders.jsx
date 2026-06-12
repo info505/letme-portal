@@ -8,13 +8,46 @@ function formatDate(date) {
   return new Date(date).toLocaleDateString("de-DE");
 }
 
-function euro(value) {
-  const num = Number(value || 0);
+function numberValue(value) {
+  if (value === null || value === undefined || value === "") {
+    return 0;
+  }
 
-  return num.toLocaleString("de-DE", {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value
+      .trim()
+      .replace(/\s/g, "")
+      .replace(/\./g, "")
+      .replace(",", ".");
+
+    const parsed = Number(normalized);
+
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  if (typeof value === "object") {
+    if (typeof value.toNumber === "function") {
+      const parsed = value.toNumber();
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    const parsed = Number(String(value));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function euro(value) {
+  return new Intl.NumberFormat("de-DE", {
     style: "currency",
     currency: "EUR",
-  });
+  }).format(numberValue(value));
 }
 
 function statusLabel(status) {
@@ -806,18 +839,14 @@ export default function AdminOrdersPage() {
                                   Einzelpreis
                                 </span>
                                 <strong>
-                                  {item.unitPrice
-                                    ? euro(item.unitPrice)
-                                    : "—"}
+                                  {euro(item.unitPrice)}
                                 </strong>
                               </div>
 
                               <div className="lmbProductTotal">
                                 <span className="lmbProductLabel">Gesamt</span>
                                 <strong>
-                                  {item.totalPrice
-                                    ? euro(item.totalPrice)
-                                    : "—"}
+                                  {euro(item.totalPrice)}
                                 </strong>
                               </div>
                             </div>

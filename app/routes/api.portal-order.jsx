@@ -483,6 +483,12 @@ export async function action({ request }) {
       ok: true,
       orderId: order.id,
       orderNumber: order.orderNumber,
+      email: {
+        internalSent: internalMailSent,
+        customerSent: customerMailSent,
+        internalRecipient: ownerEmail,
+        customerRecipient: customerEmail || null,
+      },
     });
   } catch (error) {
     console.error("api.portal-order Fehler:", error);
