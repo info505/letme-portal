@@ -254,7 +254,10 @@ async function sendMailjetMessages(messages) {
   const result = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    console.error("Mailjet API Fehler:", result);
+    console.error(
+      "Mailjet API Fehler vollständig:",
+      JSON.stringify(result, null, 2)
+    );
 
     return {
       sent: false,
