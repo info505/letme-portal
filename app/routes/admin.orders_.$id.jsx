@@ -581,11 +581,13 @@ export default function AdminOrderDeliveryNotePage() {
         @media print {
           @page {
             size: A4 portrait;
-            margin: 10mm;
+            margin: 6mm;
           }
 
           html,
           body {
+            width: 210mm !important;
+            height: auto !important;
             margin: 0 !important;
             padding: 0 !important;
             background: #ffffff !important;
@@ -600,44 +602,173 @@ export default function AdminOrderDeliveryNotePage() {
             visibility: visible !important;
           }
 
-          .deliveryNotePaper {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100% !important;
-            max-width: none !important;
-            min-height: 0 !important;
-            margin: 0 !important;
-            padding: 8mm !important;
-            border: 0 !important;
-            border-radius: 0 !important;
-            box-shadow: none !important;
-          }
-
           .deliveryNoteActions {
             display: none !important;
           }
 
+          .deliveryNotePaper {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 198mm !important;
+            max-width: 198mm !important;
+            min-height: 0 !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 5mm 7mm !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            overflow: visible !important;
+            font-size: 9px !important;
+          }
+
           .deliveryNoteHeader {
-            padding-bottom: 18px;
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 8mm !important;
+            padding-bottom: 4mm !important;
+            border-bottom-width: 1px !important;
+          }
+
+          .deliveryNoteBrand {
+            font-size: 17px !important;
+          }
+
+          .deliveryNoteBrandSubline {
+            margin-top: 2px !important;
+            font-size: 8px !important;
+          }
+
+          .deliveryNoteSender {
+            margin-top: 6px !important;
+            font-size: 8px !important;
+            line-height: 1.35 !important;
+          }
+
+          .deliveryNoteDocumentInfo {
+            min-width: 0 !important;
+          }
+
+          .deliveryNoteTitle {
+            margin: 0 0 6px !important;
+            font-size: 23px !important;
+          }
+
+          .deliveryNoteDocumentRow {
+            padding: 2px 0 !important;
+            font-size: 8.5px !important;
           }
 
           .deliveryNoteDeliveryBox {
-            margin-top: 20px;
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 4mm !important;
+            margin-top: 5mm !important;
+          }
+
+          .deliveryNoteBox {
+            padding: 3mm !important;
+            border-radius: 7px !important;
+          }
+
+          .deliveryNoteBoxTitle {
+            margin-bottom: 4px !important;
+            font-size: 7.5px !important;
+          }
+
+          .deliveryNoteAddress {
+            font-size: 9px !important;
+            line-height: 1.35 !important;
+          }
+
+          .deliveryNoteMetaList {
+            gap: 3px !important;
+          }
+
+          .deliveryNoteMetaRow {
+            grid-template-columns: 27mm 1fr !important;
+            gap: 3mm !important;
+            font-size: 8px !important;
+            line-height: 1.25 !important;
           }
 
           .deliveryNoteItemsSection {
-            margin-top: 24px;
+            margin-top: 5mm !important;
           }
 
-          .deliveryNoteTable tr,
-          .deliveryNoteBox,
+          .deliveryNoteSectionTitle {
+            margin: 0 0 3mm !important;
+            font-size: 15px !important;
+          }
+
+          .deliveryNoteTable th {
+            padding: 5px 7px !important;
+            font-size: 7.5px !important;
+          }
+
+          .deliveryNoteTable td {
+            padding: 7px !important;
+            font-size: 9px !important;
+          }
+
+          .deliveryNoteTable th:first-child,
+          .deliveryNoteTable td:first-child {
+            width: 13mm !important;
+          }
+
+          .deliveryNoteTable th:last-child,
+          .deliveryNoteTable td:last-child {
+            width: 20mm !important;
+          }
+
+          .deliveryNoteProductMeta {
+            margin-top: 2px !important;
+            font-size: 7.5px !important;
+          }
+
+          .deliveryNoteQuantity {
+            font-size: 10px !important;
+          }
+
           .deliveryNoteReference {
-            break-inside: avoid;
+            margin-top: 4mm !important;
+            padding: 3mm !important;
+            border-radius: 7px !important;
+          }
+
+          .deliveryNoteReferenceText {
+            font-size: 8px !important;
+            line-height: 1.35 !important;
+          }
+
+          .deliveryNoteSignatures {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 12mm !important;
+            margin-top: 12mm !important;
+          }
+
+          .deliveryNoteSignatureLine {
+            padding-top: 4px !important;
+            font-size: 7.5px !important;
           }
 
           .deliveryNoteFooter {
-            margin-top: 35px;
+            margin-top: 8mm !important;
+            padding-top: 3mm !important;
+            font-size: 7px !important;
+            line-height: 1.3 !important;
+          }
+
+          .deliveryNoteHeader,
+          .deliveryNoteDeliveryBox,
+          .deliveryNoteBox,
+          .deliveryNoteReference,
+          .deliveryNoteSignatures,
+          .deliveryNoteTable tr {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
           }
         }
       `}</style>
