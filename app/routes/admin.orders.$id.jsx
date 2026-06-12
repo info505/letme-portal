@@ -221,84 +221,37 @@ export default function AdminOrderDetailPage() {
             grid-column: 2;
           }
         }
-
-        .orderDetailActions {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 14px;
-          flex-wrap: wrap;
-        }
-
-        .orderPrintButton {
-          min-height: 46px;
-          padding: 0 20px;
-          border: 1px solid #c7a060;
-          border-radius: 999px;
-          background: linear-gradient(180deg, #d6b676 0%, #c7a05f 100%);
-          color: #ffffff;
-          font: inherit;
-          font-weight: 900;
-          cursor: pointer;
-          box-shadow: 0 10px 22px rgba(184, 146, 86, 0.18);
-        }
-
-        @media print {
-          @page {
-            size: A4;
-            margin: 12mm;
-          }
-
-          body {
-            background: #ffffff !important;
-          }
-
-          aside,
-          nav,
-          header,
-          footer,
-          .orderDetailActions,
-          .adminSidebar,
-          .adminHeader {
-            display: none !important;
-          }
-
-          .orderDetailPage {
-            display: block !important;
-            width: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
-          }
-
-          .orderDetailCard {
-            box-shadow: none !important;
-            border: 1px solid #d8d8d8 !important;
-            border-radius: 0 !important;
-            margin-bottom: 8mm !important;
-            break-inside: avoid;
-          }
-
-          .orderDetailItem {
-            break-inside: avoid;
-          }
-
-          .orderDetailNotes {
-            max-height: none !important;
-            overflow: visible !important;
-          }
-        }
-      }</style>
+      `}</style>
 
       <div className="orderDetailPage">
-        <div className="orderDetailActions">
+        <div
+          className="orderDetailActions"
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "14px",
+            flexWrap: "wrap",
+          }}
+        >
           <a href="/admin/orders" className="orderDetailBack">
             ← Zurück zu den Bestellungen
           </a>
 
           <button
             type="button"
-            className="orderPrintButton"
             onClick={() => window.print()}
+            style={{
+              minHeight: "46px",
+              padding: "0 20px",
+              border: "1px solid #c7a060",
+              borderRadius: "999px",
+              background: "linear-gradient(180deg, #d6b676 0%, #c7a05f 100%)",
+              color: "#ffffff",
+              font: "inherit",
+              fontWeight: 900,
+              cursor: "pointer",
+            }}
           >
             Bestellung drucken / PDF
           </button>
