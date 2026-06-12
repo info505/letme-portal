@@ -192,20 +192,25 @@ function getMailjetConfig() {
     process.env.MJ_APIKEY_PRIVATE ||
     process.env.SMTP_PASS;
 
-  const fromEmail =
+  const fromEmail = String(
     process.env.MAIL_FROM_EMAIL ||
-    process.env.MAILJET_FROM_EMAIL ||
-    "info@letmebowl-catering.de";
+      process.env.MAILJET_FROM_EMAIL ||
+      "info@letmebowl-catering.de"
+  ).trim();
 
-  const fromName =
-    process.env.MAIL_FROM_NAME || process.env.MAILJET_FROM_NAME || "Let Me Bowl";
+  const fromName = String(
+    process.env.MAIL_FROM_NAME ||
+      process.env.MAILJET_FROM_NAME ||
+      "Let Me Bowl"
+  ).trim();
 
-  const ownerEmail =
+  const ownerEmail = String(
     process.env.ORDER_NOTIFICATION_EMAIL ||
-    process.env.ORDER_MAIL_TO ||
-    "info@letmebowl-catering.de";
+      process.env.ORDER_MAIL_TO ||
+      "info@letmebowl-catering.de"
+  ).trim();
 
-  const bccEmail = process.env.MAIL_BCC || "";
+  const bccEmail = String(process.env.MAIL_BCC || "").trim();
 
   return {
     apiKey,
@@ -231,7 +236,7 @@ async function sendMailjetMessages(messages) {
         hasApiKey: Boolean(config.apiKey),
         hasSecretKey: Boolean(config.secretKey),
         fromEmail: config.fromEmail,
-        ownerEmail: config.ownerEmail,
+        ownerEmail: ownerEmail,
       },
     };
   }
@@ -965,7 +970,7 @@ async function sendOrderEmails(data, savedOrder = null) {
     },
     To: [
       {
-        Email: config.ownerEmail,
+        Email: ownerEmail,
         Name: "Let Me Bowl",
       },
     ],
@@ -1161,7 +1166,7 @@ app.get("/api/health", (req, res) => {
     mailProvider: "mailjet-api",
     mailConfigured: config.configured,
     fromEmail: config.fromEmail,
-    ownerEmail: config.ownerEmail,
+    ownerEmail: ownerEmail,
     hasApiKey: Boolean(config.apiKey),
     hasSecretKey: Boolean(config.secretKey),
     database: "prisma",
