@@ -331,7 +331,307 @@ export default function AdminOrdersPage() {
           text-align: center;
         }
 
-        @media (max-width: 1050px) {
+        
+          .lmbItems {
+            margin-top: 18px;
+            overflow: hidden;
+            border: 1px solid rgba(18, 24, 38, 0.09);
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.78);
+          }
+
+          .lmbItemsHeader {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(18, 24, 38, 0.08);
+            background: rgba(198, 157, 83, 0.09);
+            font-size: 13px;
+            font-weight: 800;
+          }
+
+          .lmbItemsHeader span:last-child {
+            color: rgba(18, 24, 38, 0.58);
+            font-size: 12px;
+          }
+
+          .lmbItemsTable {
+            display: grid;
+          }
+
+          .lmbProductRow {
+            display: grid;
+            grid-template-columns:
+              minmax(220px, 1fr)
+              minmax(80px, 0.32fr)
+              minmax(105px, 0.42fr)
+              minmax(105px, 0.42fr);
+            gap: 16px;
+            align-items: center;
+            padding: 15px 16px;
+            border-bottom: 1px solid rgba(18, 24, 38, 0.07);
+          }
+
+          .lmbProductRow:last-child {
+            border-bottom: 0;
+          }
+
+          .lmbProductRow.isDeliveryFee {
+            background: rgba(198, 157, 83, 0.08);
+          }
+
+          .lmbProductMain {
+            min-width: 0;
+          }
+
+          .lmbProductTitleRow {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+          }
+
+          .lmbProductTitle {
+            color: #121826;
+            font-size: 14px;
+            line-height: 1.35;
+          }
+
+          .lmbProductBadge {
+            display: inline-flex;
+            align-items: center;
+            min-height: 24px;
+            padding: 3px 9px;
+            border: 1px solid rgba(170, 124, 42, 0.22);
+            border-radius: 999px;
+            background: rgba(198, 157, 83, 0.14);
+            color: #755118;
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+          }
+
+          .lmbProductDetails {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px 12px;
+            margin-top: 5px;
+            color: rgba(18, 24, 38, 0.58);
+            font-size: 11px;
+          }
+
+          .lmbProductQuantity,
+          .lmbProductPrice,
+          .lmbProductTotal {
+            display: grid;
+            gap: 4px;
+          }
+
+          .lmbProductPrice,
+          .lmbProductTotal {
+            text-align: right;
+          }
+
+          .lmbProductLabel {
+            color: rgba(18, 24, 38, 0.5);
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+          }
+
+          .lmbProductQuantity strong,
+          .lmbProductPrice strong,
+          .lmbProductTotal strong {
+            color: #121826;
+            font-size: 13px;
+          }
+
+          .lmbOrderTotals {
+            display: grid;
+            gap: 8px;
+            padding: 14px 16px;
+            border-top: 1px solid rgba(18, 24, 38, 0.08);
+            background: rgba(247, 243, 235, 0.72);
+          }
+
+          .lmbOrderTotals > div {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            color: rgba(18, 24, 38, 0.66);
+            font-size: 12px;
+          }
+
+          .lmbOrderTotals strong {
+            color: #121826;
+          }
+
+          .lmbOrderTotalFinal {
+            margin-top: 3px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(18, 24, 38, 0.1);
+            font-size: 14px !important;
+            font-weight: 900;
+          }
+
+          .lmbOrderTotalFinal strong {
+            font-size: 17px;
+          }
+
+          .lmbItemsEmpty {
+            margin-top: 16px;
+            padding: 14px 16px;
+            border: 1px dashed rgba(18, 24, 38, 0.16);
+            border-radius: 16px;
+            color: rgba(18, 24, 38, 0.56);
+            font-size: 13px;
+          }
+
+          .lmbItems {
+            margin-top: 18px;
+            overflow: hidden;
+            border: 1px solid rgba(18, 24, 38, 0.09);
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.78);
+          }
+
+          .lmbItemsHeader {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(18, 24, 38, 0.08);
+            background: rgba(198, 157, 83, 0.09);
+            font-size: 13px;
+            font-weight: 800;
+          }
+
+          .lmbItemsHeader span:last-child {
+            color: rgba(18, 24, 38, 0.58);
+            font-size: 12px;
+          }
+
+          .lmbItemsTable {
+            display: grid;
+          }
+
+          .lmbProductRow {
+            display: grid;
+            grid-template-columns:
+              minmax(220px, 1fr)
+              minmax(80px, 0.3fr)
+              minmax(105px, 0.4fr)
+              minmax(105px, 0.4fr);
+            gap: 16px;
+            align-items: center;
+            padding: 15px 16px;
+            border-bottom: 1px solid rgba(18, 24, 38, 0.07);
+          }
+
+          .lmbProductRow:last-child {
+            border-bottom: 0;
+          }
+
+          .lmbProductRow.isDeliveryFee {
+            background: rgba(198, 157, 83, 0.08);
+          }
+
+          .lmbProductMain {
+            min-width: 0;
+          }
+
+          .lmbProductTitleRow {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+          }
+
+          .lmbProductTitle {
+            color: #121826;
+            font-size: 14px;
+          }
+
+          .lmbProductBadge {
+            display: inline-flex;
+            padding: 3px 9px;
+            border: 1px solid rgba(170, 124, 42, 0.22);
+            border-radius: 999px;
+            background: rgba(198, 157, 83, 0.14);
+            color: #755118;
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+          }
+
+          .lmbProductDetails {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px 12px;
+            margin-top: 5px;
+            color: rgba(18, 24, 38, 0.58);
+            font-size: 11px;
+          }
+
+          .lmbProductQuantity,
+          .lmbProductPrice,
+          .lmbProductTotal {
+            display: grid;
+            gap: 4px;
+          }
+
+          .lmbProductPrice,
+          .lmbProductTotal {
+            text-align: right;
+          }
+
+          .lmbProductLabel {
+            color: rgba(18, 24, 38, 0.5);
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+          }
+
+          .lmbOrderTotals {
+            display: grid;
+            gap: 8px;
+            padding: 14px 16px;
+            border-top: 1px solid rgba(18, 24, 38, 0.08);
+            background: rgba(247, 243, 235, 0.72);
+          }
+
+          .lmbOrderTotals > div {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            font-size: 12px;
+          }
+
+          .lmbOrderTotalFinal {
+            margin-top: 3px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(18, 24, 38, 0.1);
+            font-size: 14px !important;
+            font-weight: 900;
+          }
+
+          .lmbOrderTotalFinal strong {
+            font-size: 17px;
+          }
+
+          .lmbItemsEmpty {
+            margin-top: 16px;
+            padding: 14px 16px;
+            border: 1px dashed rgba(18, 24, 38, 0.16);
+            border-radius: 16px;
+            font-size: 13px;
+          }
+@media (max-width: 1050px) {
           .lmbStats {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
@@ -441,23 +741,113 @@ export default function AdminOrdersPage() {
                       </span>
                     </div>
                   </div>
-
                   {order.items?.length ? (
                     <div className="lmbItems">
-                      {order.items.map((item) => (
-                        <div key={item.id} className="lmbItemLine">
-                          <span>
-                            {item.quantity} × {item.title}
-                          </span>
-                          <span>
-                            {item.totalPrice ? euro(item.totalPrice) : "—"}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
+                      <div className="lmbItemsHeader">
+                        <span>Bestellte Positionen</span>
+                        <span>{order.items.length} Positionen</span>
+                      </div>
 
-                  {order.notes ? (
+                      <div className="lmbItemsTable">
+                        {order.items.map((item) => {
+                          const itemTitle = String(item.title || "Artikel");
+
+                          const isDeliveryFee =
+                            itemTitle.toLowerCase().includes("liefer") ||
+                            String(item.notes || "")
+                              .toLowerCase()
+                              .includes("lieferkosten");
+
+                          return (
+                            <div
+                              key={item.id}
+                              className={`lmbProductRow ${
+                                isDeliveryFee ? "isDeliveryFee" : ""
+                              }`}
+                            >
+                              <div className="lmbProductMain">
+                                <div className="lmbProductTitleRow">
+                                  <strong className="lmbProductTitle">
+                                    {itemTitle}
+                                  </strong>
+
+                                  {isDeliveryFee ? (
+                                    <span className="lmbProductBadge">
+                                      Lieferkosten
+                                    </span>
+                                  ) : null}
+                                </div>
+
+                                <div className="lmbProductDetails">
+                                  {item.variantTitle ? (
+                                    <span>Variante: {item.variantTitle}</span>
+                                  ) : null}
+
+                                  {item.sku ? (
+                                    <span>SKU: {item.sku}</span>
+                                  ) : null}
+
+                                  {item.notes && !isDeliveryFee ? (
+                                    <span>Hinweis: {item.notes}</span>
+                                  ) : null}
+                                </div>
+                              </div>
+
+                              <div className="lmbProductQuantity">
+                                <span className="lmbProductLabel">Menge</span>
+                                <strong>
+                                  {item.quantity || 1}
+                                  {item.unit ? ` ${item.unit}` : ""}
+                                </strong>
+                              </div>
+
+                              <div className="lmbProductPrice">
+                                <span className="lmbProductLabel">
+                                  Einzelpreis
+                                </span>
+                                <strong>
+                                  {item.unitPrice
+                                    ? euro(item.unitPrice)
+                                    : "—"}
+                                </strong>
+                              </div>
+
+                              <div className="lmbProductTotal">
+                                <span className="lmbProductLabel">Gesamt</span>
+                                <strong>
+                                  {item.totalPrice
+                                    ? euro(item.totalPrice)
+                                    : "—"}
+                                </strong>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="lmbOrderTotals">
+                        <div>
+                          <span>Zwischensumme</span>
+                          <strong>{euro(order.subtotalAmount)}</strong>
+                        </div>
+
+                        <div>
+                          <span>Enthaltene Steuer</span>
+                          <strong>{euro(order.taxAmount)}</strong>
+                        </div>
+
+                        <div className="lmbOrderTotalFinal">
+                          <span>Gesamtbetrag</span>
+                          <strong>{euro(order.totalAmount)}</strong>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="lmbItemsEmpty">
+                      Für diese Bestellung wurden keine Positionen gespeichert.
+                    </div>
+                  )}
+{order.notes ? (
                     <div className="lmbNotes">{order.notes}</div>
                   ) : null}
                 </article>
