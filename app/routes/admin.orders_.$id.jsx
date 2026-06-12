@@ -3,26 +3,169 @@ import { prisma } from "../lib/prisma.server.js";
 import { getUserFromRequest } from "../lib/auth.server.js";
 import AdminLayout from "../components/AdminLayout.jsx";
 
-function euro(value) {
-  const amount = Number(value || 0);
-
-  return new Intl.NumberFormat("de-DE", {
-    style: "currency",
-    currency: "EUR",
-  }).format(amount);
+function safeText(value) {
+  if (value === null || value === undefined) return "";
+  return String(value).trim();
 }
 
-function formatDate(value) {
+function formatDateOnly(value) {
   if (!value) return "-";
 
   const date = new Date(value);
 
-  if (Number.isNaN(date.getTime())) return "-";
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
 
   return new Intl.DateTimeFormat("de-DE", {
-    dateStyle: "medium",
-    timeStyle: "short",
+    timeZone: "Europe/Berlin",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
   }).format(date);
+}
+
+function formatCreatedAt(value) {
+  if (!value) return "-";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
+
+  return new Intl.DateTimeFormat("de-DE", {
+    timeZone: "Europe/Berlin",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function normalizeLines(value) {
+  return safeText(value)
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .split("\n")
+    .map((line) => line.trim());
+}
+
+function getNoteValue(notes, labels) {
+  const lines = normalizeLines(notes);
+  const normalizedLabels = labels.map((label) => label.toLowerCase());
+
+  for (const line of lines) {
+    const separatorIndex = line.indexOf(":");
+
+    if (separatorIndex === -1) continue;
+
+    const key = line.slice(0, separatorIndex).trim().toLowerCase();
+    const value = line.slice(separatorIndex + 1).trim();
+
+    if (normalizedLabels.includes(key) && value && value !== "-") {
+      return value;
+    }
+  }
+
+  return "";
+}
+
+function getNoteSection(notes, heading, stopHeadings = []) {
+  const lines = normalizeLines(notes);
+  const normalizedHeading = heading.toLowerCase();
+  const normalizedStops = stopHeadings.map((value) => value.toLowerCase());
+
+  const startIndex = lines.findIndex((line) => {
+    return line.replace(/:$/, "").toLowerCase() === normalizedHeading;
+  });
+
+  if (startIndex === -1) return [];
+
+  const result = [];
+
+  for (let index = startIndex + 1; index < lines.length; index += 1) {
+    const line = lines[index];
+
+    if (!line) {
+      if (result.length) break;
+      continue;
+    }
+
+    const possibleHeading = line.replace(/:$/, "").toLowerCase();
+
+    if (normalizedStops.includes(possibleHeading)) {
+      break;
+    }
+
+    result.push(line);
+  }
+
+  return result.filter((line) => line && line !== "-");
+}
+
+function isDeliveryFeeItem(item) {
+  const title = safeText(item?.title).toLowerCase();
+  const handle = safeText(item?.shopifyHandle).toLowerCase();
+
+  return (
+    title.includes("lieferkosten") ||
+    title.includes("anlieferung") ||
+    title.includes("zustellung") ||
+    title.includes("delivery fee") ||
+    title.includes("abholpauschale") ||
+    handle.includes("lieferkosten") ||
+    handle.includes("anlieferung") ||
+    handle.includes("zustellung") ||
+    handle.includes("abholpauschale")
+  );
+}
+
+function cleanOrderNotes(notes) {
+  const raw = safeText(notes);
+
+  if (!raw) return "";
+
+  const lines = normalizeLines(raw);
+  const markerIndex = lines.findIndex((line) => {
+    const normalized = line.toLowerCase();
+
+    return (
+      normalized === "hinweise / interne referenz:" ||
+      normalized === "hinweise / interne referenz" ||
+      normalized === "hinweis:" ||
+      normalized === "hinweis"
+    );
+  });
+
+  if (markerIndex === -1) {
+    return "";
+  }
+
+  const result = [];
+
+  for (let index = markerIndex + 1; index < lines.length; index += 1) {
+    const line = lines[index];
+
+    if (!line) {
+      if (result.length) break;
+      continue;
+    }
+
+    if (
+      line.toLowerCase().startsWith("technische bestellnotiz") ||
+      line.toLowerCase().startsWith("portal:")
+    ) {
+      break;
+    }
+
+    if (line !== "-") {
+      result.push(line);
+    }
+  }
+
+  return result.join("\n").trim();
 }
 
 export async function loader({ request, params }) {
@@ -44,6 +187,7 @@ export async function loader({ request, params }) {
       user: true,
       items: true,
       costCenter: true,
+      deliveryAddress: true,
     },
   });
 
@@ -56,312 +200,648 @@ export async function loader({ request, params }) {
   return { order };
 }
 
-export default function AdminOrderDetailPage() {
+export default function AdminOrderDeliveryNotePage() {
   const { order } = useLoaderData();
+
+  const notes = safeText(order.notes);
+
+  const deliveryTime =
+    getNoteValue(notes, ["Lieferzeit", "Zeit"]) || "-";
+
+  const eventTime =
+    getNoteValue(notes, ["Eventbeginn", "Eventzeit"]) || "-";
+
+  const deliveryType =
+    getNoteValue(notes, ["Lieferart"]) ||
+    safeText(order.orderType) ||
+    "Lieferung";
+
+  const noteDeliveryAddress = getNoteSection(
+    notes,
+    "Lieferadresse",
+    [
+      "Rechnungsadresse",
+      "Portal",
+      "Hinweise / interne Referenz",
+      "Technische Bestellnotiz",
+    ]
+  );
+
+  const relationDeliveryAddress = [
+    safeText(order.deliveryAddress?.companyName),
+    safeText(order.deliveryAddress?.street),
+    [
+      safeText(order.deliveryAddress?.postalCode),
+      safeText(order.deliveryAddress?.city),
+    ]
+      .filter(Boolean)
+      .join(" "),
+    safeText(order.deliveryAddress?.addressExtra),
+  ].filter(Boolean);
+
+  const deliveryAddress =
+    relationDeliveryAddress.length > 0
+      ? relationDeliveryAddress
+      : noteDeliveryAddress;
+
+  const companyName =
+    safeText(order.user?.companyName) ||
+    safeText(order.billingCompanyName) ||
+    deliveryAddress[0] ||
+    "-";
+
+  const contactName =
+    safeText(order.billingContactName) ||
+    [
+      safeText(order.user?.firstName),
+      safeText(order.user?.lastName),
+    ]
+      .filter(Boolean)
+      .join(" ") ||
+    "-";
+
+  const email =
+    safeText(order.billingEmail) ||
+    safeText(order.user?.email) ||
+    "-";
+
+  const phone = safeText(order.billingPhone) || "-";
+
+  const costCenter =
+    safeText(order.costCenter?.name) ||
+    safeText(order.referenceNumber) ||
+    "-";
+
+  const customerReference = cleanOrderNotes(notes);
+
+  const productItems = Array.isArray(order.items)
+    ? order.items.filter((item) => !isDeliveryFeeItem(item))
+    : [];
 
   return (
     <AdminLayout>
       <style>{`
-        .orderDetailPage {
-          display: grid;
-          gap: 20px;
+        .deliveryNotePage,
+        .deliveryNotePage * {
+          box-sizing: border-box;
         }
 
-        .orderDetailBack {
-          display: inline-flex;
-          width: fit-content;
+        .deliveryNoteActions {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          margin-bottom: 18px;
+          flex-wrap: wrap;
+        }
+
+        .deliveryNoteBack {
           color: #121826;
           text-decoration: none;
           font-weight: 800;
         }
 
-        .orderDetailCard {
-          padding: 26px;
-          border-radius: 26px;
-          border: 1px solid rgba(18, 24, 38, 0.09);
-          background: #fffdfa;
-          box-shadow: 0 14px 34px rgba(18, 24, 38, 0.05);
+        .deliveryNotePrintButton {
+          min-height: 46px;
+          padding: 0 22px;
+          border: 1px solid #b78d43;
+          border-radius: 999px;
+          background: linear-gradient(180deg, #d6b676 0%, #c7a05f 100%);
+          color: #ffffff;
+          font: inherit;
+          font-weight: 900;
+          cursor: pointer;
+          box-shadow: 0 10px 24px rgba(184, 146, 86, 0.22);
         }
 
-        .orderDetailHeader {
+        .deliveryNotePaper {
+          width: 100%;
+          max-width: 900px;
+          min-height: 1120px;
+          margin: 0 auto;
+          padding: 42px 46px;
+          background: #ffffff;
+          color: #111827;
+          border: 1px solid rgba(18, 24, 38, 0.1);
+          border-radius: 20px;
+          box-shadow: 0 18px 45px rgba(18, 24, 38, 0.08);
+        }
+
+        .deliveryNoteHeader {
           display: flex;
-          align-items: flex-start;
           justify-content: space-between;
-          gap: 20px;
-          flex-wrap: wrap;
+          gap: 30px;
+          padding-bottom: 28px;
+          border-bottom: 2px solid #111827;
         }
 
-        .orderDetailNumber {
-          margin: 0;
-          font-size: 32px;
-          line-height: 1.1;
-          color: #121826;
+        .deliveryNoteBrand {
+          font-size: 24px;
+          font-weight: 950;
+          letter-spacing: 0.08em;
         }
 
-        .orderDetailAmount {
-          font-size: 26px;
-          font-weight: 900;
-          color: #121826;
-        }
-
-        .orderDetailGrid {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 12px;
-          margin-top: 24px;
-        }
-
-        .orderDetailMeta {
-          padding: 14px;
-          border-radius: 16px;
-          background: #f8f5ef;
-        }
-
-        .orderDetailMeta span {
-          display: block;
-          margin-bottom: 5px;
-          color: rgba(18, 24, 38, 0.58);
-          font-size: 11px;
-          font-weight: 900;
-          letter-spacing: 0.06em;
-          text-transform: uppercase;
-        }
-
-        .orderDetailMeta strong {
-          color: #121826;
-          word-break: break-word;
-        }
-
-        .orderDetailItems {
-          display: grid;
-          gap: 10px;
-          margin-top: 18px;
-        }
-
-        .orderDetailItem {
-          display: grid;
-          grid-template-columns: 70px minmax(0, 1fr) auto;
-          gap: 14px;
-          align-items: center;
-          padding: 15px;
-          border-radius: 18px;
-          border: 1px solid rgba(18, 24, 38, 0.08);
-          background: #fff;
-        }
-
-        .orderDetailQty {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          min-height: 42px;
-          border-radius: 14px;
-          background: #f1eadc;
+        .deliveryNoteBrandSubline {
+          margin-top: 7px;
           color: #80602f;
+          font-size: 12px;
           font-weight: 900;
+          letter-spacing: 0.14em;
         }
 
-        .orderDetailItemTitle {
-          color: #121826;
-          font-weight: 900;
+        .deliveryNoteSender {
+          margin-top: 18px;
+          font-size: 12px;
+          line-height: 1.65;
+          color: #4b5563;
         }
 
-        .orderDetailItemMeta {
-          margin-top: 4px;
-          color: rgba(18, 24, 38, 0.58);
+        .deliveryNoteDocumentInfo {
+          min-width: 260px;
+          text-align: right;
+        }
+
+        .deliveryNoteTitle {
+          margin: 0 0 16px;
+          font-size: 34px;
+          line-height: 1;
+          letter-spacing: -0.03em;
+        }
+
+        .deliveryNoteDocumentRow {
+          display: flex;
+          justify-content: space-between;
+          gap: 18px;
+          padding: 5px 0;
           font-size: 13px;
         }
 
-        .orderDetailItemPrice {
-          color: #121826;
-          font-weight: 900;
-          white-space: nowrap;
+        .deliveryNoteDocumentRow span {
+          color: #6b7280;
         }
 
-        .orderDetailTotals {
+        .deliveryNoteDocumentRow strong {
+          text-align: right;
+        }
+
+        .deliveryNoteDeliveryBox {
           display: grid;
-          gap: 9px;
-          margin-top: 20px;
-          margin-left: auto;
-          max-width: 420px;
+          grid-template-columns: minmax(0, 1.15fr) minmax(260px, 0.85fr);
+          gap: 26px;
+          margin-top: 30px;
         }
 
-        .orderDetailTotals > div {
-          display: flex;
-          justify-content: space-between;
-          gap: 20px;
-          padding: 10px 0;
-          border-bottom: 1px solid rgba(18, 24, 38, 0.08);
+        .deliveryNoteBox {
+          padding: 20px;
+          border: 1px solid #d9dde4;
+          border-radius: 14px;
+          background: #ffffff;
         }
 
-        .orderDetailTotalFinal {
-          font-size: 18px;
-          font-weight: 900;
+        .deliveryNoteBoxTitle {
+          margin-bottom: 13px;
+          color: #80602f;
+          font-size: 11px;
+          font-weight: 950;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
         }
 
-        .orderDetailNotes {
-          margin-top: 18px;
-          padding: 18px;
-          border-radius: 18px;
-          background: #f8f5ef;
+        .deliveryNoteAddress {
+          font-size: 15px;
+          line-height: 1.65;
+          font-weight: 650;
+          white-space: pre-line;
+        }
+
+        .deliveryNoteMetaList {
+          display: grid;
+          gap: 10px;
+        }
+
+        .deliveryNoteMetaRow {
+          display: grid;
+          grid-template-columns: 112px minmax(0, 1fr);
+          gap: 12px;
+          font-size: 13px;
+          line-height: 1.45;
+        }
+
+        .deliveryNoteMetaRow span {
+          color: #6b7280;
+        }
+
+        .deliveryNoteMetaRow strong {
+          color: #111827;
+        }
+
+        .deliveryNoteItemsSection {
+          margin-top: 34px;
+        }
+
+        .deliveryNoteSectionTitle {
+          margin: 0 0 14px;
+          font-size: 19px;
+        }
+
+        .deliveryNoteTable {
+          width: 100%;
+          border-collapse: collapse;
+          table-layout: fixed;
+        }
+
+        .deliveryNoteTable th {
+          padding: 11px 12px;
+          border-top: 1px solid #111827;
+          border-bottom: 1px solid #111827;
+          background: #f5f2eb;
+          color: #374151;
+          font-size: 11px;
+          font-weight: 950;
+          letter-spacing: 0.08em;
+          text-align: left;
+          text-transform: uppercase;
+        }
+
+        .deliveryNoteTable td {
+          padding: 15px 12px;
+          border-bottom: 1px solid #d9dde4;
+          vertical-align: top;
+          font-size: 14px;
+        }
+
+        .deliveryNoteTable th:first-child,
+        .deliveryNoteTable td:first-child {
+          width: 74px;
+          text-align: center;
+        }
+
+        .deliveryNoteTable th:last-child,
+        .deliveryNoteTable td:last-child {
+          width: 110px;
+          text-align: center;
+        }
+
+        .deliveryNoteProductTitle {
+          font-weight: 850;
+          color: #111827;
+        }
+
+        .deliveryNoteProductMeta {
+          margin-top: 4px;
+          color: #6b7280;
+          font-size: 12px;
+          line-height: 1.4;
+        }
+
+        .deliveryNoteQuantity {
+          font-size: 16px;
+          font-weight: 950;
+        }
+
+        .deliveryNoteReference {
+          margin-top: 28px;
+          padding: 18px 20px;
+          border: 1px solid #d9dde4;
+          border-radius: 14px;
+          background: #faf9f6;
+        }
+
+        .deliveryNoteReferenceText {
           white-space: pre-wrap;
-          color: #333;
+          font-size: 13px;
           line-height: 1.65;
         }
 
-        @media (max-width: 850px) {
-          .orderDetailGrid {
+        .deliveryNoteSignatures {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 50px;
+          margin-top: 74px;
+        }
+
+        .deliveryNoteSignatureLine {
+          border-top: 1px solid #111827;
+          padding-top: 8px;
+          color: #6b7280;
+          font-size: 11px;
+        }
+
+        .deliveryNoteFooter {
+          display: flex;
+          justify-content: space-between;
+          gap: 20px;
+          margin-top: 56px;
+          padding-top: 16px;
+          border-top: 1px solid #d9dde4;
+          color: #6b7280;
+          font-size: 10px;
+          line-height: 1.5;
+        }
+
+        @media (max-width: 760px) {
+          .deliveryNotePaper {
+            min-height: auto;
+            padding: 24px 20px;
+            border-radius: 14px;
+          }
+
+          .deliveryNoteHeader,
+          .deliveryNoteDeliveryBox,
+          .deliveryNoteSignatures {
             grid-template-columns: 1fr;
+            display: grid;
           }
 
-          .orderDetailItem {
-            grid-template-columns: 56px minmax(0, 1fr);
+          .deliveryNoteDocumentInfo {
+            min-width: 0;
+            text-align: left;
           }
 
-          .orderDetailItemPrice {
-            grid-column: 2;
+          .deliveryNoteDocumentRow strong {
+            text-align: left;
+          }
+
+          .deliveryNoteMetaRow {
+            grid-template-columns: 1fr;
+            gap: 2px;
+          }
+
+          .deliveryNoteTable th:first-child,
+          .deliveryNoteTable td:first-child {
+            width: 54px;
+          }
+
+          .deliveryNoteTable th:last-child,
+          .deliveryNoteTable td:last-child {
+            width: 72px;
+          }
+        }
+
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 10mm;
+          }
+
+          html,
+          body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+          }
+
+          body * {
+            visibility: hidden !important;
+          }
+
+          .deliveryNotePaper,
+          .deliveryNotePaper * {
+            visibility: visible !important;
+          }
+
+          .deliveryNotePaper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            max-width: none !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            padding: 8mm !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+          }
+
+          .deliveryNoteActions {
+            display: none !important;
+          }
+
+          .deliveryNoteHeader {
+            padding-bottom: 18px;
+          }
+
+          .deliveryNoteDeliveryBox {
+            margin-top: 20px;
+          }
+
+          .deliveryNoteItemsSection {
+            margin-top: 24px;
+          }
+
+          .deliveryNoteTable tr,
+          .deliveryNoteBox,
+          .deliveryNoteReference {
+            break-inside: avoid;
+          }
+
+          .deliveryNoteFooter {
+            margin-top: 35px;
           }
         }
       `}</style>
 
-      <div className="orderDetailPage">
-        <div
-          className="orderDetailActions"
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: "14px",
-            flexWrap: "wrap",
-          }}
-        >
-          <a href="/admin/orders" className="orderDetailBack">
+      <div className="deliveryNotePage">
+        <div className="deliveryNoteActions">
+          <a href="/admin/orders" className="deliveryNoteBack">
             ← Zurück zu den Bestellungen
           </a>
 
           <button
             type="button"
+            className="deliveryNotePrintButton"
             onClick={() => window.print()}
-            style={{
-              position: "fixed",
-              top: "92px",
-              right: "28px",
-              zIndex: 99999,
-              minHeight: "48px",
-              padding: "0 22px",
-              border: "1px solid #b78d43",
-              borderRadius: "999px",
-              background: "linear-gradient(180deg, #d6b676 0%, #c7a05f 100%)",
-              color: "#ffffff",
-              font: "inherit",
-              fontWeight: 900,
-              cursor: "pointer",
-              boxShadow: "0 12px 28px rgba(0, 0, 0, 0.22)",
-}}
           >
-            Bestellung drucken / PDF
+            Lieferschein drucken / PDF
           </button>
         </div>
 
-        <section className="orderDetailCard">
-          <div className="orderDetailHeader">
+        <article className="deliveryNotePaper">
+          <header className="deliveryNoteHeader">
             <div>
-              <div style={{ color: "#9b773d", fontWeight: 900, marginBottom: 8 }}>
-                BESTELLDETAILS
+              <div className="deliveryNoteBrand">LET ME BOWL</div>
+              <div className="deliveryNoteBrandSubline">
+                BUSINESS CATERING
               </div>
 
-              <h1 className="orderDetailNumber">
-                {order.orderNumber}
-              </h1>
-
-              <div style={{ marginTop: 8, color: "rgba(18,24,38,.62)" }}>
-                Eingegangen am {formatDate(order.orderedAt || order.createdAt)}
+              <div className="deliveryNoteSender">
+                Edis Gastrobetriebe GmbH &amp; Co. KG
+                <br />
+                Goerzallee 299
+                <br />
+                14167 Berlin
+                <br />
+                info@letmebowl-catering.de
+                <br />
+                030 46996295
               </div>
             </div>
 
-            <div className="orderDetailAmount">
-              {euro(order.totalAmount)}
+            <div className="deliveryNoteDocumentInfo">
+              <h1 className="deliveryNoteTitle">Lieferschein</h1>
+
+              <div className="deliveryNoteDocumentRow">
+                <span>Lieferschein-Nr.</span>
+                <strong>{order.orderNumber || "-"}</strong>
+              </div>
+
+              <div className="deliveryNoteDocumentRow">
+                <span>Bestelldatum</span>
+                <strong>
+                  {formatCreatedAt(order.orderedAt || order.createdAt)}
+                </strong>
+              </div>
+
+              <div className="deliveryNoteDocumentRow">
+                <span>Lieferdatum</span>
+                <strong>{formatDateOnly(order.deliveryDate)}</strong>
+              </div>
             </div>
-          </div>
+          </header>
 
-          <div className="orderDetailGrid">
-            <Meta label="Firma" value={order.user?.companyName || order.billingCompanyName} />
-            <Meta label="Kontakt" value={order.billingContactName} />
-            <Meta label="E-Mail" value={order.billingEmail || order.user?.email} />
-            <Meta label="Telefon" value={order.billingPhone} />
-            <Meta label="Lieferdatum" value={formatDate(order.deliveryDate)} />
-            <Meta label="Lieferart" value={order.orderType} />
-            <Meta label="Kostenstelle" value={order.costCenter?.name || order.referenceNumber} />
-            <Meta label="Status" value={order.status} />
-            <Meta label="Positionen" value={String(order.items?.length || 0)} />
-          </div>
-        </section>
+          <section className="deliveryNoteDeliveryBox">
+            <div className="deliveryNoteBox">
+              <div className="deliveryNoteBoxTitle">Lieferadresse</div>
 
-        <section className="orderDetailCard">
-          <h2 style={{ margin: 0, color: "#121826" }}>
-            Bestellte Positionen
-          </h2>
-
-          <div className="orderDetailItems">
-            {order.items?.length ? (
-              order.items.map((item) => (
-                <div key={item.id} className="orderDetailItem">
-                  <div className="orderDetailQty">
-                    {item.quantity} ×
-                  </div>
-
-                  <div>
-                    <div className="orderDetailItemTitle">
-                      {item.title}
-                    </div>
-
-                    <div className="orderDetailItemMeta">
-                      {item.variantTitle || item.sku || "Bestellposition"}
-                    </div>
-                  </div>
-
-                  <div className="orderDetailItemPrice">
-                    {euro(item.totalPrice)}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p>Für diese Bestellung sind keine Positionen gespeichert.</p>
-            )}
-          </div>
-
-          <div className="orderDetailTotals">
-            <div>
-              <span>Zwischensumme</span>
-              <strong>{euro(order.subtotalAmount)}</strong>
+              <div className="deliveryNoteAddress">
+                {deliveryAddress.length
+                  ? deliveryAddress.map((line, index) => (
+                      <div key={`${line}-${index}`}>{line}</div>
+                    ))
+                  : "Keine Lieferadresse gespeichert"}
+              </div>
             </div>
 
-            <div>
-              <span>Enthaltene Steuer</span>
-              <strong>{euro(order.taxAmount)}</strong>
-            </div>
+            <div className="deliveryNoteBox">
+              <div className="deliveryNoteBoxTitle">Lieferinformationen</div>
 
-            <div className="orderDetailTotalFinal">
-              <span>Gesamtbetrag</span>
-              <strong>{euro(order.totalAmount)}</strong>
+              <div className="deliveryNoteMetaList">
+                <InfoRow label="Firma" value={companyName} />
+                <InfoRow label="Kontakt" value={contactName} />
+                <InfoRow label="Telefon" value={phone} />
+                <InfoRow label="E-Mail" value={email} />
+                <InfoRow
+                  label="Datum"
+                  value={formatDateOnly(order.deliveryDate)}
+                />
+                <InfoRow label="Lieferzeit" value={deliveryTime} />
+                <InfoRow label="Eventbeginn" value={eventTime} />
+                <InfoRow label="Lieferart" value={deliveryType} />
+                <InfoRow label="Kostenstelle" value={costCenter} />
+              </div>
             </div>
-          </div>
+          </section>
 
-          {order.notes ? (
-            <div className="orderDetailNotes">
-              {order.notes}
-            </div>
+          <section className="deliveryNoteItemsSection">
+            <h2 className="deliveryNoteSectionTitle">
+              Gelieferte Produkte
+            </h2>
+
+            <table className="deliveryNoteTable">
+              <thead>
+                <tr>
+                  <th>Pos.</th>
+                  <th>Produkt</th>
+                  <th>Menge</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {productItems.length ? (
+                  productItems.map((item, index) => (
+                    <tr key={item.id || `${item.title}-${index}`}>
+                      <td>{index + 1}</td>
+
+                      <td>
+                        <div className="deliveryNoteProductTitle">
+                          {safeText(item.title) || "Artikel"}
+                        </div>
+
+                        {safeText(item.variantTitle) ||
+                        safeText(item.sku) ||
+                        safeText(item.notes) ? (
+                          <div className="deliveryNoteProductMeta">
+                            {[
+                              safeText(item.variantTitle),
+                              safeText(item.sku)
+                                ? `SKU: ${safeText(item.sku)}`
+                                : "",
+                              safeText(item.notes),
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </div>
+                        ) : null}
+                      </td>
+
+                      <td>
+                        <span className="deliveryNoteQuantity">
+                          {Number(item.quantity || 1)}
+                          {safeText(item.unit)
+                            ? ` ${safeText(item.unit)}`
+                            : ""}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="3">
+                      Keine auslieferbaren Produkte gespeichert.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </section>
+
+          {customerReference ? (
+            <section className="deliveryNoteReference">
+              <div className="deliveryNoteBoxTitle">
+                Hinweise / interne Referenz
+              </div>
+
+              <div className="deliveryNoteReferenceText">
+                {customerReference}
+              </div>
+            </section>
           ) : null}
-        </section>
+
+          <section className="deliveryNoteSignatures">
+            <div className="deliveryNoteSignatureLine">
+              Datum / Unterschrift Auslieferung
+            </div>
+
+            <div className="deliveryNoteSignatureLine">
+              Datum / Unterschrift Empfänger
+            </div>
+          </section>
+
+          <footer className="deliveryNoteFooter">
+            <div>
+              Edis Gastrobetriebe GmbH &amp; Co. KG
+              <br />
+              Goerzallee 299 · 14167 Berlin
+            </div>
+
+            <div>
+              Let Me Bowl Catering
+              <br />
+              info@letmebowl-catering.de · 030 46996295
+            </div>
+          </footer>
+        </article>
       </div>
     </AdminLayout>
   );
 }
 
-function Meta({ label, value }) {
+function InfoRow({ label, value }) {
   return (
-    <div className="orderDetailMeta">
+    <div className="deliveryNoteMetaRow">
       <span>{label}</span>
-      <strong>{value || "-"}</strong>
+      <strong>{safeText(value) || "-"}</strong>
     </div>
   );
 }
