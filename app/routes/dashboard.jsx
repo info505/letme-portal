@@ -610,6 +610,358 @@ export default function DashboardPage() {
             border-radius: 16px;
           }
         }
+
+        /* LMB PREMIUM DASHBOARD FINAL */
+
+        .dashboardPage {
+          position: relative;
+          gap: 22px;
+          padding-bottom: 42px;
+        }
+
+        .dashboardPage::before {
+          content: "";
+          position: absolute;
+          top: -130px;
+          right: -160px;
+          width: 460px;
+          height: 460px;
+          border-radius: 50%;
+          background:
+            radial-gradient(
+              circle,
+              rgba(198, 159, 87, 0.16) 0%,
+              rgba(198, 159, 87, 0.05) 42%,
+              transparent 72%
+            );
+          pointer-events: none;
+        }
+
+        .dashboardPage > * {
+          position: relative;
+          z-index: 1;
+        }
+
+        .dashboardHero {
+          isolation: isolate;
+          min-height: 340px;
+          padding: 44px;
+          border-radius: 36px;
+          border: 1px solid rgba(170, 128, 57, 0.18);
+          background:
+            radial-gradient(
+              circle at 7% 0%,
+              rgba(217, 185, 119, 0.26),
+              transparent 34%
+            ),
+            radial-gradient(
+              circle at 100% 100%,
+              rgba(156, 111, 42, 0.11),
+              transparent 37%
+            ),
+            linear-gradient(
+              135deg,
+              #ffffff 0%,
+              #fdfaf4 53%,
+              #f3e8d5 100%
+            );
+          box-shadow:
+            0 32px 80px rgba(55, 38, 15, 0.11),
+            0 5px 16px rgba(55, 38, 15, 0.04);
+        }
+
+        .dashboardHero::after {
+          content: "";
+          position: absolute;
+          z-index: -1;
+          top: -105px;
+          right: -85px;
+          width: 320px;
+          height: 320px;
+          border-radius: 50%;
+          border: 1px solid rgba(181, 140, 72, 0.12);
+          box-shadow:
+            0 0 0 38px rgba(181, 140, 72, 0.035),
+            0 0 0 82px rgba(181, 140, 72, 0.018);
+          pointer-events: none;
+        }
+
+        .dashboardHeroInner {
+          grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.68fr);
+          gap: 42px;
+        }
+
+        .dashboardEyebrow {
+          min-height: 35px;
+          padding: 0 15px;
+          margin-bottom: 19px;
+          border-color: rgba(178, 137, 67, 0.25);
+          background:
+            linear-gradient(
+              180deg,
+              rgba(255, 255, 255, 0.94),
+              rgba(198, 159, 87, 0.12)
+            );
+          color: #98712e;
+          box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.96),
+            0 8px 20px rgba(120, 84, 29, 0.07);
+        }
+
+        .dashboardHeroTitle {
+          max-width: 720px;
+          font-size: clamp(44px, 5.3vw, 66px);
+          line-height: 0.95;
+          letter-spacing: -0.065em;
+          text-wrap: balance;
+        }
+
+        .dashboardHeroText {
+          max-width: 720px;
+          margin-top: 21px;
+          font-size: 16px;
+          line-height: 1.75;
+        }
+
+        .dashboardHeroActions {
+          gap: 12px;
+          margin-top: 29px;
+        }
+
+        .dashboardPrimaryBtn,
+        .dashboardSecondaryBtn {
+          min-height: 54px;
+          padding: 0 23px;
+          border-radius: 16px;
+          font-weight: 900;
+          transition:
+            transform 180ms ease,
+            box-shadow 180ms ease,
+            border-color 180ms ease;
+        }
+
+        .dashboardPrimaryBtn {
+          border-color: #b3873c;
+          background:
+            linear-gradient(
+              145deg,
+              #d9ba76 0%,
+              #c49a4e 56%,
+              #aa7b31 100%
+            );
+          color: #ffffff;
+          box-shadow:
+            0 16px 32px rgba(158, 113, 43, 0.27),
+            inset 0 1px 0 rgba(255, 255, 255, 0.42);
+        }
+
+        .dashboardSecondaryBtn {
+          border-color: rgba(52, 38, 18, 0.13);
+          background: rgba(255, 255, 255, 0.9);
+          box-shadow:
+            0 12px 27px rgba(41, 29, 13, 0.07),
+            inset 0 1px 0 rgba(255, 255, 255, 0.98);
+          backdrop-filter: blur(12px);
+        }
+
+        .dashboardPrimaryBtn:hover,
+        .dashboardSecondaryBtn:hover {
+          transform: translateY(-3px);
+        }
+
+        .dashboardPrimaryBtn:hover {
+          box-shadow:
+            0 22px 42px rgba(158, 113, 43, 0.33),
+            inset 0 1px 0 rgba(255, 255, 255, 0.45);
+        }
+
+        .dashboardSecondaryBtn:hover {
+          border-color: rgba(184, 147, 79, 0.38);
+          box-shadow: 0 17px 35px rgba(41, 29, 13, 0.11);
+        }
+
+        .dashboardHeroBox {
+          position: relative;
+          overflow: hidden;
+          padding: 28px;
+          border-radius: 26px;
+          border: 1px solid rgba(159, 117, 49, 0.17);
+          background:
+            radial-gradient(
+              circle at top right,
+              rgba(205, 169, 101, 0.17),
+              transparent 44%
+            ),
+            rgba(255, 255, 255, 0.84);
+          box-shadow:
+            0 19px 44px rgba(47, 32, 12, 0.08),
+            inset 0 1px 0 rgba(255, 255, 255, 0.97);
+          backdrop-filter: blur(16px);
+        }
+
+        .dashboardStats {
+          gap: 14px;
+        }
+
+        .dashboardStat {
+          position: relative;
+          overflow: hidden;
+          min-height: 132px;
+          padding: 23px 21px;
+          border-radius: 24px;
+          border-color: rgba(91, 66, 29, 0.12);
+          background:
+            linear-gradient(
+              145deg,
+              rgba(255, 255, 255, 0.99),
+              rgba(249, 245, 236, 0.97)
+            );
+          box-shadow:
+            0 16px 38px rgba(49, 34, 15, 0.065),
+            inset 0 1px 0 rgba(255, 255, 255, 0.98);
+          transition:
+            transform 180ms ease,
+            border-color 180ms ease,
+            box-shadow 180ms ease;
+        }
+
+        .dashboardStat::after {
+          content: "";
+          position: absolute;
+          right: -30px;
+          bottom: -40px;
+          width: 120px;
+          height: 120px;
+          border-radius: 50%;
+          background:
+            radial-gradient(
+              circle,
+              rgba(196, 156, 82, 0.13),
+              transparent 69%
+            );
+          pointer-events: none;
+        }
+
+        .dashboardStat:hover {
+          transform: translateY(-4px);
+          border-color: rgba(184, 147, 79, 0.3);
+          box-shadow:
+            0 24px 52px rgba(49, 34, 15, 0.11),
+            inset 0 1px 0 rgba(255, 255, 255, 0.99);
+        }
+
+        .dashboardStatValue {
+          font-size: clamp(30px, 3vw, 38px);
+          line-height: 1;
+          letter-spacing: -0.05em;
+        }
+
+        .dashboardQuickGrid {
+          gap: 15px;
+        }
+
+        .dashboardQuickCard {
+          min-height: 165px;
+          padding: 24px;
+          border-radius: 25px;
+          border-color: rgba(91, 66, 29, 0.12);
+          background:
+            linear-gradient(
+              150deg,
+              rgba(255, 255, 255, 0.99),
+              rgba(249, 246, 239, 0.96)
+            );
+          box-shadow:
+            0 16px 37px rgba(49, 34, 15, 0.06),
+            inset 0 1px 0 rgba(255, 255, 255, 0.98);
+          transition:
+            transform 190ms ease,
+            border-color 190ms ease,
+            box-shadow 190ms ease;
+        }
+
+        .dashboardQuickCard:hover {
+          transform: translateY(-4px);
+          border-color: rgba(184, 147, 79, 0.3);
+          box-shadow:
+            0 24px 52px rgba(49, 34, 15, 0.11),
+            inset 0 1px 0 rgba(255, 255, 255, 0.99);
+        }
+
+        .dashboardQuickIcon {
+          width: 45px;
+          height: 45px;
+          border-radius: 15px;
+          border-color: rgba(184, 147, 79, 0.24);
+          background:
+            linear-gradient(
+              145deg,
+              rgba(255, 255, 255, 0.98),
+              rgba(201, 164, 95, 0.17)
+            );
+          box-shadow:
+            0 10px 22px rgba(119, 84, 31, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.97);
+        }
+
+        .ordersCard {
+          border-radius: 30px;
+          border-color: rgba(91, 66, 29, 0.12);
+          box-shadow:
+            0 18px 46px rgba(49, 34, 15, 0.07),
+            inset 0 1px 0 rgba(255, 255, 255, 0.98);
+        }
+
+        .orderRow {
+          border-radius: 19px;
+          border-color: rgba(70, 52, 27, 0.1);
+          background: rgba(255, 255, 255, 0.9);
+          box-shadow:
+            0 10px 24px rgba(45, 31, 13, 0.045),
+            inset 0 1px 0 rgba(255, 255, 255, 0.94);
+          transition:
+            transform 180ms ease,
+            border-color 180ms ease,
+            box-shadow 180ms ease;
+        }
+
+        .orderRow:hover {
+          transform: translateY(-3px);
+          border-color: rgba(184, 147, 79, 0.28);
+          box-shadow: 0 17px 34px rgba(45, 31, 13, 0.085);
+        }
+
+        @media (max-width: 900px) {
+          .dashboardHero {
+            min-height: 0;
+            padding: 30px;
+          }
+
+          .dashboardHeroInner {
+            grid-template-columns: 1fr;
+            gap: 26px;
+          }
+        }
+
+        @media (max-width: 720px) {
+          .dashboardHero {
+            padding: 25px 20px;
+            border-radius: 26px;
+          }
+
+          .dashboardHeroTitle {
+            font-size: 39px;
+          }
+
+          .dashboardHeroActions {
+            display: grid;
+          }
+
+          .dashboardPrimaryBtn,
+          .dashboardSecondaryBtn {
+            width: 100%;
+          }
+        }
       `}</style>
 
       <div className="dashboardPage">
