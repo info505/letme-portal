@@ -24,6 +24,49 @@ function centsToEuro(cents) {
   if (Number.isNaN(value)) return 0;
   return Number(value.toFixed(2));
 }
+function normalizeCents(value) {
+  if (value === null || value === undefined || value === "") {
+    return 0;
+  }
+
+  const normalized = String(value)
+    .trim()
+    .replace(/\s/g, "")
+    .replace(",", ".");
+
+  const number = Number(normalized);
+
+  return Number.isFinite(number) ? Math.round(number) : 0;
+}
+
+function getItemUnitPriceCents(item) {
+  return normalizeCents(
+    item.unitPriceCents ??
+      item.finalPrice ??
+      item.final_price ??
+      item.priceCents ??
+      item.price ??
+      0
+  );
+}
+
+function getItemTotalPriceCents(item) {
+  const directTotal = normalizeCents(
+    item.totalPriceCents ??
+      item.finalLinePrice ??
+      item.final_line_price ??
+      item.linePriceCents ??
+      item.linePrice ??
+      0
+  );
+
+  if (directTotal > 0) {
+    return directTotal;
+  }
+
+  const quantity = Math.max(1, Number(item.quantity || 1));
+  return getItemUnitPriceCents(item) * quantity;
+}
 
 function euroText(value) {
   return new Intl.NumberFormat("de-DE", {
@@ -386,9 +429,9 @@ export async function action({ request }) {
 
         referenceNumber: referenceParts.filter(Boolean).join(" · ") || null,
 
-        subtotalAmount: centsToEuro(data.subtotalAmountCents),
-        taxAmount: centsToEuro(data.taxAmountCents),
-        totalAmount: centsToEuro(data.totalAmountCents),
+        subtotalAmount: centsToEuro(data.subtotalAmountCents || data.cartSubtotalCents || 0),
+        taxAmount: centsToEuro(data.taxAmountCents || 0),
+        totalAmount: centsToEuro(data.cartTotalCents || data.totalAmountCents || 0),
 
         notes: [
           data.note || "",
@@ -423,8 +466,8 @@ export async function action({ request }) {
             title: safeText(item.title) || "Artikel",
             quantity: Number(item.quantity || 1),
             unit: safeText(item.unit || ""),
-            unitPrice: centsToEuro(item.unitPriceCents || 0),
-            totalPrice: centsToEuro(item.totalPriceCents || 0),
+            unitPrice: centsToEuro(getItemUnitPriceCents(item)),
+            totalPrice: centsToEuro(getItemTotalPriceCents(item)),
             notes: safeText(item.notes || ""),
 
             shopifyProductId:
@@ -449,34 +492,89 @@ export async function action({ request }) {
       },
     });
 
-    try {
-      const ownerEmail =
-        process.env.ORDER_NOTIFICATION_EMAIL ||
+    const ownerEmail = String(
+      process.env.ORDER_NOTIFICATION_EMAIL ||
         process.env.ORDER_MAIL_TO ||
-        "info@letmebowl-catering.de";
+        "info@letmebowl-catering.de"
+    )
+      .trim()
+      .toLowerCase();
 
-      await sendMail({
+    const customerEmail = String(
+      data.contactEmail ||
+        data.customerEmail ||
+        data.portalCustomerEmail ||
+        ""
+    )
+      .trim()
+      .toLowerCase();
+
+    let internalMailSent = false;
+    let customerMailSent = false;
+    let internalMailError = null;
+    let customerMailError = null;
+
+    try {
+      const internalResult = await sendMail({
         to: ownerEmail,
-        subject: `Neue Bestellung: ${order.orderNumber} – ${
-          data.customerCompany || data.contactName || "Kunde"
+        subject: `Neue Bestellung ${order.orderNumber}: ${
+          data.customerCompany ||
+          data.portalCustomerCompany ||
+          data.contactName ||
+          data.customerName ||
+          "Kunde"
         }`,
         text: buildOwnerEmailText(data, order.orderNumber),
+        replyTo: customerEmail || undefined,
       });
 
-      const customerEmail = data.contactEmail || data.customerEmail;
+      internalMailSent = true;
 
-      if (customerEmail && customerEmail !== ownerEmail) {
-        await sendMail({
+      console.log("INTERNE BESTELLMAIL VERSENDET:", {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        recipient: ownerEmail,
+        result: internalResult,
+      });
+    } catch (error) {
+      internalMailError = String(error?.message || error);
+
+      console.error("INTERNE BESTELLMAIL FEHLGESCHLAGEN:", {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        recipient: ownerEmail,
+        error: internalMailError,
+        stack: error?.stack || null,
+      });
+    }
+
+    if (customerEmail && customerEmail !== ownerEmail) {
+      try {
+        const customerResult = await sendMail({
           to: customerEmail,
           subject: `Deine Bestellung ${order.orderNumber} bei Let Me Bowl wurde erhalten`,
           text: buildCustomerEmailText(data, order.orderNumber),
         });
+
+        customerMailSent = true;
+
+        console.log("KUNDEN-BESTELLMAIL VERSENDET:", {
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          recipient: customerEmail,
+          result: customerResult,
+        });
+      } catch (error) {
+        customerMailError = String(error?.message || error);
+
+        console.error("KUNDEN-BESTELLMAIL FEHLGESCHLAGEN:", {
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          recipient: customerEmail,
+          error: customerMailError,
+          stack: error?.stack || null,
+        });
       }
-    } catch (mailError) {
-      console.error(
-        "Bestellung wurde gespeichert, aber E-Mail konnte nicht gesendet werden:",
-        mailError
-      );
     }
 
     return Response.json({
@@ -488,6 +586,8 @@ export async function action({ request }) {
         customerSent: customerMailSent,
         internalRecipient: ownerEmail,
         customerRecipient: customerEmail || null,
+        internalError: internalMailError,
+        customerError: customerMailError,
       },
     });
   } catch (error) {
