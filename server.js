@@ -274,23 +274,44 @@ async function sendMailjetMessages(messages) {
 async function generatePortalOrderNumber() {
   const now = new Date();
 
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
+  const berlinParts = new Intl.DateTimeFormat("de-DE", {
+    timeZone: "Europe/Berlin",
+    year: "2-digit",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
 
-  const prefix = `LMB-${year}${month}${day}`;
+  const part = (type) =>
+    berlinParts.find((entry) => entry.type === type)?.value || "00";
+
+  const year = part("year");
+  const month = part("month");
+  const day = part("day");
+
+  const dateCode = `${year}${month}${day}`;
+
+  const berlinDate = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Berlin",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+
+  const startOfDay = new Date(`${berlinDate}T00:00:00+02:00`);
+  const endOfDay = new Date(`${berlinDate}T23:59:59.999+02:00`);
 
   const countToday = await prisma.portalOrder.count({
     where: {
-      orderNumber: {
-        startsWith: prefix,
+      createdAt: {
+        gte: startOfDay,
+        lte: endOfDay,
       },
     },
   });
 
-  const nextNumber = String(countToday + 1).padStart(4, "0");
+  const sequence = String(countToday + 1).padStart(3, "0");
 
-  return `${prefix}-${nextNumber}`;
+  return `LMB-${dateCode}-${sequence}`;
 }
 
 async function findPortalUserForOrder(data) {
@@ -906,7 +927,12 @@ async function savePortalOrderToDatabase(data) {
 async function sendOrderEmails(data, savedOrder = null) {
   const config = getMailjetConfig();
 
-  const ownerEmail = safeText(config.ownerEmail).toLowerCase();
+  const ownerEmail = safeText(
+    process.env.ORDER_NOTIFICATION_EMAIL ||
+    process.env.ORDER_MAIL_TO ||
+    config.ownerEmail ||
+    "info@letmebowl-catering.de"
+  ).toLowerCase();
   const bccEmail = safeText(config.bccEmail).toLowerCase();
 
   const customerEmail = safeText(
