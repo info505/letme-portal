@@ -242,16 +242,21 @@ export default function AdminOrderDetailPage() {
             type="button"
             onClick={() => window.print()}
             style={{
-              minHeight: "46px",
-              padding: "0 20px",
-              border: "1px solid #c7a060",
+              position: "fixed",
+              top: "92px",
+              right: "28px",
+              zIndex: 99999,
+              minHeight: "48px",
+              padding: "0 22px",
+              border: "1px solid #b78d43",
               borderRadius: "999px",
               background: "linear-gradient(180deg, #d6b676 0%, #c7a05f 100%)",
               color: "#ffffff",
               font: "inherit",
               fontWeight: 900,
               cursor: "pointer",
-            }}
+              boxShadow: "0 12px 28px rgba(0, 0, 0, 0.22)",
+}}
           >
             Bestellung drucken / PDF
           </button>
