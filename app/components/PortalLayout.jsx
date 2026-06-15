@@ -1,5 +1,4 @@
 import { useLoaderData, useLocation } from "react-router";
-import { colors } from "../lib/ui.js";
 import { dict, withLang } from "../lib/i18n.js";
 
 function getInitials(user) {
@@ -19,22 +18,34 @@ function getInitials(user) {
 }
 
 function getDisplayName(user) {
-  const full = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim();
+  const full = [user?.firstName, user?.lastName]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
   if (full) return full;
   if (user?.companyName) return user.companyName;
   if (user?.email) return user.email;
+
   return "Portal";
 }
 
 function getCompanyName(user) {
   if (user?.companyName) return user.companyName;
   if (user?.email) return user.email;
+
   return "Firmenkonto";
 }
 
 function getRoleLabel(user, locale) {
-  if (user?.isAdmin) return locale === "en" ? "Admin" : "Administrator";
-  if (user?.role === "FINANCE") return locale === "en" ? "Finance" : "Finanzen";
+  if (user?.isAdmin) {
+    return locale === "en" ? "Administrator" : "Administrator";
+  }
+
+  if (user?.role === "FINANCE") {
+    return locale === "en" ? "Finance" : "Finanzen";
+  }
+
   return locale === "en" ? "Business customer" : "Firmenkunde";
 }
 
@@ -48,10 +59,116 @@ function isActivePath(pathname, href) {
   return pathname === cleanHref || pathname.startsWith(`${cleanHref}/`);
 }
 
+function PortalIcon({ name }) {
+  const commonProps = {
+    width: 18,
+    height: 18,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.8,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    "aria-hidden": true,
+  };
+
+  switch (name) {
+    case "home":
+      return (
+        <svg {...commonProps}>
+          <path d="M3 10.5 12 3l9 7.5" />
+          <path d="M5.5 9.5V21h13V9.5" />
+          <path d="M9.5 21v-7h5v7" />
+        </svg>
+      );
+
+    case "orders":
+      return (
+        <svg {...commonProps}>
+          <path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2Z" />
+          <path d="M8.5 8h7" />
+          <path d="M8.5 12h7" />
+          <path d="M8.5 16h4" />
+        </svg>
+      );
+
+    case "billing":
+      return (
+        <svg {...commonProps}>
+          <rect x="4" y="3" width="16" height="18" rx="2" />
+          <path d="M8 8h8" />
+          <path d="M8 12h8" />
+          <path d="M8 16h5" />
+        </svg>
+      );
+
+    case "address":
+      return (
+        <svg {...commonProps}>
+          <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" />
+          <circle cx="12" cy="10" r="2.5" />
+        </svg>
+      );
+
+    case "cost":
+      return (
+        <svg {...commonProps}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M9 9.5c0-1 1-1.8 2.4-1.8h1.2c1.3 0 2.4.8 2.4 1.8 0 1.2-1 1.7-3 2.2s-3 1-3 2.3c0 1.1 1 2 2.5 2h1c1.5 0 2.5-.8 2.5-2" />
+          <path d="M12 5.5v13" />
+        </svg>
+      );
+
+    case "invoice":
+      return (
+        <svg {...commonProps}>
+          <path d="M6 3h9l3 3v15H6Z" />
+          <path d="M15 3v4h4" />
+          <path d="M9 11h6" />
+          <path d="M9 15h6" />
+        </svg>
+      );
+
+    case "lock":
+      return (
+        <svg {...commonProps}>
+          <rect x="5" y="10" width="14" height="10" rx="2" />
+          <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10" />
+        </svg>
+      );
+
+    case "logout":
+      return (
+        <svg {...commonProps}>
+          <path d="M10 5H5v14h5" />
+          <path d="m14 8 4 4-4 4" />
+          <path d="M18 12H9" />
+        </svg>
+      );
+
+    case "plus":
+      return (
+        <svg {...commonProps}>
+          <path d="M12 5v14" />
+          <path d="M5 12h14" />
+        </svg>
+      );
+
+    default:
+      return null;
+  }
+}
+
 function SidebarLink({ href, label, icon, active = false }) {
   return (
-    <a href={href} className={`portalNavLink ${active ? "isActive" : ""}`}>
-      <span className="portalNavIcon">{icon}</span>
+    <a
+      href={href}
+      className={`portalNavLink ${active ? "isActive" : ""}`}
+    >
+      <span className="portalNavIcon">
+        <PortalIcon name={icon} />
+      </span>
+
       <span className="portalNavLabel">{label}</span>
     </a>
   );
@@ -66,84 +183,117 @@ export default function PortalLayout({
 }) {
   const location = useLocation();
   const data = useLoaderData?.() || {};
+
   const locale =
-    data?.locale || new URLSearchParams(location.search).get("lang") || "de";
+    data?.locale ||
+    new URLSearchParams(location.search).get("lang") ||
+    "de";
 
   const user = data?.user || null;
   const t = dict[locale] || dict.de;
 
   const sidebarOrderHref =
-    orderNowHref || "https://letmebowl-catering.de/pages/bestellen";
+    orderNowHref ||
+    "https://letmebowl-catering.de/pages/bestellen";
 
   const navItems = [
     {
       href: withLang("/dashboard", locale),
       label: t.account || "Konto",
       mobileLabel: locale === "en" ? "Home" : "Konto",
-      icon: "⌂",
+      icon: "home",
     },
     {
       href: withLang("/bestellungen", locale),
       label: t.ordersTitle || "Bestellungen",
       mobileLabel: locale === "en" ? "Orders" : "Bestellungen",
-      icon: "▤",
+      icon: "orders",
     },
     {
       href: withLang("/rechnungsadresse", locale),
       label: t.billingAddressNav || "Rechnungsadresse",
       mobileLabel: locale === "en" ? "Billing" : "Rechnung",
-      icon: "◧",
+      icon: "billing",
     },
     {
       href: withLang("/lieferadressen", locale),
       label: t.shippingAddressesNav || "Lieferadressen",
       mobileLabel: locale === "en" ? "Addresses" : "Adressen",
-      icon: "⌖",
+      icon: "address",
     },
     {
       href: withLang("/kostenstellen", locale),
       label: t.costCentersNav || "Kostenstellen",
       mobileLabel: locale === "en" ? "Cost centers" : "Kostenstellen",
-      icon: "◎",
+      icon: "cost",
     },
     {
       href: withLang("/rechnungen", locale),
       label: t.invoices || "Rechnungen",
       mobileLabel: locale === "en" ? "Invoices" : "Rechnungen",
-      icon: "◫",
+      icon: "invoice",
     },
   ];
+
+  const orderButtonContent = (
+    <>
+      <PortalIcon name="plus" />
+      <span>{t.orderNow || "Jetzt bestellen"}</span>
+    </>
+  );
 
   return (
     <div className="portalRoot">
       <style>{`
         :root {
-          --portal-bg: ${colors.bg || "#f7f4ee"};
-          --portal-card: #ffffff;
-          --portal-card-soft: #fbf8f2;
-          --portal-text: ${colors.text || "#171717"};
-          --portal-muted: ${colors.muted || "#756b5f"};
-          --portal-border: ${colors.border || "#e8decd"};
-          --portal-gold: #c8a96a;
-          --portal-gold-dark: #a9823c;
-          --portal-green: #2f6a4a;
-          --portal-red: #8b2222;
-          --portal-shadow: 0 22px 60px rgba(30, 20, 10, 0.07);
-          --portal-shadow-soft: 0 12px 34px rgba(30, 20, 10, 0.05);
+          --portal-bg: #f5f6f7;
+          --portal-sidebar: #ffffff;
+          --portal-surface: #ffffff;
+          --portal-surface-muted: #f8f9fa;
+          --portal-surface-soft: #fbfbfc;
+          --portal-text: #191a1d;
+          --portal-text-soft: #344054;
+          --portal-muted: #667085;
+          --portal-muted-light: #98a2b3;
+          --portal-border: #e3e6ea;
+          --portal-border-strong: #d0d5dd;
+          --portal-brand: #a97d2f;
+          --portal-brand-hover: #8c6422;
+          --portal-brand-soft: #f8f2e7;
+          --portal-green: #16794f;
+          --portal-green-soft: #edf8f2;
+          --portal-red: #b42318;
+          --portal-red-soft: #fff4f2;
+          --portal-radius-sm: 8px;
+          --portal-radius: 12px;
+          --portal-radius-lg: 16px;
+          --portal-shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.04);
+          --portal-shadow-sm:
+            0 1px 3px rgba(16, 24, 40, 0.05),
+            0 1px 2px rgba(16, 24, 40, 0.03);
+        }
+
+        * {
+          box-sizing: border-box;
         }
 
         .portalRoot {
           min-height: 100vh;
-          background:
-            radial-gradient(circle at top left, rgba(200,169,106,0.12), transparent 26%),
-            linear-gradient(180deg, var(--portal-bg) 0%, #efe9df 100%);
-          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          background: var(--portal-bg);
           color: var(--portal-text);
+          font-family:
+            Inter,
+            ui-sans-serif,
+            system-ui,
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            sans-serif;
         }
 
         .portalLayout {
           display: grid;
-          grid-template-columns: 304px minmax(0, 1fr);
+          grid-template-columns: 264px minmax(0, 1fr);
           min-height: 100vh;
         }
 
@@ -151,94 +301,99 @@ export default function PortalLayout({
           position: sticky;
           top: 0;
           height: 100vh;
-          padding: 24px 18px;
-          background:
-            radial-gradient(circle at top left, rgba(200,169,106,0.12), transparent 32%),
-            linear-gradient(180deg, #fffdf8 0%, #f8f1e6 100%);
-          border-right: 1px solid rgba(232,222,205,0.95);
           display: flex;
           flex-direction: column;
+          padding: 22px 16px 18px;
           overflow-y: auto;
+          background: var(--portal-sidebar);
+          border-right: 1px solid var(--portal-border);
         }
 
         .portalBrand {
           display: flex;
           align-items: center;
-          gap: 12px;
-          text-decoration: none;
+          gap: 11px;
+          min-width: 0;
+          padding: 2px 6px 18px;
           color: var(--portal-text);
-          margin-bottom: 22px;
-          padding: 6px 8px;
+          text-decoration: none;
+          border-bottom: 1px solid var(--portal-border);
         }
 
         .portalBrandMark {
-          width: 42px;
-          height: 42px;
-          border-radius: 16px;
-          background: #fff;
-          border: 1px solid var(--portal-border);
+          width: 38px;
+          height: 38px;
+          flex: 0 0 38px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          font-size: 13px;
-          font-weight: 950;
-          color: var(--portal-gold-dark);
-          box-shadow: 0 8px 20px rgba(30,20,10,0.05);
+          border-radius: 10px;
+          border: 1px solid #dfd3bd;
+          background: var(--portal-brand-soft);
+          color: var(--portal-brand);
+          font-size: 12px;
+          line-height: 1;
+          font-weight: 850;
+          letter-spacing: -0.02em;
         }
 
         .portalBrandText {
           display: grid;
-          gap: 2px;
+          gap: 3px;
           min-width: 0;
         }
 
         .portalBrandTitle {
-          font-size: 15px;
-          font-weight: 950;
-          letter-spacing: 0.08em;
+          overflow: hidden;
+          color: var(--portal-text);
+          font-size: 14px;
           line-height: 1.1;
+          font-weight: 800;
+          letter-spacing: 0.045em;
+          text-overflow: ellipsis;
           white-space: nowrap;
         }
 
         .portalBrandSub {
-          font-size: 11px;
-          font-weight: 850;
-          letter-spacing: 0.12em;
+          overflow: hidden;
+          color: var(--portal-muted);
+          font-size: 10px;
+          line-height: 1.2;
+          font-weight: 700;
+          letter-spacing: 0.08em;
           text-transform: uppercase;
-          color: var(--portal-gold-dark);
+          text-overflow: ellipsis;
           white-space: nowrap;
         }
 
         .portalUserCard {
-          padding: 16px;
-          border-radius: 24px;
-          background:
-            radial-gradient(circle at top right, rgba(200,169,106,0.14), transparent 40%),
-            rgba(255,255,255,0.78);
-          border: 1px solid rgba(232,222,205,0.95);
-          box-shadow: var(--portal-shadow-soft);
-          margin-bottom: 18px;
+          margin: 18px 0 16px;
+          padding: 14px;
+          border: 1px solid var(--portal-border);
+          border-radius: var(--portal-radius);
+          background: var(--portal-surface-soft);
         }
 
         .portalUserTop {
           display: flex;
-          gap: 12px;
           align-items: center;
+          gap: 11px;
           min-width: 0;
         }
 
         .portalUserAvatar {
-          width: 48px;
-          height: 48px;
-          border-radius: 18px;
-          background: linear-gradient(135deg, #fff 0%, #f6ecd9 100%);
-          border: 1px solid rgba(200,169,106,0.32);
+          width: 40px;
+          height: 40px;
+          flex: 0 0 40px;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-weight: 950;
-          color: var(--portal-gold-dark);
-          flex: 0 0 48px;
+          border-radius: 10px;
+          border: 1px solid #dfd3bd;
+          background: #ffffff;
+          color: var(--portal-brand);
+          font-size: 13px;
+          font-weight: 800;
         }
 
         .portalUserText {
@@ -246,99 +401,114 @@ export default function PortalLayout({
         }
 
         .portalUserName {
-          color: var(--portal-text);
-          font-size: 15px;
-          font-weight: 950;
-          line-height: 1.25;
-          white-space: nowrap;
           overflow: hidden;
+          color: var(--portal-text);
+          font-size: 13px;
+          line-height: 1.3;
+          font-weight: 750;
           text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         .portalUserCompany {
-          color: var(--portal-muted);
-          font-size: 13px;
-          margin-top: 4px;
-          line-height: 1.35;
-          white-space: nowrap;
+          display: -webkit-box;
+          margin-top: 3px;
           overflow: hidden;
-          text-overflow: ellipsis;
+          color: var(--portal-muted);
+          font-size: 11px;
+          line-height: 1.35;
+          font-weight: 500;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
         }
 
         .portalUserMeta {
           display: flex;
+          align-items: center;
+          gap: 6px;
+          margin-top: 11px;
           flex-wrap: wrap;
-          gap: 8px;
-          margin-top: 14px;
         }
 
         .portalPill {
+          min-height: 22px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          min-height: 28px;
-          padding: 0 10px;
+          padding: 0 8px;
           border-radius: 999px;
-          font-size: 11px;
-          font-weight: 900;
-          background: #fff;
           border: 1px solid var(--portal-border);
+          background: #ffffff;
           color: var(--portal-muted);
+          font-size: 10px;
+          line-height: 1;
+          font-weight: 700;
         }
 
         .portalPillGreen {
-          background: rgba(47,106,74,0.08);
-          border-color: rgba(47,106,74,0.18);
+          border-color: #cdebdc;
+          background: var(--portal-green-soft);
           color: var(--portal-green);
         }
 
         .portalNav {
           display: grid;
-          gap: 7px;
-          margin-top: 4px;
+          gap: 4px;
         }
 
         .portalNavLink {
-          text-decoration: none;
-          min-height: 48px;
-          padding: 0 13px;
-          border-radius: 17px;
+          position: relative;
+          min-height: 42px;
           display: flex;
           align-items: center;
-          gap: 11px;
-          background: transparent;
+          gap: 10px;
+          padding: 0 10px;
           border: 1px solid transparent;
+          border-radius: 9px;
+          background: transparent;
           color: var(--portal-muted);
-          font-size: 14px;
-          font-weight: 820;
-          transition: 0.18s ease;
+          font-size: 13px;
+          line-height: 1.2;
+          font-weight: 650;
+          text-decoration: none;
+          transition:
+            background 150ms ease,
+            border-color 150ms ease,
+            color 150ms ease;
         }
 
         .portalNavLink:hover {
-          background: rgba(255,255,255,0.72);
+          border-color: var(--portal-border);
+          background: var(--portal-surface-muted);
           color: var(--portal-text);
-          border-color: rgba(232,222,205,0.9);
         }
 
         .portalNavLink.isActive {
-          background: #fff;
-          color: var(--portal-text);
-          border-color: rgba(200,169,106,0.34);
-          box-shadow: 0 10px 24px rgba(30,20,10,0.055);
+          border-color: #e2d7c3;
+          background: var(--portal-brand-soft);
+          color: #6e4f1c;
+          font-weight: 750;
+        }
+
+        .portalNavLink.isActive::before {
+          content: "";
+          position: absolute;
+          top: 9px;
+          bottom: 9px;
+          left: -17px;
+          width: 3px;
+          border-radius: 0 4px 4px 0;
+          background: var(--portal-brand);
         }
 
         .portalNavIcon {
-          width: 28px;
-          height: 28px;
-          border-radius: 11px;
-          background: rgba(200,169,106,0.10);
-          color: var(--portal-gold-dark);
+          width: 24px;
+          height: 24px;
+          flex: 0 0 24px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          flex: 0 0 28px;
-          font-size: 14px;
-          font-weight: 950;
+          color: currentColor;
         }
 
         .portalNavLabel {
@@ -349,38 +519,95 @@ export default function PortalLayout({
         }
 
         .portalSidebarBottom {
+          display: grid;
+          gap: 9px;
           margin-top: auto;
           padding-top: 18px;
-          border-top: 1px solid rgba(232,222,205,0.95);
+          border-top: 1px solid var(--portal-border);
+        }
+
+        .portalSecurity {
           display: grid;
-          gap: 10px;
+          grid-template-columns: 28px minmax(0, 1fr);
+          gap: 9px;
+          align-items: start;
+          padding: 10px;
+          border: 1px solid var(--portal-border);
+          border-radius: 9px;
+          background: var(--portal-surface-muted);
+        }
+
+        .portalSecurityIcon {
+          width: 28px;
+          height: 28px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--portal-green);
+        }
+
+        .portalSecurityTitle {
+          color: var(--portal-text-soft);
+          font-size: 11px;
+          line-height: 1.3;
+          font-weight: 750;
+        }
+
+        .portalSecurityText {
+          margin-top: 2px;
+          color: var(--portal-muted);
+          font-size: 10px;
+          line-height: 1.4;
+          font-weight: 500;
         }
 
         .portalOrderButton,
         .portalLogoutButton {
-          min-height: 50px;
-          border-radius: 16px;
+          min-height: 42px;
+          width: 100%;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          text-decoration: none;
-          font-size: 14px;
-          font-weight: 950;
+          gap: 8px;
+          padding: 0 14px;
+          border-radius: 9px;
+          font-family: inherit;
+          font-size: 13px;
+          line-height: 1;
+          font-weight: 750;
           text-align: center;
+          text-decoration: none;
           cursor: pointer;
+          transition:
+            background 150ms ease,
+            border-color 150ms ease,
+            color 150ms ease,
+            transform 150ms ease;
         }
 
         .portalOrderButton {
-          background: linear-gradient(135deg, var(--portal-gold), var(--portal-gold-dark));
-          color: #fff;
-          border: 1px solid rgba(169,130,60,0.2);
-          box-shadow: 0 14px 28px rgba(200,169,106,0.22);
+          border: 1px solid var(--portal-brand);
+          background: var(--portal-brand);
+          color: #ffffff;
+          box-shadow: var(--portal-shadow-xs);
+        }
+
+        .portalOrderButton:hover {
+          border-color: var(--portal-brand-hover);
+          background: var(--portal-brand-hover);
+          transform: translateY(-1px);
         }
 
         .portalLogoutButton {
-          background: rgba(255,255,255,0.74);
+          border: 1px solid var(--portal-border);
+          background: #ffffff;
+          color: var(--portal-muted);
+        }
+
+        .portalLogoutButton:hover {
+          border-color: #f1b8b3;
+          background: var(--portal-red-soft);
           color: var(--portal-red);
-          border: 1px solid rgba(232,222,205,0.95);
         }
 
         .portalMain {
@@ -393,19 +620,21 @@ export default function PortalLayout({
           position: sticky;
           top: 0;
           z-index: 30;
-          background: rgba(247,244,238,0.84);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          border-bottom: 1px solid rgba(232,222,205,0.72);
-          padding: 22px 28px;
+          padding: 22px 30px 20px;
+          border-bottom: 1px solid var(--portal-border);
+          background: rgba(255, 255, 255, 0.94);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
         }
 
         .portalHeaderInner {
+          width: 100%;
+          max-width: 1360px;
           display: flex;
-          align-items: center;
+          align-items: flex-start;
           justify-content: space-between;
-          gap: 18px;
-          min-width: 0;
+          gap: 24px;
+          margin: 0 auto;
         }
 
         .portalHeaderText {
@@ -413,95 +642,105 @@ export default function PortalLayout({
         }
 
         .portalKicker {
-          font-size: 11px;
-          font-weight: 950;
-          letter-spacing: 0.13em;
+          margin-bottom: 6px;
+          color: var(--portal-brand);
+          font-size: 10px;
+          line-height: 1.2;
+          font-weight: 800;
+          letter-spacing: 0.09em;
           text-transform: uppercase;
-          color: var(--portal-gold-dark);
-          margin-bottom: 7px;
         }
 
         .portalTitle {
           margin: 0;
-          font-size: clamp(28px, 3.4vw, 42px);
           color: var(--portal-text);
-          line-height: 1.02;
-          letter-spacing: -0.055em;
-          font-weight: 950;
+          font-size: clamp(26px, 3vw, 34px);
+          line-height: 1.12;
+          font-weight: 800;
+          letter-spacing: -0.035em;
           overflow-wrap: anywhere;
         }
 
         .portalSubtitle {
-          margin: 9px 0 0;
+          max-width: 760px;
+          margin: 7px 0 0;
           color: var(--portal-muted);
-          font-size: 15px;
-          line-height: 1.6;
-          max-width: 820px;
-          font-weight: 600;
+          font-size: 13px;
+          line-height: 1.55;
+          font-weight: 500;
         }
 
         .portalHeaderActions {
           display: flex;
           align-items: center;
-          gap: 10px;
           flex-shrink: 0;
         }
 
         .portalLangSwitch {
           display: inline-flex;
           align-items: center;
-          gap: 4px;
-          background: #f6f1e8;
+          gap: 2px;
+          padding: 3px;
           border: 1px solid var(--portal-border);
-          border-radius: 999px;
-          padding: 4px;
-          box-shadow: 0 8px 20px rgba(30,20,10,0.035);
+          border-radius: 9px;
+          background: var(--portal-surface-muted);
         }
 
         .portalLangLink {
-          text-decoration: none;
+          min-width: 38px;
+          min-height: 30px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 6px;
           color: var(--portal-muted);
-          font-weight: 900;
-          font-size: 13px;
-          padding: 8px 12px;
-          border-radius: 999px;
+          font-size: 11px;
           line-height: 1;
+          font-weight: 750;
+          text-decoration: none;
         }
 
         .portalLangLink.isActive {
+          background: #ffffff;
           color: var(--portal-text);
-          background: #fff;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+          box-shadow: var(--portal-shadow-xs);
         }
 
+        .portalContent {
+          width: 100%;
+          max-width: 1420px;
+          min-width: 0;
+          padding: 26px 30px 38px;
+          margin: 0 auto;
+        }
+
+        .portalMobileBar,
         .portalMobileOrder {
           display: none;
         }
 
-        .portalMobileBar {
-          display: none;
-        }
-
-        .portalContent {
-          padding: 28px;
-          min-width: 0;
-        }
-
-        @media (max-width: 1100px) {
+        @media (max-width: 1120px) {
           .portalLayout {
-            grid-template-columns: 270px minmax(0, 1fr);
+            grid-template-columns: 238px minmax(0, 1fr);
           }
 
           .portalSidebar {
-            padding: 20px 14px;
+            padding-right: 12px;
+            padding-left: 12px;
+          }
+
+          .portalHeader {
+            padding-right: 22px;
+            padding-left: 22px;
           }
 
           .portalContent {
-            padding: 22px;
+            padding-right: 22px;
+            padding-left: 22px;
           }
         }
 
-        @media (max-width: 920px) {
+        @media (max-width: 900px) {
           .portalLayout {
             display: block;
           }
@@ -511,16 +750,15 @@ export default function PortalLayout({
           }
 
           .portalMobileBar {
-            display: block;
             position: sticky;
             top: 0;
-            z-index: 50;
-            background:
-              radial-gradient(circle at top right, rgba(200,169,106,0.18), transparent 34%),
-              linear-gradient(180deg, #fffdf8 0%, #f8f1e6 100%);
-            border-bottom: 1px solid rgba(232,222,205,0.95);
-            padding: 12px 14px 10px;
-            box-shadow: 0 16px 34px rgba(30,20,10,0.08);
+            z-index: 60;
+            display: block;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--portal-border);
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
           }
 
           .portalMobileTop {
@@ -528,68 +766,74 @@ export default function PortalLayout({
             align-items: center;
             justify-content: space-between;
             gap: 12px;
-            margin-bottom: 10px;
           }
 
           .portalMobileBrand {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 9px;
             min-width: 0;
           }
 
           .portalMobileAvatar {
-            width: 38px;
-            height: 38px;
-            border-radius: 14px;
-            background: #fff;
-            border: 1px solid rgba(200,169,106,0.28);
+            width: 34px;
+            height: 34px;
+            flex: 0 0 34px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-weight: 950;
-            color: var(--portal-gold-dark);
-            flex: 0 0 38px;
+            border: 1px solid #dfd3bd;
+            border-radius: 9px;
+            background: var(--portal-brand-soft);
+            color: var(--portal-brand);
+            font-size: 11px;
+            font-weight: 800;
           }
 
           .portalMobileName {
-            font-size: 14px;
-            font-weight: 950;
-            color: var(--portal-text);
-            line-height: 1.15;
-            white-space: nowrap;
             overflow: hidden;
+            color: var(--portal-text);
+            font-size: 12px;
+            line-height: 1.25;
+            font-weight: 750;
             text-overflow: ellipsis;
+            white-space: nowrap;
           }
 
           .portalMobileCompany {
-            margin-top: 3px;
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--portal-muted);
-            line-height: 1.2;
-            white-space: nowrap;
             overflow: hidden;
+            margin-top: 2px;
+            color: var(--portal-muted);
+            font-size: 10px;
+            line-height: 1.25;
+            font-weight: 500;
             text-overflow: ellipsis;
+            white-space: nowrap;
           }
 
           .portalMobileLogout {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 34px;
+            padding: 0 10px;
+            border: 1px solid var(--portal-border);
+            border-radius: 8px;
+            background: #ffffff;
+            color: var(--portal-muted);
+            font-size: 11px;
+            line-height: 1;
+            font-weight: 700;
             text-decoration: none;
-            color: var(--portal-red);
-            background: #fff;
-            border: 1px solid rgba(232,222,205,0.95);
-            border-radius: 999px;
-            padding: 10px 12px;
-            font-size: 12px;
-            font-weight: 950;
             white-space: nowrap;
           }
 
           .portalMobileNav {
             display: flex;
-            gap: 8px;
+            gap: 6px;
+            margin-top: 9px;
+            padding-bottom: 1px;
             overflow-x: auto;
-            padding-bottom: 2px;
             scrollbar-width: none;
           }
 
@@ -598,103 +842,117 @@ export default function PortalLayout({
           }
 
           .portalMobileNavLink {
-            text-decoration: none;
-            min-height: 42px;
-            padding: 0 12px;
-            border-radius: 14px;
+            min-height: 36px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 7px;
-            white-space: nowrap;
-            color: var(--portal-muted);
-            background: rgba(255,255,255,0.58);
-            border: 1px solid rgba(232,222,205,0.85);
-            font-size: 12px;
-            font-weight: 900;
             flex: 0 0 auto;
+            padding: 0 10px;
+            border: 1px solid var(--portal-border);
+            border-radius: 8px;
+            background: var(--portal-surface-muted);
+            color: var(--portal-muted);
+            font-size: 10px;
+            line-height: 1;
+            font-weight: 700;
+            text-decoration: none;
+            white-space: nowrap;
           }
 
           .portalMobileNavLink.isActive {
-            background: #fff;
-            color: var(--portal-text);
-            border-color: rgba(200,169,106,0.38);
-            box-shadow: 0 8px 18px rgba(30,20,10,0.05);
+            border-color: #dfd3bd;
+            background: var(--portal-brand-soft);
+            color: #6e4f1c;
+          }
+
+          .portalMobileNavIcon {
+            width: 17px;
+            height: 17px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
           }
 
           .portalHeader {
             position: static;
-            padding: 18px 16px 14px;
-            background: transparent;
+            padding: 19px 16px 16px;
+            background: #ffffff;
             backdrop-filter: none;
             -webkit-backdrop-filter: none;
           }
 
           .portalHeaderInner {
             display: grid;
-            grid-template-columns: 1fr;
+            grid-template-columns: minmax(0, 1fr) auto;
             gap: 14px;
           }
 
-          .portalHeaderActions {
-            justify-content: space-between;
+          .portalTitle {
+            font-size: 27px;
+          }
+
+          .portalSubtitle {
+            font-size: 12px;
           }
 
           .portalMobileOrder {
             display: block;
-            width: 100%;
-          }
-
-          .portalMobileOrder .portalOrderButton {
-            width: 100%;
-          }
-
-          .portalTitle {
-            font-size: 32px;
-          }
-
-          .portalSubtitle {
-            font-size: 14px;
+            grid-column: 1 / -1;
           }
 
           .portalContent {
-            padding: 0 16px 24px;
+            padding: 18px 16px 28px;
           }
         }
 
-        @media (max-width: 520px) {
+        @media (max-width: 560px) {
           .portalMobileBar {
-            padding: 11px 12px 9px;
-          }
-
-          .portalMobileLogout {
-            padding: 9px 10px;
+            padding-right: 12px;
+            padding-left: 12px;
           }
 
           .portalHeader {
-            padding: 16px 14px 12px;
+            padding-right: 13px;
+            padding-left: 13px;
           }
 
-          .portalContent {
-            padding: 0 14px 22px;
+          .portalHeaderInner {
+            grid-template-columns: 1fr;
+          }
+
+          .portalHeaderActions {
+            position: absolute;
+            top: 16px;
+            right: 13px;
+          }
+
+          .portalHeaderText {
+            padding-right: 90px;
           }
 
           .portalTitle {
-            font-size: 29px;
+            font-size: 24px;
           }
 
-          .portalLangLink {
-            padding: 8px 11px;
+          .portalContent {
+            padding-right: 13px;
+            padding-left: 13px;
           }
         }
       `}</style>
 
       <div className="portalLayout">
         <aside className="portalSidebar">
-          <a href="https://letmebowl-catering.de" className="portalBrand">
+          <a
+            href="https://letmebowl-catering.de"
+            className="portalBrand"
+          >
             <span className="portalBrandMark">LMB</span>
+
             <span className="portalBrandText">
               <span className="portalBrandTitle">LET ME BOWL</span>
+
               <span className="portalBrandSub">
                 {locale === "en" ? "Business Portal" : "Firmenportal"}
               </span>
@@ -703,11 +961,21 @@ export default function PortalLayout({
 
           <div className="portalUserCard">
             <div className="portalUserTop">
-              <div className="portalUserAvatar">{getInitials(user)}</div>
+              <div className="portalUserAvatar">
+                {getInitials(user)}
+              </div>
 
               <div className="portalUserText">
-                <div className="portalUserName">{getDisplayName(user)}</div>
-                <div className="portalUserCompany">{getCompanyName(user)}</div>
+                <div className="portalUserName">
+                  {getDisplayName(user)}
+                </div>
+
+                <div
+                  className="portalUserCompany"
+                  title={getCompanyName(user)}
+                >
+                  {getCompanyName(user)}
+                </div>
               </div>
             </div>
 
@@ -715,7 +983,10 @@ export default function PortalLayout({
               <span className="portalPill portalPillGreen">
                 {locale === "en" ? "Active" : "Aktiv"}
               </span>
-              <span className="portalPill">{getRoleLabel(user, locale)}</span>
+
+              <span className="portalPill">
+                {getRoleLabel(user, locale)}
+              </span>
             </div>
           </div>
 
@@ -732,22 +1003,49 @@ export default function PortalLayout({
           </nav>
 
           <div className="portalSidebarBottom">
+            <div className="portalSecurity">
+              <div className="portalSecurityIcon">
+                <PortalIcon name="lock" />
+              </div>
+
+              <div>
+                <div className="portalSecurityTitle">
+                  {locale === "en"
+                    ? "Protected company account"
+                    : "Geschütztes Firmenkonto"}
+                </div>
+
+                <div className="portalSecurityText">
+                  {locale === "en"
+                    ? "Access is limited to signed-in users."
+                    : "Zugriff nur für angemeldete Benutzer."}
+                </div>
+              </div>
+            </div>
+
             {orderNowOnClick ? (
               <button
                 type="button"
                 onClick={orderNowOnClick}
                 className="portalOrderButton"
               >
-                {t.orderNow || "Jetzt bestellen"}
+                {orderButtonContent}
               </button>
             ) : (
-              <a href={sidebarOrderHref} className="portalOrderButton">
-                {t.orderNow || "Jetzt bestellen"}
+              <a
+                href={sidebarOrderHref}
+                className="portalOrderButton"
+              >
+                {orderButtonContent}
               </a>
             )}
 
-            <a href={withLang("/logout", locale)} className="portalLogoutButton">
-              {t.logout || "Abmelden"}
+            <a
+              href={withLang("/logout", locale)}
+              className="portalLogoutButton"
+            >
+              <PortalIcon name="logout" />
+              <span>{t.logout || "Abmelden"}</span>
             </a>
           </div>
         </aside>
@@ -756,14 +1054,25 @@ export default function PortalLayout({
           <div className="portalMobileBar">
             <div className="portalMobileTop">
               <div className="portalMobileBrand">
-                <div className="portalMobileAvatar">{getInitials(user)}</div>
+                <div className="portalMobileAvatar">
+                  {getInitials(user)}
+                </div>
+
                 <div style={{ minWidth: 0 }}>
-                  <div className="portalMobileName">{getDisplayName(user)}</div>
-                  <div className="portalMobileCompany">{getCompanyName(user)}</div>
+                  <div className="portalMobileName">
+                    {getDisplayName(user)}
+                  </div>
+
+                  <div className="portalMobileCompany">
+                    {getCompanyName(user)}
+                  </div>
                 </div>
               </div>
 
-              <a href={withLang("/logout", locale)} className="portalMobileLogout">
+              <a
+                href={withLang("/logout", locale)}
+                className="portalMobileLogout"
+              >
                 {t.logout || "Abmelden"}
               </a>
             </div>
@@ -774,10 +1083,15 @@ export default function PortalLayout({
                   key={item.href}
                   href={item.href}
                   className={`portalMobileNavLink ${
-                    isActivePath(location.pathname, item.href) ? "isActive" : ""
+                    isActivePath(location.pathname, item.href)
+                      ? "isActive"
+                      : ""
                   }`}
                 >
-                  <span>{item.icon}</span>
+                  <span className="portalMobileNavIcon">
+                    <PortalIcon name={item.icon} />
+                  </span>
+
                   <span>{item.mobileLabel}</span>
                 </a>
               ))}
@@ -788,25 +1102,34 @@ export default function PortalLayout({
             <div className="portalHeaderInner">
               <div className="portalHeaderText">
                 <div className="portalKicker">
-                  {locale === "en" ? "Let Me Bowl business account" : "Let Me Bowl Firmenkonto"}
+                  {locale === "en"
+                    ? "Let Me Bowl business account"
+                    : "Let Me Bowl Firmenkonto"}
                 </div>
 
                 <h1 className="portalTitle">{title}</h1>
 
-                {subtitle ? <p className="portalSubtitle">{subtitle}</p> : null}
+                {subtitle ? (
+                  <p className="portalSubtitle">{subtitle}</p>
+                ) : null}
               </div>
 
               <div className="portalHeaderActions">
                 <div className="portalLangSwitch">
                   <a
                     href={withLang(location.pathname, "de")}
-                    className={`portalLangLink ${locale === "de" ? "isActive" : ""}`}
+                    className={`portalLangLink ${
+                      locale === "de" ? "isActive" : ""
+                    }`}
                   >
                     DE
                   </a>
+
                   <a
                     href={withLang(location.pathname, "en")}
-                    className={`portalLangLink ${locale === "en" ? "isActive" : ""}`}
+                    className={`portalLangLink ${
+                      locale === "en" ? "isActive" : ""
+                    }`}
                   >
                     EN
                   </a>
@@ -820,18 +1143,23 @@ export default function PortalLayout({
                     onClick={orderNowOnClick}
                     className="portalOrderButton"
                   >
-                    {t.orderNow || "Jetzt bestellen"}
+                    {orderButtonContent}
                   </button>
                 ) : (
-                  <a href={sidebarOrderHref} className="portalOrderButton">
-                    {t.orderNow || "Jetzt bestellen"}
+                  <a
+                    href={sidebarOrderHref}
+                    className="portalOrderButton"
+                  >
+                    {orderButtonContent}
                   </a>
                 )}
               </div>
             </div>
           </header>
 
-          <section className="portalContent">{children}</section>
+          <section className="portalContent">
+            {children}
+          </section>
         </main>
       </div>
     </div>

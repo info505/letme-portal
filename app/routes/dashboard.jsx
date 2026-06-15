@@ -184,16 +184,20 @@ export default function DashboardPage() {
       <style>{`
         .dashboardPage {
           width: 100%;
-          max-width: 1180px;
+          max-width: 1280px;
           display: grid;
-          gap: 20px;
+          gap: 18px;
         }
 
         .dashboardHero {
           position: relative;
           overflow: hidden;
-          border-radius: 30px;
-          border: 1px solid ${colors.line};
+          border-radius: 16px;
+          border: 1px solid #e3e6ea;
+          background: #ffffff;
+          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
+          padding: 24px;
+        };
           background:
             radial-gradient(circle at top left, rgba(200,169,106,0.16), transparent 30%),
             linear-gradient(180deg, #ffffff 0%, #faf6ee 100%);
@@ -204,7 +208,7 @@ export default function DashboardPage() {
         .dashboardHeroInner {
           display: grid;
           grid-template-columns: minmax(0, 1fr) auto;
-          gap: 24px;
+          gap: 22px;
           align-items: center;
           position: relative;
           z-index: 1;
@@ -214,11 +218,13 @@ export default function DashboardPage() {
           display: inline-flex;
           width: fit-content;
           align-items: center;
-          padding: 8px 12px;
-          border-radius: 999px;
-          background: rgba(200,169,106,0.10);
-          border: 1px solid rgba(200,169,106,0.28);
-          color: ${colors.goldDark};
+          margin-bottom: 8px;
+          color: #a97d2f;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.09em;
+          text-transform: uppercase;
+        };
           font-size: 12px;
           font-weight: 950;
           letter-spacing: 0.13em;
@@ -229,7 +235,12 @@ export default function DashboardPage() {
         .dashboardHeroTitle {
           margin: 0;
           max-width: 760px;
-          color: ${colors.text};
+          color: #191a1d;
+          font-size: clamp(26px, 3.2vw, 36px);
+          line-height: 1.12;
+          letter-spacing: -0.035em;
+          font-weight: 800;
+        };
           font-size: clamp(34px, 5vw, 56px);
           line-height: 0.98;
           letter-spacing: -0.055em;
@@ -237,9 +248,13 @@ export default function DashboardPage() {
         }
 
         .dashboardHeroText {
-          margin: 16px 0 0;
+          margin: 9px 0 0;
           max-width: 760px;
-          color: ${colors.muted};
+          color: #667085;
+          font-size: 13px;
+          line-height: 1.6;
+          font-weight: 500;
+        };
           font-size: 16px;
           line-height: 1.7;
           font-weight: 600;
@@ -247,59 +262,68 @@ export default function DashboardPage() {
 
         .dashboardHeroActions {
           display: flex;
-          gap: 12px;
+          gap: 10px;
           flex-wrap: wrap;
-          margin-top: 24px;
+          margin-top: 18px;
         }
 
         .dashboardPrimaryBtn,
         .dashboardSecondaryBtn {
-          min-height: 54px;
-          padding: 0 20px;
-          border-radius: 18px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          text-decoration: none;
-          font-size: 15px;
-          font-weight: 950;
-          cursor: pointer;
-          white-space: nowrap;
+          border: 1px solid #e3e6ea;
+          background: #fff;
+          color: #191a1d;
         }
 
         .dashboardPrimaryBtn {
-          border: 0;
-          background: linear-gradient(135deg, ${colors.gold}, ${colors.goldDark});
+          border: 1px solid #a97d2f;
+          background: #a97d2f;
+          color: #fff;
+          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+        }, ${colors.goldDark});
           color: #fff;
           box-shadow: 0 16px 30px rgba(200,169,106,0.24);
         }
 
         .dashboardSecondaryBtn {
-          border: 1px solid ${colors.line};
+          border: 1px solid #e3e6ea;
+          background: #fff;
+          color: #191a1d;
+        };
           background: #fff;
           color: ${colors.text};
         }
 
         .dashboardHeroBox {
           min-width: 250px;
-          border-radius: 24px;
-          border: 1px solid ${colors.line};
+          border-radius: 12px;
+          border: 1px solid #e3e6ea;
+          background: #f8f9fa;
+          padding: 16px;
+          box-shadow: none;
+        };
           background: rgba(255,255,255,0.78);
           padding: 22px;
           box-shadow: 0 14px 34px rgba(30,20,10,0.045);
         }
 
         .dashboardHeroBoxLabel {
-          font-size: 12px;
-          font-weight: 950;
-          letter-spacing: 0.1em;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
           text-transform: uppercase;
-          color: ${colors.muted};
+          color: #667085;
+          margin-bottom: 7px;
+        };
           margin-bottom: 10px;
         }
 
         .dashboardHeroBoxValue {
-          color: ${colors.text};
+          color: #191a1d;
+          font-size: 20px;
+          line-height: 1.2;
+          font-weight: 800;
+          letter-spacing: -0.025em;
+        };
           font-size: 24px;
           line-height: 1.15;
           font-weight: 950;
@@ -307,8 +331,12 @@ export default function DashboardPage() {
         }
 
         .dashboardHeroBoxText {
-          margin-top: 10px;
-          color: ${colors.muted};
+          margin-top: 8px;
+          color: #667085;
+          font-size: 12px;
+          line-height: 1.5;
+          font-weight: 500;
+        };
           font-size: 13.5px;
           line-height: 1.6;
           font-weight: 650;
@@ -317,12 +345,17 @@ export default function DashboardPage() {
         .dashboardStats {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 14px;
+          gap: 12px;
         }
 
         .dashboardStat {
+          min-width: 0;
           background: #fff;
-          border: 1px solid ${colors.line};
+          border: 1px solid #e3e6ea;
+          border-radius: 12px;
+          padding: 16px;
+          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035);
+        };
           border-radius: 22px;
           padding: 20px;
           box-shadow: 0 16px 42px rgba(30,20,10,0.045);
@@ -330,16 +363,24 @@ export default function DashboardPage() {
         }
 
         .dashboardStatLabel {
-          font-size: 11.5px;
-          font-weight: 950;
-          letter-spacing: 0.1em;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
           text-transform: uppercase;
-          color: ${colors.muted};
+          color: #667085;
+          margin-bottom: 7px;
+        };
           margin-bottom: 10px;
         }
 
         .dashboardStatValue {
-          color: ${colors.text};
+          color: #191a1d;
+          font-size: clamp(24px, 2.5vw, 30px);
+          line-height: 1.05;
+          font-weight: 800;
+          letter-spacing: -0.035em;
+          overflow-wrap: anywhere;
+        };
           font-size: 34px;
           line-height: 1;
           font-weight: 950;
@@ -348,8 +389,12 @@ export default function DashboardPage() {
         }
 
         .dashboardStatText {
-          margin-top: 9px;
-          color: ${colors.muted};
+          margin-top: 7px;
+          color: #667085;
+          font-size: 12px;
+          line-height: 1.45;
+          font-weight: 500;
+        };
           font-size: 13.5px;
           line-height: 1.55;
           font-weight: 650;
@@ -358,11 +403,22 @@ export default function DashboardPage() {
         .dashboardQuickGrid {
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 14px;
+          gap: 12px;
         }
 
         .quickCard {
-          border: 1px solid ${colors.line};
+          border: 1px solid #e3e6ea;
+          border-radius: 12px;
+          background: #fff;
+          padding: 18px;
+          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035);
+          text-decoration: none;
+          color: #191a1d;
+          display: grid;
+          gap: 9px;
+          min-width: 0;
+          transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+        };
           border-radius: 24px;
           background: #fff;
           padding: 22px;
@@ -375,12 +431,18 @@ export default function DashboardPage() {
         }
 
         .quickCardIcon {
-          width: 42px;
-          height: 42px;
-          border-radius: 16px;
-          background: #f6efe1;
-          border: 1px solid #eadfc8;
-          color: ${colors.goldDark};
+          width: 36px;
+          height: 36px;
+          border-radius: 9px;
+          background: #f8f2e7;
+          border: 1px solid #e2d7c3;
+          color: #a97d2f;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+          font-weight: 800;
+        };
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -389,22 +451,32 @@ export default function DashboardPage() {
         }
 
         .quickCardTitle {
-          font-size: 19px;
-          line-height: 1.2;
-          font-weight: 950;
-          letter-spacing: -0.025em;
-          color: ${colors.text};
+          font-size: 16px;
+          line-height: 1.25;
+          font-weight: 800;
+          letter-spacing: -0.02em;
+          color: #191a1d;
+        };
         }
 
         .quickCardText {
-          color: ${colors.muted};
+          color: #667085;
+          font-size: 12.5px;
+          line-height: 1.55;
+          font-weight: 500;
+        };
           font-size: 14px;
           line-height: 1.6;
           font-weight: 650;
         }
 
         .ordersCard {
-          border: 1px solid ${colors.line};
+          border: 1px solid #e3e6ea;
+          border-radius: 14px;
+          background: #fff;
+          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
+          overflow: hidden;
+        };
           border-radius: 28px;
           background: #fff;
           box-shadow: 0 18px 50px rgba(30,20,10,0.055);
@@ -526,20 +598,34 @@ export default function DashboardPage() {
 
         @media (max-width: 1100px) {
           .dashboardHeroInner {
-            grid-template-columns: 1fr;
-          }
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 22px;
+          align-items: center;
+          position: relative;
+          z-index: 1;
+        }
 
           .dashboardHeroBox {
-            min-width: 0;
-          }
+          min-width: 250px;
+          border-radius: 12px;
+          border: 1px solid #e3e6ea;
+          background: #f8f9fa;
+          padding: 16px;
+          box-shadow: none;
+        }
 
           .dashboardStats {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 12px;
+        }
 
           .dashboardQuickGrid {
-            grid-template-columns: 1fr;
-          }
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 12px;
+        }
 
           .orderRow {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -549,51 +635,91 @@ export default function DashboardPage() {
 
         @media (max-width: 720px) {
           .dashboardPage {
-            gap: 16px;
-          }
+          width: 100%;
+          max-width: 1280px;
+          display: grid;
+          gap: 18px;
+        }
 
           .dashboardHero,
           .ordersCard {
-            padding: 20px 16px;
-            border-radius: 22px;
-          }
+          border: 1px solid #e3e6ea;
+          border-radius: 14px;
+          background: #fff;
+          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
+          overflow: hidden;
+        }
 
           .dashboardHeroTitle {
-            font-size: 34px;
-          }
+          margin: 0;
+          max-width: 760px;
+          color: #191a1d;
+          font-size: clamp(26px, 3.2vw, 36px);
+          line-height: 1.12;
+          letter-spacing: -0.035em;
+          font-weight: 800;
+        }
 
           .dashboardHeroText {
-            font-size: 14.5px;
-          }
+          margin: 9px 0 0;
+          max-width: 760px;
+          color: #667085;
+          font-size: 13px;
+          line-height: 1.6;
+          font-weight: 500;
+        }
 
           .dashboardHeroActions {
-            display: grid;
-            grid-template-columns: 1fr;
-          }
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+          margin-top: 18px;
+        }
 
           .dashboardPrimaryBtn,
-          .dashboardSecondaryBtn {
-            width: 100%;
-          }
+        .dashboardSecondaryBtn {
+          border: 1px solid #e3e6ea;
+          background: #fff;
+          color: #191a1d;
+        }
 
           .dashboardStats {
-            grid-template-columns: 1fr;
-            gap: 10px;
-          }
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 12px;
+        }
 
           .dashboardStat {
-            padding: 17px;
-            border-radius: 20px;
-          }
+          min-width: 0;
+          background: #fff;
+          border: 1px solid #e3e6ea;
+          border-radius: 12px;
+          padding: 16px;
+          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035);
+        }
 
           .dashboardStatValue {
-            font-size: 30px;
-          }
+          color: #191a1d;
+          font-size: clamp(24px, 2.5vw, 30px);
+          line-height: 1.05;
+          font-weight: 800;
+          letter-spacing: -0.035em;
+          overflow-wrap: anywhere;
+        }
 
           .quickCard {
-            padding: 18px;
-            border-radius: 20px;
-          }
+          border: 1px solid #e3e6ea;
+          border-radius: 12px;
+          background: #fff;
+          padding: 18px;
+          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035);
+          text-decoration: none;
+          color: #191a1d;
+          display: grid;
+          gap: 9px;
+          min-width: 0;
+          transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+        }
 
           .ordersHead {
             display: grid;
@@ -614,9 +740,10 @@ export default function DashboardPage() {
         /* LMB PREMIUM DASHBOARD FINAL */
 
         .dashboardPage {
-          position: relative;
-          gap: 22px;
-          padding-bottom: 42px;
+          width: 100%;
+          max-width: 1280px;
+          display: grid;
+          gap: 18px;
         }
 
         .dashboardPage::before {
@@ -643,31 +770,13 @@ export default function DashboardPage() {
         }
 
         .dashboardHero {
-          isolation: isolate;
-          min-height: 340px;
-          padding: 44px;
-          border-radius: 36px;
-          border: 1px solid rgba(170, 128, 57, 0.18);
-          background:
-            radial-gradient(
-              circle at 7% 0%,
-              rgba(217, 185, 119, 0.26),
-              transparent 34%
-            ),
-            radial-gradient(
-              circle at 100% 100%,
-              rgba(156, 111, 42, 0.11),
-              transparent 37%
-            ),
-            linear-gradient(
-              135deg,
-              #ffffff 0%,
-              #fdfaf4 53%,
-              #f3e8d5 100%
-            );
-          box-shadow:
-            0 32px 80px rgba(55, 38, 15, 0.11),
-            0 5px 16px rgba(55, 38, 15, 0.04);
+          position: relative;
+          overflow: hidden;
+          border-radius: 16px;
+          border: 1px solid #e3e6ea;
+          background: #ffffff;
+          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
+          padding: 24px;
         }
 
         .dashboardHero::after {
@@ -687,81 +796,70 @@ export default function DashboardPage() {
         }
 
         .dashboardHeroInner {
-          grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.68fr);
-          gap: 42px;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 22px;
+          align-items: center;
+          position: relative;
+          z-index: 1;
         }
 
         .dashboardEyebrow {
-          min-height: 35px;
-          padding: 0 15px;
-          margin-bottom: 19px;
-          border-color: rgba(178, 137, 67, 0.25);
-          background:
-            linear-gradient(
-              180deg,
-              rgba(255, 255, 255, 0.94),
-              rgba(198, 159, 87, 0.12)
-            );
-          color: #98712e;
-          box-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, 0.96),
-            0 8px 20px rgba(120, 84, 29, 0.07);
+          display: inline-flex;
+          width: fit-content;
+          align-items: center;
+          margin-bottom: 8px;
+          color: #a97d2f;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.09em;
+          text-transform: uppercase;
         }
 
         .dashboardHeroTitle {
-          max-width: 720px;
-          font-size: clamp(44px, 5.3vw, 66px);
-          line-height: 0.95;
-          letter-spacing: -0.065em;
-          text-wrap: balance;
+          margin: 0;
+          max-width: 760px;
+          color: #191a1d;
+          font-size: clamp(26px, 3.2vw, 36px);
+          line-height: 1.12;
+          letter-spacing: -0.035em;
+          font-weight: 800;
         }
 
         .dashboardHeroText {
-          max-width: 720px;
-          margin-top: 21px;
-          font-size: 16px;
-          line-height: 1.75;
+          margin: 9px 0 0;
+          max-width: 760px;
+          color: #667085;
+          font-size: 13px;
+          line-height: 1.6;
+          font-weight: 500;
         }
 
         .dashboardHeroActions {
-          gap: 12px;
-          margin-top: 29px;
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+          margin-top: 18px;
         }
 
         .dashboardPrimaryBtn,
         .dashboardSecondaryBtn {
-          min-height: 54px;
-          padding: 0 23px;
-          border-radius: 16px;
-          font-weight: 900;
-          transition:
-            transform 180ms ease,
-            box-shadow 180ms ease,
-            border-color 180ms ease;
+          border: 1px solid #e3e6ea;
+          background: #fff;
+          color: #191a1d;
         }
 
         .dashboardPrimaryBtn {
-          border-color: #b3873c;
-          background:
-            linear-gradient(
-              145deg,
-              #d9ba76 0%,
-              #c49a4e 56%,
-              #aa7b31 100%
-            );
-          color: #ffffff;
-          box-shadow:
-            0 16px 32px rgba(158, 113, 43, 0.27),
-            inset 0 1px 0 rgba(255, 255, 255, 0.42);
+          border: 1px solid #a97d2f;
+          background: #a97d2f;
+          color: #fff;
+          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
         }
 
         .dashboardSecondaryBtn {
-          border-color: rgba(52, 38, 18, 0.13);
-          background: rgba(255, 255, 255, 0.9);
-          box-shadow:
-            0 12px 27px rgba(41, 29, 13, 0.07),
-            inset 0 1px 0 rgba(255, 255, 255, 0.98);
-          backdrop-filter: blur(12px);
+          border: 1px solid #e3e6ea;
+          background: #fff;
+          color: #191a1d;
         }
 
         .dashboardPrimaryBtn:hover,
@@ -781,48 +879,27 @@ export default function DashboardPage() {
         }
 
         .dashboardHeroBox {
-          position: relative;
-          overflow: hidden;
-          padding: 28px;
-          border-radius: 26px;
-          border: 1px solid rgba(159, 117, 49, 0.17);
-          background:
-            radial-gradient(
-              circle at top right,
-              rgba(205, 169, 101, 0.17),
-              transparent 44%
-            ),
-            rgba(255, 255, 255, 0.84);
-          box-shadow:
-            0 19px 44px rgba(47, 32, 12, 0.08),
-            inset 0 1px 0 rgba(255, 255, 255, 0.97);
-          backdrop-filter: blur(16px);
+          min-width: 250px;
+          border-radius: 12px;
+          border: 1px solid #e3e6ea;
+          background: #f8f9fa;
+          padding: 16px;
+          box-shadow: none;
         }
 
         .dashboardStats {
-          gap: 14px;
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 12px;
         }
 
         .dashboardStat {
-          position: relative;
-          overflow: hidden;
-          min-height: 132px;
-          padding: 23px 21px;
-          border-radius: 24px;
-          border-color: rgba(91, 66, 29, 0.12);
-          background:
-            linear-gradient(
-              145deg,
-              rgba(255, 255, 255, 0.99),
-              rgba(249, 245, 236, 0.97)
-            );
-          box-shadow:
-            0 16px 38px rgba(49, 34, 15, 0.065),
-            inset 0 1px 0 rgba(255, 255, 255, 0.98);
-          transition:
-            transform 180ms ease,
-            border-color 180ms ease,
-            box-shadow 180ms ease;
+          min-width: 0;
+          background: #fff;
+          border: 1px solid #e3e6ea;
+          border-radius: 12px;
+          padding: 16px;
+          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035);
         }
 
         .dashboardStat::after {
@@ -851,13 +928,18 @@ export default function DashboardPage() {
         }
 
         .dashboardStatValue {
-          font-size: clamp(30px, 3vw, 38px);
-          line-height: 1;
-          letter-spacing: -0.05em;
+          color: #191a1d;
+          font-size: clamp(24px, 2.5vw, 30px);
+          line-height: 1.05;
+          font-weight: 800;
+          letter-spacing: -0.035em;
+          overflow-wrap: anywhere;
         }
 
         .dashboardQuickGrid {
-          gap: 15px;
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 12px;
         }
 
         .dashboardQuickCard {
@@ -905,11 +987,11 @@ export default function DashboardPage() {
         }
 
         .ordersCard {
-          border-radius: 30px;
-          border-color: rgba(91, 66, 29, 0.12);
-          box-shadow:
-            0 18px 46px rgba(49, 34, 15, 0.07),
-            inset 0 1px 0 rgba(255, 255, 255, 0.98);
+          border: 1px solid #e3e6ea;
+          border-radius: 14px;
+          background: #fff;
+          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
+          overflow: hidden;
         }
 
         .orderRow {
@@ -933,56 +1015,68 @@ export default function DashboardPage() {
 
         @media (max-width: 900px) {
           .dashboardHero {
-            min-height: 0;
-            padding: 30px;
-          }
+          position: relative;
+          overflow: hidden;
+          border-radius: 16px;
+          border: 1px solid #e3e6ea;
+          background: #ffffff;
+          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
+          padding: 24px;
+        }
 
           .dashboardHeroInner {
-            grid-template-columns: 1fr;
-            gap: 26px;
-          }
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 22px;
+          align-items: center;
+          position: relative;
+          z-index: 1;
+        }
         }
 
         @media (max-width: 720px) {
           .dashboardHero {
-            padding: 25px 20px;
-            border-radius: 26px;
-          }
+          position: relative;
+          overflow: hidden;
+          border-radius: 16px;
+          border: 1px solid #e3e6ea;
+          background: #ffffff;
+          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
+          padding: 24px;
+        }
 
           .dashboardHeroTitle {
-            font-size: 39px;
-          }
+          margin: 0;
+          max-width: 760px;
+          color: #191a1d;
+          font-size: clamp(26px, 3.2vw, 36px);
+          line-height: 1.12;
+          letter-spacing: -0.035em;
+          font-weight: 800;
+        }
 
           .dashboardHeroActions {
-            display: grid;
-          }
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+          margin-top: 18px;
+        }
 
           .dashboardPrimaryBtn,
-          .dashboardSecondaryBtn {
-            width: 100%;
-          }
+        .dashboardSecondaryBtn {
+          border: 1px solid #e3e6ea;
+          background: #fff;
+          color: #191a1d;
+        }
         }
 
         /* LMB LUXURY DASHBOARD V2 */
 
         .dashboardPage {
-          --luxury-ivory: #f6f2ea;
-          --luxury-paper: #fffdf9;
-          --luxury-paper-soft: #faf6ef;
-          --luxury-espresso: #201b16;
-          --luxury-brown: #5e5245;
-          --luxury-muted: #817465;
-          --luxury-champagne: #cbb078;
-          --luxury-gold: #b89252;
-          --luxury-gold-dark: #87652f;
-          --luxury-line: rgba(91, 72, 45, 0.13);
-          --luxury-line-strong: rgba(145, 108, 54, 0.21);
-          --luxury-shadow:
-            0 22px 55px rgba(54, 42, 25, 0.075),
-            0 4px 14px rgba(54, 42, 25, 0.035);
-
-          gap: 20px;
-          padding-bottom: 46px;
+          width: 100%;
+          max-width: 1280px;
+          display: grid;
+          gap: 18px;
         }
 
         .dashboardPage::before {
@@ -1000,31 +1094,13 @@ export default function DashboardPage() {
         }
 
         .dashboardHero {
-          min-height: 350px;
-          padding: 46px;
-          border-radius: 32px;
-          border: 1px solid var(--luxury-line-strong);
-          background:
-            radial-gradient(
-              circle at 2% 0%,
-              rgba(223, 204, 167, 0.3),
-              transparent 34%
-            ),
-            radial-gradient(
-              circle at 98% 100%,
-              rgba(178, 143, 82, 0.09),
-              transparent 37%
-            ),
-            linear-gradient(
-              138deg,
-              #fffefb 0%,
-              #fbf8f2 47%,
-              #f3ebdd 100%
-            );
-          box-shadow:
-            0 30px 80px rgba(55, 43, 26, 0.095),
-            0 5px 18px rgba(55, 43, 26, 0.035),
-            inset 0 1px 0 rgba(255, 255, 255, 0.95);
+          position: relative;
+          overflow: hidden;
+          border-radius: 16px;
+          border: 1px solid #e3e6ea;
+          background: #ffffff;
+          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
+          padding: 24px;
         }
 
         .dashboardHero::before {
@@ -1054,95 +1130,70 @@ export default function DashboardPage() {
         }
 
         .dashboardHeroInner {
-          grid-template-columns: minmax(0, 1.25fr) minmax(315px, 0.64fr);
-          gap: 46px;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 22px;
+          align-items: center;
+          position: relative;
+          z-index: 1;
         }
 
         .dashboardEyebrow {
-          min-height: 36px;
-          padding: 0 15px;
-          margin-bottom: 21px;
-          border: 1px solid rgba(173, 133, 67, 0.24);
-          background:
-            linear-gradient(
-              180deg,
-              rgba(255, 255, 255, 0.9),
-              rgba(205, 174, 113, 0.12)
-            );
-          color: var(--luxury-gold-dark);
-          font-size: 11px;
-          letter-spacing: 0.15em;
-          box-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, 0.95),
-            0 8px 20px rgba(96, 72, 38, 0.055);
+          display: inline-flex;
+          width: fit-content;
+          align-items: center;
+          margin-bottom: 8px;
+          color: #a97d2f;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.09em;
+          text-transform: uppercase;
         }
 
         .dashboardHeroTitle {
-          max-width: 720px;
-          color: var(--luxury-espresso);
-          font-size: clamp(46px, 5.35vw, 68px);
-          line-height: 0.94;
-          letter-spacing: -0.066em;
-          font-weight: 950;
-          text-wrap: balance;
+          margin: 0;
+          max-width: 760px;
+          color: #191a1d;
+          font-size: clamp(26px, 3.2vw, 36px);
+          line-height: 1.12;
+          letter-spacing: -0.035em;
+          font-weight: 800;
         }
 
         .dashboardHeroText {
-          max-width: 690px;
-          margin-top: 22px;
-          color: var(--luxury-brown);
-          font-size: 16px;
-          line-height: 1.78;
-          font-weight: 570;
+          margin: 9px 0 0;
+          max-width: 760px;
+          color: #667085;
+          font-size: 13px;
+          line-height: 1.6;
+          font-weight: 500;
         }
 
         .dashboardHeroActions {
-          margin-top: 31px;
-          gap: 12px;
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+          margin-top: 18px;
         }
 
         .dashboardPrimaryBtn,
         .dashboardSecondaryBtn {
-          min-height: 55px;
-          padding: 0 24px;
-          border-radius: 14px;
-          font-weight: 880;
-          letter-spacing: -0.015em;
-          transition:
-            transform 180ms ease,
-            box-shadow 180ms ease,
-            border-color 180ms ease,
-            background 180ms ease;
+          border: 1px solid #e3e6ea;
+          background: #fff;
+          color: #191a1d;
         }
 
         .dashboardPrimaryBtn {
-          border: 1px solid #a77c3c;
-          background:
-            linear-gradient(
-              145deg,
-              #d8bf88 0%,
-              #c19c5b 52%,
-              #a77837 100%
-            );
-          color: #fffdf8;
-          box-shadow:
-            0 15px 30px rgba(129, 93, 43, 0.24),
-            inset 0 1px 0 rgba(255, 255, 255, 0.36);
+          border: 1px solid #a97d2f;
+          background: #a97d2f;
+          color: #fff;
+          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
         }
 
         .dashboardSecondaryBtn {
-          border: 1px solid rgba(66, 52, 34, 0.13);
-          background:
-            linear-gradient(
-              180deg,
-              rgba(255, 255, 255, 0.94),
-              rgba(250, 246, 238, 0.9)
-            );
-          color: var(--luxury-espresso);
-          box-shadow:
-            0 10px 24px rgba(50, 39, 24, 0.055),
-            inset 0 1px 0 rgba(255, 255, 255, 0.98);
-          backdrop-filter: blur(14px);
+          border: 1px solid #e3e6ea;
+          background: #fff;
+          color: #191a1d;
         }
 
         .dashboardPrimaryBtn:hover,
@@ -1171,24 +1222,12 @@ export default function DashboardPage() {
         }
 
         .dashboardHeroBox {
-          padding: 29px;
-          border-radius: 22px;
-          border: 1px solid rgba(145, 108, 54, 0.18);
-          background:
-            radial-gradient(
-              circle at top right,
-              rgba(204, 174, 116, 0.16),
-              transparent 42%
-            ),
-            linear-gradient(
-              145deg,
-              rgba(255, 255, 255, 0.91),
-              rgba(251, 247, 239, 0.86)
-            );
-          box-shadow:
-            0 18px 42px rgba(50, 38, 22, 0.07),
-            inset 0 1px 0 rgba(255, 255, 255, 0.97);
-          backdrop-filter: blur(18px);
+          min-width: 250px;
+          border-radius: 12px;
+          border: 1px solid #e3e6ea;
+          background: #f8f9fa;
+          padding: 16px;
+          box-shadow: none;
         }
 
         .dashboardHeroBox::after {
@@ -1215,32 +1254,18 @@ export default function DashboardPage() {
         }
 
         .dashboardStats {
-          gap: 14px;
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 12px;
         }
 
         .dashboardStat {
-          min-height: 134px;
-          padding: 23px 21px;
-          border-radius: 21px;
-          border: 1px solid var(--luxury-line);
-          background:
-            radial-gradient(
-              circle at 100% 0%,
-              rgba(214, 190, 143, 0.12),
-              transparent 42%
-            ),
-            linear-gradient(
-              145deg,
-              #fffefb 0%,
-              #faf6ef 100%
-            );
-          box-shadow:
-            0 14px 34px rgba(52, 40, 23, 0.055),
-            inset 0 1px 0 rgba(255, 255, 255, 0.98);
-          transition:
-            transform 180ms ease,
-            border-color 180ms ease,
-            box-shadow 180ms ease;
+          min-width: 0;
+          background: #fff;
+          border: 1px solid #e3e6ea;
+          border-radius: 12px;
+          padding: 16px;
+          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035);
         }
 
         .dashboardStat::before {
@@ -1281,24 +1306,35 @@ export default function DashboardPage() {
         }
 
         .dashboardStatLabel {
-          color: var(--luxury-gold-dark);
           font-size: 10px;
-          letter-spacing: 0.14em;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #667085;
+          margin-bottom: 7px;
         }
 
         .dashboardStatValue {
-          color: var(--luxury-espresso);
-          font-size: clamp(30px, 3vw, 39px);
-          letter-spacing: -0.055em;
+          color: #191a1d;
+          font-size: clamp(24px, 2.5vw, 30px);
+          line-height: 1.05;
+          font-weight: 800;
+          letter-spacing: -0.035em;
+          overflow-wrap: anywhere;
         }
 
         .dashboardStatText {
-          color: var(--luxury-muted);
-          line-height: 1.55;
+          margin-top: 7px;
+          color: #667085;
+          font-size: 12px;
+          line-height: 1.45;
+          font-weight: 500;
         }
 
         .dashboardQuickGrid {
-          gap: 15px;
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 12px;
         }
 
         .dashboardQuickCard {
@@ -1362,17 +1398,11 @@ export default function DashboardPage() {
         }
 
         .ordersCard {
-          border-radius: 26px;
-          border: 1px solid var(--luxury-line);
-          background:
-            linear-gradient(
-              150deg,
-              rgba(255, 254, 251, 0.98),
-              rgba(250, 247, 241, 0.96)
-            );
-          box-shadow:
-            0 17px 42px rgba(52, 40, 23, 0.06),
-            inset 0 1px 0 rgba(255, 255, 255, 0.98);
+          border: 1px solid #e3e6ea;
+          border-radius: 14px;
+          background: #fff;
+          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
+          overflow: hidden;
         }
 
         .orderRow {
@@ -1413,46 +1443,84 @@ export default function DashboardPage() {
 
         @media (max-width: 900px) {
           .dashboardHero {
-            min-height: 0;
-            padding: 32px;
-          }
+          position: relative;
+          overflow: hidden;
+          border-radius: 16px;
+          border: 1px solid #e3e6ea;
+          background: #ffffff;
+          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
+          padding: 24px;
+        }
 
           .dashboardHeroInner {
-            grid-template-columns: 1fr;
-            gap: 28px;
-          }
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 22px;
+          align-items: center;
+          position: relative;
+          z-index: 1;
+        }
 
           .dashboardHeroBox {
-            width: 100%;
-          }
+          min-width: 250px;
+          border-radius: 12px;
+          border: 1px solid #e3e6ea;
+          background: #f8f9fa;
+          padding: 16px;
+          box-shadow: none;
+        }
         }
 
         @media (max-width: 720px) {
           .dashboardPage {
-            gap: 15px;
-          }
+          width: 100%;
+          max-width: 1280px;
+          display: grid;
+          gap: 18px;
+        }
 
           .dashboardHero {
-            padding: 26px 21px;
-            border-radius: 24px;
-          }
+          position: relative;
+          overflow: hidden;
+          border-radius: 16px;
+          border: 1px solid #e3e6ea;
+          background: #ffffff;
+          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
+          padding: 24px;
+        }
 
           .dashboardHeroTitle {
-            font-size: 40px;
-          }
+          margin: 0;
+          max-width: 760px;
+          color: #191a1d;
+          font-size: clamp(26px, 3.2vw, 36px);
+          line-height: 1.12;
+          letter-spacing: -0.035em;
+          font-weight: 800;
+        }
 
           .dashboardHeroText {
-            font-size: 14.5px;
-          }
+          margin: 9px 0 0;
+          max-width: 760px;
+          color: #667085;
+          font-size: 13px;
+          line-height: 1.6;
+          font-weight: 500;
+        }
 
           .dashboardHeroActions {
-            display: grid;
-          }
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+          margin-top: 18px;
+        }
 
           .dashboardPrimaryBtn,
-          .dashboardSecondaryBtn {
-            width: 100%;
-          }
+        .dashboardSecondaryBtn {
+          border: 1px solid #e3e6ea;
+          background: #fff;
+          color: #191a1d;
+        }
 
           .dashboardStat,
           .dashboardQuickCard {

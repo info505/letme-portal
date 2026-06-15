@@ -107,7 +107,7 @@ export default function BestellungenPage() {
           width: 100%;
           max-width: 1280px;
           display: grid;
-          gap: 22px;
+          gap: 18px;
         }
 
         .ordersHero {
@@ -117,25 +117,17 @@ export default function BestellungenPage() {
           grid-template-columns: minmax(0, 1fr) auto;
           gap: 24px;
           align-items: center;
-          padding: 30px;
-          border-radius: 30px;
-          background:
-            radial-gradient(circle at top right, rgba(200,169,106,0.22), transparent 36%),
-            linear-gradient(135deg, #fffdf8 0%, #f6efe2 100%);
-          border: 1px solid ${ui.line};
+          padding: 24px;
+          border-radius: 16px;
+          background: #ffffff;
+          border: 1px solid #e3e6ea;
+          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
+        };
           box-shadow: 0 24px 60px rgba(30,20,10,0.07);
         }
 
         .ordersHero::after {
-          content: "";
-          position: absolute;
-          right: -70px;
-          bottom: -90px;
-          width: 230px;
-          height: 230px;
-          border-radius: 999px;
-          background: rgba(200,169,106,0.12);
-          pointer-events: none;
+          content: none;
         }
 
         .ordersHeroTextWrap {
@@ -147,14 +139,14 @@ export default function BestellungenPage() {
         .ordersKicker {
           display: inline-flex;
           width: fit-content;
-          min-height: 30px;
-          padding: 0 12px;
-          border-radius: 999px;
           align-items: center;
-          justify-content: center;
-          background: rgba(47,106,74,0.08);
-          border: 1px solid rgba(47,106,74,0.18);
-          color: ${ui.green};
+          margin-bottom: 8px;
+          color: #a97d2f;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.09em;
+          text-transform: uppercase;
+        };
           font-size: 11px;
           font-weight: 950;
           letter-spacing: 0.12em;
@@ -164,7 +156,13 @@ export default function BestellungenPage() {
 
         .ordersHeroTitle {
           margin: 0;
-          color: ${ui.text};
+          color: #191a1d;
+          font-size: clamp(26px, 3.2vw, 36px);
+          line-height: 1.12;
+          letter-spacing: -0.035em;
+          font-weight: 800;
+          max-width: 760px;
+        };
           font-size: clamp(30px, 4.3vw, 50px);
           line-height: 1.02;
           letter-spacing: -0.055em;
@@ -173,8 +171,13 @@ export default function BestellungenPage() {
         }
 
         .ordersHeroCopy {
-          margin: 14px 0 0;
-          color: ${ui.muted};
+          margin: 9px 0 0;
+          color: #667085;
+          font-size: 13px;
+          line-height: 1.6;
+          font-weight: 500;
+          max-width: 760px;
+        };
           font-size: 15px;
           line-height: 1.75;
           font-weight: 600;
@@ -185,35 +188,69 @@ export default function BestellungenPage() {
           position: relative;
           z-index: 2;
           display: flex;
+          align-items: center;
+          justify-content: flex-end;
           gap: 10px;
           flex-wrap: wrap;
-          justify-content: flex-end;
         }
 
         .ordersBtnPrimary,
         .ordersBtnSecondary {
-          min-height: 52px;
-          padding: 0 20px;
-          border-radius: 999px;
-          text-decoration: none;
+          min-height: 42px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          font-size: 14px;
-          font-weight: 950;
-          white-space: nowrap;
-          cursor: pointer;
+          padding: 0 16px;
+          border-radius: 9px;
+          border: 1px solid #e3e6ea;
+          background: #fff;
+          color: #191a1d;
+          text-decoration: none;
+          font-size: 13px;
+          line-height: 1;
+          font-weight: 700;
+          box-shadow: none;
+          transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
         }
 
         .ordersBtnPrimary {
-          border: 1px solid rgba(169,130,60,0.24);
-          background: linear-gradient(135deg, ${ui.gold}, ${ui.goldDark});
+          min-height: 42px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 16px;
+          border-radius: 9px;
+          border: 1px solid #a97d2f;
+          background: #a97d2f;
+          color: #fff;
+          text-decoration: none;
+          font-size: 13px;
+          line-height: 1;
+          font-weight: 750;
+          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+          transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
+        }, ${ui.goldDark});
           color: #fff;
           box-shadow: 0 14px 30px rgba(200,169,106,0.24);
         }
 
         .ordersBtnSecondary {
-          border: 1px solid ${ui.line};
+          min-height: 42px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 16px;
+          border-radius: 9px;
+          border: 1px solid #e3e6ea;
+          background: #fff;
+          color: #191a1d;
+          text-decoration: none;
+          font-size: 13px;
+          line-height: 1;
+          font-weight: 700;
+          box-shadow: none;
+          transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
+        };
           background: #fff;
           color: ${ui.text};
         }
@@ -221,19 +258,27 @@ export default function BestellungenPage() {
         .ordersStats {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 14px;
+          gap: 12px;
         }
 
         .ordersStat {
-          padding: 20px;
-          border-radius: 24px;
+          padding: 16px;
+          border-radius: 12px;
           background: #fff;
-          border: 1px solid ${ui.line};
+          border: 1px solid #e3e6ea;
+          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035);
+        };
           box-shadow: 0 12px 34px rgba(30,20,10,0.04);
         }
 
         .ordersStatLabel {
-          color: ${ui.muted};
+          color: #667085;
+          font-size: 10px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          margin-bottom: 7px;
+        };
           font-size: 11px;
           font-weight: 950;
           letter-spacing: 0.11em;
@@ -242,7 +287,13 @@ export default function BestellungenPage() {
         }
 
         .ordersStatValue {
-          color: ${ui.text};
+          color: #191a1d;
+          font-size: clamp(24px, 2.5vw, 30px);
+          line-height: 1.05;
+          font-weight: 800;
+          letter-spacing: -0.035em;
+          margin-bottom: 6px;
+        };
           font-size: 34px;
           line-height: 1;
           font-weight: 950;
@@ -251,7 +302,11 @@ export default function BestellungenPage() {
         }
 
         .ordersStatText {
-          color: ${ui.muted};
+          color: #667085;
+          font-size: 12px;
+          line-height: 1.45;
+          font-weight: 500;
+        };
           font-size: 13px;
           line-height: 1.55;
           font-weight: 650;
@@ -260,12 +315,13 @@ export default function BestellungenPage() {
         .ordersNotice {
           display: grid;
           grid-template-columns: auto minmax(0, 1fr);
-          gap: 14px;
+          gap: 12px;
           align-items: start;
-          padding: 18px;
-          border-radius: 24px;
-          background: rgba(255,255,255,0.78);
-          border: 1px solid ${ui.line};
+          padding: 14px 16px;
+          border-radius: 12px;
+          background: #f8f9fa;
+          border: 1px solid #e3e6ea;
+        };
           box-shadow: 0 12px 34px rgba(30,20,10,0.035);
         }
 
@@ -299,24 +355,33 @@ export default function BestellungenPage() {
         }
 
         .ordersListPanel {
-          padding: 24px;
-          border-radius: 28px;
+          padding: 20px;
+          border-radius: 14px;
           background: #fff;
-          border: 1px solid ${ui.line};
+          border: 1px solid #e3e6ea;
+          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
+        };
           box-shadow: 0 14px 40px rgba(30,20,10,0.045);
         }
 
         .ordersListHead {
           display: flex;
           justify-content: space-between;
-          align-items: flex-start;
+          align-items: center;
           gap: 18px;
-          margin-bottom: 18px;
+          margin-bottom: 16px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid #eaecf0;
         }
 
         .ordersListTitle {
           margin: 0;
-          color: ${ui.text};
+          color: #191a1d;
+          font-size: 21px;
+          line-height: 1.2;
+          letter-spacing: -0.025em;
+          font-weight: 800;
+        };
           font-size: 26px;
           line-height: 1.1;
           letter-spacing: -0.04em;
@@ -324,8 +389,12 @@ export default function BestellungenPage() {
         }
 
         .ordersListSub {
-          margin: 7px 0 0;
-          color: ${ui.muted};
+          margin: 4px 0 0;
+          color: #667085;
+          font-size: 13px;
+          line-height: 1.5;
+          font-weight: 500;
+        };
           font-size: 14px;
           line-height: 1.6;
           font-weight: 650;
@@ -337,7 +406,15 @@ export default function BestellungenPage() {
         }
 
         .orderCard {
-          border: 1px solid ${ui.line};
+          border: 1px solid #e3e6ea;
+          border-radius: 12px;
+          background: #fff;
+          padding: 18px;
+          display: grid;
+          gap: 14px;
+          box-shadow: none;
+          transition: border-color 150ms ease, box-shadow 150ms ease;
+        };
           border-radius: 24px;
           background:
             radial-gradient(circle at top right, rgba(200,169,106,0.08), transparent 36%),
@@ -578,16 +655,34 @@ export default function BestellungenPage() {
 
         @media (max-width: 1180px) {
           .ordersHero {
-            grid-template-columns: 1fr;
-          }
+          position: relative;
+          overflow: hidden;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 24px;
+          align-items: center;
+          padding: 24px;
+          border-radius: 16px;
+          background: #ffffff;
+          border: 1px solid #e3e6ea;
+          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
+        }
 
           .ordersHeroActions {
-            justify-content: flex-start;
-          }
+          position: relative;
+          z-index: 2;
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
 
           .ordersStats {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 12px;
+        }
 
           .orderInfoGrid,
           .orderMetaGrid {
@@ -597,8 +692,11 @@ export default function BestellungenPage() {
 
         @media (max-width: 720px) {
           .ordersPage {
-            gap: 16px;
-          }
+          width: 100%;
+          max-width: 1280px;
+          display: grid;
+          gap: 18px;
+        }
 
           .ordersHero,
           .ordersListPanel,
@@ -616,8 +714,22 @@ export default function BestellungenPage() {
 
           .ordersBtnPrimary,
           .ordersBtnSecondary {
-            width: 100%;
-          }
+          min-height: 42px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 16px;
+          border-radius: 9px;
+          border: 1px solid #e3e6ea;
+          background: #fff;
+          color: #191a1d;
+          text-decoration: none;
+          font-size: 13px;
+          line-height: 1;
+          font-weight: 700;
+          box-shadow: none;
+          transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
+        }
 
           .ordersStats,
           .orderInfoGrid,
@@ -659,14 +771,14 @@ export default function BestellungenPage() {
 
             <h1 className="ordersHeroTitle">
               {locale === "en"
-                ? "All company orders in one clean overview."
-                : "Alle Firmenbestellungen sauber an einem Ort."}
+                ? "Manage company orders and delivery details."
+                : "Firmenbestellungen und Lieferdetails verwalten."}
             </h1>
 
             <p className="ordersHeroCopy">
               {locale === "en"
-                ? "Track order status, review delivery details, cost centers, order items and start a reorder when product data is available."
-                : "Verfolge den Status, prüfe Lieferdaten, Kostenstellen, Positionen und starte bei gespeicherten Produktdaten eine erneute Bestellung."}
+                ? "Review order status, delivery dates, cost centers and order details in one central overview."
+                : "Prüfe Bestellstatus, Liefertermine, Kostenstellen und Bestelldetails in einer zentralen Übersicht."}
             </p>
           </div>
 
@@ -729,8 +841,8 @@ export default function BestellungenPage() {
             <div>
               <h3 className="ordersNoticeTitle">
                 {locale === "en"
-                  ? "Invoice orders are now saved in your portal."
-                  : "Rechnungskauf-Bestellungen werden jetzt im Portal gespeichert."}
+                  ? "Order information is available in your company account."
+                  : "Bestellinformationen sind in deinem Firmenkonto verfügbar."}
               </h3>
               <p className="ordersNoticeText">
                 {locale === "en"
