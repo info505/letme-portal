@@ -939,8 +939,7 @@ export default function PortalLayout({
             padding-left: 13px;
           }
         }
-        /* MINIMAL PREMIUM PORTAL FINAL */
-
+        /* CLEAN FINAL PORTAL FRAME */
         html,
         body,
         .portalRoot {
@@ -949,39 +948,39 @@ export default function PortalLayout({
         }
 
         .portalLayout {
-          grid-template-columns: 220px minmax(0, 1fr) !important;
+          grid-template-columns: 218px minmax(0, 1fr) !important;
         }
 
         .portalSidebar {
-          padding: 18px 12px !important;
+          padding: 16px 12px !important;
           background: #ffffff !important;
           border-right: 1px solid #e5e7eb !important;
         }
 
         .portalBrand {
-          padding: 0 6px 18px !important;
+          padding: 0 5px 14px !important;
           margin: 0 !important;
           border-bottom: 1px solid #e5e7eb !important;
         }
 
         .portalBrandMark {
-          width: 32px !important;
-          height: 32px !important;
-          flex: 0 0 32px !important;
+          width: 30px !important;
+          height: 30px !important;
+          flex: 0 0 30px !important;
           border-radius: 8px !important;
-          font-size: 10px !important;
+          font-size: 9.5px !important;
         }
 
         .portalBrandTitle {
           font-size: 12px !important;
-          line-height: 1.15 !important;
-          font-weight: 800 !important;
+          line-height: 1.1 !important;
+          font-weight: 850 !important;
           letter-spacing: 0.035em !important;
         }
 
         .portalBrandSub {
           margin-top: 1px !important;
-          font-size: 10px !important;
+          font-size: 9.5px !important;
           line-height: 1.2 !important;
           font-weight: 500 !important;
           letter-spacing: 0 !important;
@@ -994,12 +993,12 @@ export default function PortalLayout({
         }
 
         .portalNav {
-          margin-top: 18px !important;
+          margin-top: 16px !important;
           gap: 2px !important;
         }
 
         .portalNavLink {
-          min-height: 38px !important;
+          min-height: 37px !important;
           padding: 0 10px !important;
           border-radius: 8px !important;
           font-size: 12.5px !important;
@@ -1027,9 +1026,9 @@ export default function PortalLayout({
         }
 
         .portalNavIcon {
-          width: 20px !important;
-          height: 20px !important;
-          flex: 0 0 20px !important;
+          width: 19px !important;
+          height: 19px !important;
+          flex: 0 0 19px !important;
         }
 
         .portalSidebarBottom {
@@ -1047,7 +1046,7 @@ export default function PortalLayout({
           min-height: 38px !important;
           border-radius: 8px !important;
           font-size: 12px !important;
-          font-weight: 750 !important;
+          font-weight: 800 !important;
           box-shadow: none !important;
         }
 
@@ -1067,36 +1066,37 @@ export default function PortalLayout({
           top: 0 !important;
           background: #ffffff !important;
           border-bottom: 1px solid #e5e7eb !important;
-          padding: 20px 28px !important;
+          padding: 16px 26px !important;
         }
 
         .portalHeaderInner {
           max-width: 1120px !important;
           margin: 0 auto !important;
+          align-items: center !important;
         }
 
         .portalKicker {
-          margin-bottom: 5px !important;
+          margin-bottom: 4px !important;
           color: #a97d2f !important;
           font-size: 9.5px !important;
-          font-weight: 800 !important;
+          font-weight: 850 !important;
           letter-spacing: 0.09em !important;
         }
 
         .portalTitle {
-          font-size: clamp(25px, 2.8vw, 32px) !important;
-          line-height: 1.12 !important;
-          font-weight: 850 !important;
-          letter-spacing: -0.04em !important;
+          font-size: clamp(24px, 2.5vw, 30px) !important;
+          line-height: 1.08 !important;
+          font-weight: 900 !important;
+          letter-spacing: -0.045em !important;
           color: #17191c !important;
         }
 
         .portalSubtitle {
-          margin-top: 6px !important;
+          margin-top: 5px !important;
           max-width: 680px !important;
           color: #667085 !important;
-          font-size: 13px !important;
-          line-height: 1.5 !important;
+          font-size: 12.5px !important;
+          line-height: 1.45 !important;
           font-weight: 500 !important;
         }
 
@@ -1117,155 +1117,8 @@ export default function PortalLayout({
         .portalContent {
           max-width: 1120px !important;
           margin: 0 auto !important;
-          padding: 22px 28px 36px !important;
+          padding: 18px 26px 34px !important;
           overflow-x: hidden !important;
-        }
-
-        /* Dashboard komplett ruhiger */
-
-        .dashboardPage {
-          max-width: 100% !important;
-          margin: 0 !important;
-          display: grid !important;
-          gap: 14px !important;
-          overflow-x: hidden !important;
-        }
-
-        .dashboardHero {
-          display: none !important;
-        }
-
-        .dashboardStats {
-          display: grid !important;
-          grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-          gap: 10px !important;
-        }
-
-        .dashboardStat {
-          min-width: 0 !important;
-          padding: 16px !important;
-          border-radius: 12px !important;
-          border: 1px solid #e5e7eb !important;
-          background: #ffffff !important;
-          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035) !important;
-        }
-
-        .dashboardStatLabel {
-          margin-bottom: 7px !important;
-          color: #667085 !important;
-          font-size: 9.5px !important;
-          font-weight: 800 !important;
-          letter-spacing: 0.08em !important;
-          text-transform: uppercase !important;
-        }
-
-        .dashboardStatValue {
-          color: #17191c !important;
-          font-size: 28px !important;
-          line-height: 1.05 !important;
-          font-weight: 850 !important;
-          letter-spacing: -0.035em !important;
-        }
-
-        .dashboardStatText {
-          margin-top: 7px !important;
-          color: #667085 !important;
-          font-size: 11.5px !important;
-          line-height: 1.45 !important;
-          font-weight: 500 !important;
-        }
-
-        .dashboardQuickGrid {
-          display: grid !important;
-          grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-          gap: 10px !important;
-        }
-
-        .quickCard {
-          min-width: 0 !important;
-          display: block !important;
-          padding: 16px !important;
-          border-radius: 12px !important;
-          border: 1px solid #e5e7eb !important;
-          background: #ffffff !important;
-          color: #17191c !important;
-          text-decoration: none !important;
-          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035) !important;
-        }
-
-        .quickCard:hover {
-          border-color: #d0d5dd !important;
-          box-shadow: 0 4px 12px rgba(16, 24, 40, 0.055) !important;
-          transform: translateY(-1px) !important;
-        }
-
-        .quickCardIcon {
-          width: 34px !important;
-          height: 34px !important;
-          display: inline-flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          margin-bottom: 12px !important;
-          border-radius: 9px !important;
-          border: 1px solid #e2d7c3 !important;
-          background: #f8f2e7 !important;
-          color: #a97d2f !important;
-          font-size: 14px !important;
-          font-weight: 800 !important;
-        }
-
-        .quickCardTitle {
-          margin: 0 !important;
-          color: #17191c !important;
-          font-size: 15px !important;
-          line-height: 1.25 !important;
-          font-weight: 850 !important;
-          letter-spacing: -0.015em !important;
-        }
-
-        .quickCardText {
-          margin-top: 7px !important;
-          color: #667085 !important;
-          font-size: 12.5px !important;
-          line-height: 1.5 !important;
-          font-weight: 500 !important;
-        }
-
-        .ordersCard {
-          overflow: hidden !important;
-          border-radius: 14px !important;
-          border: 1px solid #e5e7eb !important;
-          background: #ffffff !important;
-          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04) !important;
-        }
-
-        .ordersCard h2,
-        .ordersCardTitle {
-          margin: 0 !important;
-          color: #17191c !important;
-          font-size: 21px !important;
-          line-height: 1.2 !important;
-          font-weight: 850 !important;
-          letter-spacing: -0.03em !important;
-        }
-
-        .ordersCard a {
-          color: #17191c !important;
-          text-decoration: none !important;
-        }
-
-        .ordersCard a:hover {
-          text-decoration: none !important;
-        }
-
-        @media (max-width: 1180px) {
-          .dashboardStats {
-            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-          }
-
-          .dashboardQuickGrid {
-            grid-template-columns: 1fr !important;
-          }
         }
 
         @media (max-width: 900px) {
@@ -1277,16 +1130,15 @@ export default function PortalLayout({
             display: none !important;
           }
 
+          .portalHeader {
+            padding: 15px 14px !important;
+          }
+
           .portalContent {
             padding: 16px 14px 28px !important;
           }
         }
 
-        @media (max-width: 720px) {
-          .dashboardStats {
-            grid-template-columns: 1fr !important;
-          }
-        }
 
       `}</style>
 
