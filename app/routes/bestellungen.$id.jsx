@@ -61,7 +61,7 @@ export default function BestellungDetailPage() {
 
   return (
     <PortalLayout
-      title={locale === "en" ? "Order details" : "Bestelldetails"}
+      title={"DETAILSEITE TEST 123"}
       subtitle={
         locale === "en"
           ? "Review all information for this order."
