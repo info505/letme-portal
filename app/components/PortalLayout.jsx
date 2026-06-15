@@ -1222,6 +1222,91 @@ export default function PortalLayout({
           margin-top: 0 !important;
         }
 
+        /* PORTAL HEIGHT MODEL FIX */
+        html,
+        body {
+          height: 100%;
+        }
+
+        body {
+          overflow: hidden;
+        }
+
+        .portalShell,
+        .portalLayout,
+        .portalFrame,
+        .portalRoot {
+          height: 100vh;
+          max-height: 100vh;
+          overflow: hidden;
+        }
+
+        .portalShell,
+        .portalLayout,
+        .portalFrame {
+          display: flex;
+          align-items: stretch;
+        }
+
+        .portalSidebar {
+          flex: 0 0 240px;
+          width: 240px;
+          min-width: 240px;
+          max-width: 240px;
+          height: 100vh;
+          max-height: 100vh;
+          overflow: hidden;
+        }
+
+        .portalMain,
+        .portalContent,
+        main {
+          min-width: 0;
+          flex: 1 1 auto;
+          height: 100vh;
+          max-height: 100vh;
+          overflow-y: auto;
+          overflow-x: hidden;
+        }
+
+        @media (max-width: 900px) {
+          body {
+            overflow: auto;
+          }
+
+          .portalShell,
+          .portalLayout,
+          .portalFrame,
+          .portalRoot {
+            height: auto;
+            max-height: none;
+            overflow: visible;
+          }
+
+          .portalShell,
+          .portalLayout,
+          .portalFrame {
+            display: block;
+          }
+
+          .portalSidebar {
+            width: 100%;
+            min-width: 0;
+            max-width: none;
+            height: auto;
+            max-height: none;
+            overflow: visible;
+          }
+
+          .portalMain,
+          .portalContent,
+          main {
+            height: auto;
+            max-height: none;
+            overflow: visible;
+          }
+        }
+
       `}</style>
 
       <div className="portalLayout">
