@@ -1397,6 +1397,271 @@ export default function BestellungenPage() {
             grid-template-columns: 1fr !important;
           }
         }
+        /* ORDERS TABLE CLEAN FINAL */
+        .ordersPage {
+          max-width: none !important;
+          width: 100% !important;
+          gap: 14px !important;
+        }
+
+        .ordersHero {
+          display: none !important;
+        }
+
+        .ordersStats {
+          display: grid !important;
+          grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+          gap: 10px !important;
+        }
+
+        .ordersStat {
+          padding: 14px 15px !important;
+          border-radius: 12px !important;
+          border: 1px solid #e5e7eb !important;
+          background: #ffffff !important;
+          box-shadow: 0 1px 2px rgba(16,24,40,0.035) !important;
+        }
+
+        .ordersStatLabel {
+          margin-bottom: 6px !important;
+          color: #667085 !important;
+          font-size: 9px !important;
+          font-weight: 850 !important;
+          letter-spacing: 0.08em !important;
+          text-transform: uppercase !important;
+        }
+
+        .ordersStatValue {
+          color: #17191c !important;
+          font-size: 25px !important;
+          line-height: 1.05 !important;
+          font-weight: 900 !important;
+          letter-spacing: -0.035em !important;
+        }
+
+        .ordersStatText {
+          margin-top: 6px !important;
+          color: #667085 !important;
+          font-size: 11.5px !important;
+          line-height: 1.4 !important;
+          font-weight: 500 !important;
+        }
+
+        .ordersNotice {
+          display: none !important;
+        }
+
+        .ordersListPanel {
+          padding: 0 !important;
+          overflow: hidden !important;
+          border-radius: 14px !important;
+          border: 1px solid #e5e7eb !important;
+          background: #ffffff !important;
+          box-shadow: 0 1px 3px rgba(16,24,40,0.04) !important;
+        }
+
+        .ordersListHead {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: space-between !important;
+          gap: 16px !important;
+          padding: 17px 18px !important;
+          margin: 0 !important;
+          border-bottom: 1px solid #eaecf0 !important;
+        }
+
+        .ordersListTitle {
+          margin: 0 !important;
+          color: #17191c !important;
+          font-size: 21px !important;
+          line-height: 1.2 !important;
+          font-weight: 900 !important;
+          letter-spacing: -0.035em !important;
+        }
+
+        .ordersListSub {
+          margin: 5px 0 0 !important;
+          color: #667085 !important;
+          font-size: 12.5px !important;
+          line-height: 1.45 !important;
+          font-weight: 500 !important;
+        }
+
+        .ordersList {
+          display: grid !important;
+          gap: 0 !important;
+        }
+
+        .orderCard {
+          display: grid !important;
+          grid-template-columns: minmax(210px, 1.25fr) repeat(4, minmax(110px, 0.7fr)) 190px !important;
+          align-items: center !important;
+          gap: 14px !important;
+          min-height: 78px !important;
+          padding: 13px 18px !important;
+          border: 0 !important;
+          border-bottom: 1px solid #f0f2f4 !important;
+          border-radius: 0 !important;
+          background: #ffffff !important;
+          box-shadow: none !important;
+        }
+
+        .orderCard:last-child {
+          border-bottom: 0 !important;
+        }
+
+        .orderTop {
+          display: grid !important;
+          gap: 4px !important;
+          min-width: 0 !important;
+        }
+
+        .orderKicker {
+          color: #667085 !important;
+          font-size: 8.5px !important;
+          line-height: 1.1 !important;
+          font-weight: 850 !important;
+          letter-spacing: 0.08em !important;
+          text-transform: uppercase !important;
+        }
+
+        .orderNumber {
+          margin: 0 !important;
+          color: #17191c !important;
+          font-size: 14.5px !important;
+          line-height: 1.2 !important;
+          font-weight: 900 !important;
+          letter-spacing: -0.02em !important;
+        }
+
+        .orderSubline {
+          margin: 0 !important;
+          color: #667085 !important;
+          font-size: 11.5px !important;
+          line-height: 1.3 !important;
+          font-weight: 500 !important;
+        }
+
+        .orderBadges {
+          display: flex !important;
+          align-items: center !important;
+          gap: 6px !important;
+          margin-top: 4px !important;
+          flex-wrap: wrap !important;
+        }
+
+        .orderInfoGrid {
+          display: contents !important;
+        }
+
+        .orderInfoBox {
+          padding: 0 !important;
+          border: 0 !important;
+          background: transparent !important;
+          border-radius: 0 !important;
+        }
+
+        .orderInfoLabel {
+          margin-bottom: 4px !important;
+          color: #667085 !important;
+          font-size: 8.5px !important;
+          line-height: 1.1 !important;
+          font-weight: 850 !important;
+          letter-spacing: 0.08em !important;
+          text-transform: uppercase !important;
+        }
+
+        .orderInfoValue {
+          margin: 0 !important;
+          color: #17191c !important;
+          font-size: 12px !important;
+          line-height: 1.25 !important;
+          font-weight: 850 !important;
+          white-space: nowrap !important;
+        }
+
+        .orderMetaGrid,
+        .orderItemsPreview,
+        .orderNote {
+          display: none !important;
+        }
+
+        .orderFooter {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: flex-end !important;
+          padding: 0 !important;
+          border: 0 !important;
+        }
+
+        .orderActions {
+          display: grid !important;
+          grid-template-columns: 1fr !important;
+          gap: 7px !important;
+          justify-items: stretch !important;
+          min-width: 150px !important;
+        }
+
+        .orderActions a,
+        .orderActions button {
+          min-height: 34px !important;
+          border-radius: 8px !important;
+          font-size: 11.5px !important;
+          font-weight: 850 !important;
+          padding: 0 12px !important;
+          box-shadow: none !important;
+        }
+
+        @media (max-width: 1280px) {
+          .orderCard {
+            grid-template-columns: minmax(210px, 1fr) repeat(2, minmax(120px, 0.7fr)) 170px !important;
+          }
+
+          .orderInfoBox:nth-child(3),
+          .orderInfoBox:nth-child(4) {
+            display: none !important;
+          }
+        }
+
+        @media (max-width: 900px) {
+          .ordersStats {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          }
+
+          .orderCard {
+            grid-template-columns: 1fr !important;
+            align-items: start !important;
+            gap: 10px !important;
+          }
+
+          .orderInfoGrid {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 8px !important;
+          }
+
+          .orderInfoBox {
+            display: block !important;
+            padding: 10px !important;
+            border-radius: 9px !important;
+            border: 1px solid #eaecf0 !important;
+            background: #f8fafc !important;
+          }
+
+          .orderFooter,
+          .orderActions {
+            justify-content: stretch !important;
+            width: 100% !important;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .ordersStats,
+          .orderInfoGrid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+
 
 
 
