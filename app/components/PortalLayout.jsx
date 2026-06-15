@@ -293,7 +293,7 @@ export default function PortalLayout({
 
         .portalLayout {
           display: grid;
-          grid-template-columns: 264px minmax(0, 1fr);
+          grid-template-columns: 248px minmax(0, 1fr);
           min-height: 100vh;
         }
 
@@ -303,35 +303,35 @@ export default function PortalLayout({
           height: 100vh;
           display: flex;
           flex-direction: column;
-          padding: 22px 16px 18px;
+          padding: 20px 14px 16px;
           overflow-y: auto;
-          background: var(--portal-sidebar);
+          background: #ffffff;
           border-right: 1px solid var(--portal-border);
         }
 
         .portalBrand {
           display: flex;
           align-items: center;
-          gap: 11px;
+          gap: 10px;
           min-width: 0;
-          padding: 2px 6px 18px;
+          padding: 0 6px 16px;
           color: var(--portal-text);
           text-decoration: none;
           border-bottom: 1px solid var(--portal-border);
         }
 
         .portalBrandMark {
-          width: 38px;
-          height: 38px;
-          flex: 0 0 38px;
+          width: 36px;
+          height: 36px;
+          flex: 0 0 36px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          border-radius: 10px;
+          border-radius: 9px;
           border: 1px solid #dfd3bd;
           background: var(--portal-brand-soft);
           color: var(--portal-brand);
-          font-size: 12px;
+          font-size: 11px;
           line-height: 1;
           font-weight: 850;
           letter-spacing: -0.02em;
@@ -346,10 +346,10 @@ export default function PortalLayout({
         .portalBrandTitle {
           overflow: hidden;
           color: var(--portal-text);
-          font-size: 14px;
-          line-height: 1.1;
+          font-size: 13px;
+          line-height: 1.15;
           font-weight: 800;
-          letter-spacing: 0.045em;
+          letter-spacing: 0.035em;
           text-overflow: ellipsis;
           white-space: nowrap;
         }
@@ -358,42 +358,30 @@ export default function PortalLayout({
           overflow: hidden;
           color: var(--portal-muted);
           font-size: 10px;
-          line-height: 1.2;
-          font-weight: 700;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
+          line-height: 1.25;
+          font-weight: 600;
+          letter-spacing: 0.02em;
+          text-transform: none;
           text-overflow: ellipsis;
           white-space: nowrap;
         }
 
         .portalUserCard {
-          margin: 18px 0 16px;
-          padding: 14px;
-          border: 1px solid var(--portal-border);
-          border-radius: var(--portal-radius);
-          background: var(--portal-surface-soft);
+          margin: 14px 0 14px;
+          padding: 0 6px 14px;
+          border: 0;
+          border-bottom: 1px solid var(--portal-border);
+          border-radius: 0;
+          background: transparent;
         }
 
         .portalUserTop {
-          display: flex;
-          align-items: center;
-          gap: 11px;
+          display: block;
           min-width: 0;
         }
 
         .portalUserAvatar {
-          width: 40px;
-          height: 40px;
-          flex: 0 0 40px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 10px;
-          border: 1px solid #dfd3bd;
-          background: #ffffff;
-          color: var(--portal-brand);
-          font-size: 13px;
-          font-weight: 800;
+          display: none;
         }
 
         .portalUserText {
@@ -403,7 +391,7 @@ export default function PortalLayout({
         .portalUserName {
           overflow: hidden;
           color: var(--portal-text);
-          font-size: 13px;
+          font-size: 12px;
           line-height: 1.3;
           font-weight: 750;
           text-overflow: ellipsis;
@@ -423,11 +411,7 @@ export default function PortalLayout({
         }
 
         .portalUserMeta {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          margin-top: 11px;
-          flex-wrap: wrap;
+          display: none;
         }
 
         .portalPill {
@@ -458,16 +442,16 @@ export default function PortalLayout({
 
         .portalNavLink {
           position: relative;
-          min-height: 42px;
+          min-height: 40px;
           display: flex;
           align-items: center;
           gap: 10px;
           padding: 0 10px;
           border: 1px solid transparent;
-          border-radius: 9px;
+          border-radius: 8px;
           background: transparent;
           color: var(--portal-muted);
-          font-size: 13px;
+          font-size: 12.5px;
           line-height: 1.2;
           font-weight: 650;
           text-decoration: none;
@@ -485,7 +469,7 @@ export default function PortalLayout({
 
         .portalNavLink.isActive {
           border-color: #e2d7c3;
-          background: var(--portal-brand-soft);
+          background: #f8f2e7;
           color: #6e4f1c;
           font-weight: 750;
         }
@@ -502,9 +486,9 @@ export default function PortalLayout({
         }
 
         .portalNavIcon {
-          width: 24px;
-          height: 24px;
-          flex: 0 0 24px;
+          width: 22px;
+          height: 22px;
+          flex: 0 0 22px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -528,12 +512,12 @@ export default function PortalLayout({
 
         .portalSecurity {
           display: grid;
-          grid-template-columns: 28px minmax(0, 1fr);
-          gap: 9px;
+          grid-template-columns: 24px minmax(0, 1fr);
+          gap: 8px;
           align-items: start;
-          padding: 10px;
+          padding: 9px;
           border: 1px solid var(--portal-border);
-          border-radius: 9px;
+          border-radius: 8px;
           background: var(--portal-surface-muted);
         }
 
@@ -548,7 +532,7 @@ export default function PortalLayout({
 
         .portalSecurityTitle {
           color: var(--portal-text-soft);
-          font-size: 11px;
+          font-size: 10.5px;
           line-height: 1.3;
           font-weight: 750;
         }
@@ -556,23 +540,23 @@ export default function PortalLayout({
         .portalSecurityText {
           margin-top: 2px;
           color: var(--portal-muted);
-          font-size: 10px;
-          line-height: 1.4;
+          font-size: 9.5px;
+          line-height: 1.35;
           font-weight: 500;
         }
 
         .portalOrderButton,
         .portalLogoutButton {
-          min-height: 42px;
+          min-height: 40px;
           width: 100%;
           display: inline-flex;
           align-items: center;
           justify-content: center;
           gap: 8px;
-          padding: 0 14px;
-          border-radius: 9px;
+          padding: 0 13px;
+          border-radius: 8px;
           font-family: inherit;
-          font-size: 13px;
+          font-size: 12.5px;
           line-height: 1;
           font-weight: 750;
           text-align: center;
@@ -725,9 +709,16 @@ export default function PortalLayout({
           }
 
           .portalSidebar {
-            padding-right: 12px;
-            padding-left: 12px;
-          }
+          position: sticky;
+          top: 0;
+          height: 100vh;
+          display: flex;
+          flex-direction: column;
+          padding: 20px 14px 16px;
+          overflow-y: auto;
+          background: #ffffff;
+          border-right: 1px solid var(--portal-border);
+        }
 
           .portalHeader {
             padding-right: 22px;
@@ -746,8 +737,16 @@ export default function PortalLayout({
           }
 
           .portalSidebar {
-            display: none;
-          }
+          position: sticky;
+          top: 0;
+          height: 100vh;
+          display: flex;
+          flex-direction: column;
+          padding: 20px 14px 16px;
+          overflow-y: auto;
+          background: #ffffff;
+          border-right: 1px solid var(--portal-border);
+        }
 
           .portalMobileBar {
             position: sticky;
@@ -954,7 +953,7 @@ export default function PortalLayout({
               <span className="portalBrandTitle">LET ME BOWL</span>
 
               <span className="portalBrandSub">
-                {locale === "en" ? "Business Portal" : "Firmenportal"}
+                {locale === "en" ? "Company account" : "Firmenkonto"}
               </span>
             </span>
           </a>
