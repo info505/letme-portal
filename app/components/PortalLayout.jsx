@@ -1261,6 +1261,44 @@ export default function PortalLayout({
           font-size: 13px;
         }
 
+        /* GLOBAL SIDEBAR VIEWPORT FIX */
+        .portalSidebar {
+          position: sticky;
+          top: 0;
+          align-self: flex-start;
+          height: 100vh;
+          max-height: 100vh;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .portalSidebar nav {
+          flex: 1 1 auto;
+          overflow-y: auto;
+          min-height: 0;
+          padding-bottom: 12px;
+        }
+
+        .portalSidebarFooter,
+        .portalSidebarActions,
+        .sidebarFooter,
+        .sidebarActions {
+          margin-top: auto;
+          flex: 0 0 auto;
+          padding-top: 12px;
+          background: #ffffff;
+        }
+
+        .portalSidebar a,
+        .portalSidebar button {
+          min-height: 38px;
+        }
+
+        .portalMain {
+          min-width: 0;
+        }
+
       `}</style>
 
       <div className="portalLayout">
