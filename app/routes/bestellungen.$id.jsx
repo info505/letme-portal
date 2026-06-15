@@ -16,7 +16,6 @@ export async function loader({ request, params }) {
 
   const order = await prisma.portalOrder.findFirst({
     where: {
-      userId: sessionUser.id,
       OR: [
         { id: orderId },
         { orderNumber: orderId },
