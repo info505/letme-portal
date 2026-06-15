@@ -1527,6 +1527,157 @@ export default function DashboardPage() {
             border-radius: 19px;
           }
         }
+
+        /* REAL DASHBOARD CLEANUP */
+        .dashboardPage {
+          max-width: 1080px !important;
+          margin: 0 auto !important;
+          gap: 14px !important;
+          overflow-x: hidden !important;
+        }
+
+        .dashboardHero {
+          display: none !important;
+        }
+
+        .dashboardStats {
+          display: grid !important;
+          grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+          gap: 10px !important;
+        }
+
+        .dashboardStat {
+          padding: 16px !important;
+          border-radius: 12px !important;
+          border: 1px solid #e5e7eb !important;
+          background: #ffffff !important;
+          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035) !important;
+        }
+
+        .dashboardStatLabel {
+          margin-bottom: 7px !important;
+          color: #667085 !important;
+          font-size: 9.5px !important;
+          font-weight: 800 !important;
+          letter-spacing: 0.08em !important;
+          text-transform: uppercase !important;
+        }
+
+        .dashboardStatValue {
+          color: #191a1d !important;
+          font-size: 27px !important;
+          line-height: 1.05 !important;
+          font-weight: 800 !important;
+          letter-spacing: -0.03em !important;
+        }
+
+        .dashboardStatText {
+          margin-top: 6px !important;
+          color: #667085 !important;
+          font-size: 11.5px !important;
+          line-height: 1.4 !important;
+          font-weight: 500 !important;
+        }
+
+        .dashboardQuickGrid {
+          display: grid !important;
+          grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+          gap: 10px !important;
+        }
+
+        .quickCard {
+          display: grid !important;
+          grid-template-columns: 32px minmax(0, 1fr) !important;
+          gap: 11px !important;
+          align-items: start !important;
+          padding: 15px !important;
+          border-radius: 12px !important;
+          border: 1px solid #e5e7eb !important;
+          background: #ffffff !important;
+          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035) !important;
+          text-decoration: none !important;
+          color: #191a1d !important;
+        }
+
+        .quickCardIcon {
+          width: 32px !important;
+          height: 32px !important;
+          border-radius: 8px !important;
+          background: #f8f2e7 !important;
+          border: 1px solid #e2d7c3 !important;
+          color: #a97d2f !important;
+          font-size: 13px !important;
+        }
+
+        .quickCardTitle {
+          font-size: 14.5px !important;
+          line-height: 1.25 !important;
+          font-weight: 800 !important;
+          color: #191a1d !important;
+        }
+
+        .quickCardText {
+          margin-top: 3px !important;
+          color: #667085 !important;
+          font-size: 12px !important;
+          line-height: 1.45 !important;
+          font-weight: 500 !important;
+        }
+
+        .ordersCard {
+          border-radius: 14px !important;
+          border: 1px solid #e5e7eb !important;
+          background: #ffffff !important;
+          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04) !important;
+          overflow: hidden !important;
+        }
+
+        .ordersCard h2 {
+          margin: 0 !important;
+          font-size: 20px !important;
+          line-height: 1.2 !important;
+          font-weight: 800 !important;
+          letter-spacing: -0.025em !important;
+        }
+
+        .ordersCard a {
+          min-height: 34px !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          width: fit-content !important;
+          padding: 0 12px !important;
+          border-radius: 8px !important;
+          border: 1px solid #e5e7eb !important;
+          background: #ffffff !important;
+          color: #191a1d !important;
+          font-size: 12px !important;
+          line-height: 1 !important;
+          font-weight: 700 !important;
+          text-decoration: none !important;
+        }
+
+        .ordersCard a:hover {
+          background: #f8fafc !important;
+          border-color: #d0d5dd !important;
+          text-decoration: none !important;
+        }
+
+        @media (max-width: 1180px) {
+          .dashboardStats {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          }
+
+          .dashboardQuickGrid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+
+        @media (max-width: 720px) {
+          .dashboardStats {
+            grid-template-columns: 1fr !important;
+          }
+        }
       `}</style>
 
       <div className="dashboardPage">
