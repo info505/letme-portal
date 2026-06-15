@@ -608,6 +608,29 @@ export default function DashboardPage() {
             gap: 10px;
           }
         }
+        /* DASHBOARD WIDTH FIX */
+        .dashboardPage {
+          max-width: none !important;
+          width: 100% !important;
+          margin: 0 !important;
+        }
+
+        .dashboardTopGrid,
+        .dashboardMainGrid {
+          grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.55fr) !important;
+        }
+
+        .ordersPanel {
+          min-width: 0 !important;
+        }
+
+        @media (max-width: 1180px) {
+          .dashboardTopGrid,
+          .dashboardMainGrid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+
       `}</style>
 
       <div className="dashboardPage">

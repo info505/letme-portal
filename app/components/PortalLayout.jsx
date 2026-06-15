@@ -1138,6 +1138,53 @@ export default function PortalLayout({
             padding: 16px 14px 28px !important;
           }
         }
+        /* PORTAL WIDTH FIX */
+        .portalLayout {
+          grid-template-columns: 248px minmax(0, 1fr) !important;
+        }
+
+        .portalSidebar {
+          width: 248px !important;
+          min-width: 248px !important;
+          padding: 18px 14px !important;
+        }
+
+        .portalHeader {
+          padding: 14px 24px !important;
+        }
+
+        .portalHeaderInner {
+          max-width: none !important;
+          width: 100% !important;
+          margin: 0 !important;
+        }
+
+        .portalContent {
+          max-width: none !important;
+          width: 100% !important;
+          margin: 0 !important;
+          padding: 18px 24px 32px !important;
+        }
+
+        .portalMain {
+          min-width: 0 !important;
+        }
+
+        @media (max-width: 900px) {
+          .portalSidebar {
+            width: auto !important;
+            min-width: 0 !important;
+          }
+
+          .portalHeader {
+            padding: 14px 14px !important;
+          }
+
+          .portalContent {
+            padding: 14px 14px 24px !important;
+          }
+        }
+
 
 
       `}</style>
