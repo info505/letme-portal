@@ -1291,6 +1291,113 @@ export default function BestellungenPage() {
             display: grid !important;
           }
         }
+        /* ORDERS POLISH FINAL */
+        .ordersPage {
+          gap: 14px !important;
+        }
+
+        .ordersHero {
+          padding: 20px 22px !important;
+          min-height: auto !important;
+        }
+
+        .ordersHeroTitle {
+          font-size: clamp(24px, 2.5vw, 32px) !important;
+          max-width: 680px !important;
+        }
+
+        .ordersHeroCopy {
+          max-width: 660px !important;
+          margin-top: 8px !important;
+        }
+
+        .ordersStats {
+          grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+          gap: 10px !important;
+        }
+
+        .ordersStat {
+          padding: 14px !important;
+        }
+
+        .ordersStatValue {
+          font-size: 25px !important;
+        }
+
+        .ordersListPanel {
+          margin-top: 0 !important;
+        }
+
+        .orderCard {
+          grid-template-columns: 300px minmax(0, 1fr) 210px !important;
+          gap: 18px !important;
+          padding: 14px 18px !important;
+          min-height: 102px !important;
+        }
+
+        .orderNumber {
+          font-size: 14.5px !important;
+        }
+
+        .orderSubline {
+          font-size: 11.5px !important;
+        }
+
+        .orderBadges {
+          margin-top: 6px !important;
+        }
+
+        .orderInfoGrid {
+          grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+          gap: 8px !important;
+        }
+
+        .orderInfoBox {
+          padding: 9px 10px !important;
+        }
+
+        .orderInfoLabel {
+          font-size: 8.5px !important;
+        }
+
+        .orderInfoValue {
+          font-size: 12px !important;
+        }
+
+        .orderActions {
+          align-items: center !important;
+        }
+
+        .orderActions a,
+        .orderActions button {
+          min-height: 38px !important;
+          border-radius: 8px !important;
+          font-size: 12px !important;
+          font-weight: 800 !important;
+        }
+
+        @media (max-width: 1300px) {
+          .orderCard {
+            grid-template-columns: 1fr !important;
+            align-items: start !important;
+          }
+
+          .orderInfoGrid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          }
+
+          .orderActions {
+            justify-content: flex-start !important;
+          }
+        }
+
+        @media (max-width: 760px) {
+          .ordersStats,
+          .orderInfoGrid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+
 
 
       `}</style>

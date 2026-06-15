@@ -501,6 +501,105 @@ export default function RechnungsadressePage() {
           border-color: #a97d2f !important;
           box-shadow: 0 0 0 3px rgba(169,125,47,0.12) !important;
         }
+        /* BILLING POLISH FINAL */
+        .billingPage,
+        .addressPage,
+        .accountPage,
+        .invoiceAddressPage,
+        .portalFormPage {
+          width: 100% !important;
+          max-width: none !important;
+          margin: 0 !important;
+          display: grid !important;
+          gap: 16px !important;
+        }
+
+        .billingHero,
+        .addressHero,
+        .invoiceAddressHero,
+        .formHero {
+          padding: 22px !important;
+          border-radius: 14px !important;
+          border: 1px solid #e5e7eb !important;
+          background: #ffffff !important;
+          box-shadow: 0 1px 3px rgba(16,24,40,0.04) !important;
+        }
+
+        .billingHero::before,
+        .billingHero::after,
+        .addressHero::before,
+        .addressHero::after {
+          display: none !important;
+          content: none !important;
+        }
+
+        form,
+        .billingForm,
+        .addressForm {
+          display: grid !important;
+          gap: 14px !important;
+        }
+
+        form section,
+        form fieldset,
+        .billingSection,
+        .addressSection,
+        .formSection,
+        .billingCard,
+        .addressCard,
+        .formCard,
+        .panel {
+          padding: 18px !important;
+          border-radius: 14px !important;
+          border: 1px solid #e5e7eb !important;
+          background: #ffffff !important;
+          box-shadow: 0 1px 3px rgba(16,24,40,0.04) !important;
+        }
+
+        form section *,
+        form fieldset * {
+          box-shadow: none;
+        }
+
+        label {
+          color: #17191c !important;
+          font-size: 12px !important;
+          font-weight: 800 !important;
+        }
+
+        input,
+        select,
+        textarea {
+          min-height: 42px !important;
+          border-radius: 9px !important;
+          border: 1px solid #d0d5dd !important;
+          background: #ffffff !important;
+          color: #17191c !important;
+          font-size: 13px !important;
+          font-weight: 500 !important;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+          outline: none !important;
+          border-color: #a97d2f !important;
+          box-shadow: 0 0 0 3px rgba(169,125,47,0.12) !important;
+        }
+
+        button[type="submit"],
+        .saveButton,
+        .primaryButton {
+          min-height: 42px !important;
+          border-radius: 9px !important;
+          border: 1px solid #a97d2f !important;
+          background: #a97d2f !important;
+          color: #ffffff !important;
+          font-size: 13px !important;
+          font-weight: 850 !important;
+          box-shadow: none !important;
+        }
+
 
       `}</style>
 

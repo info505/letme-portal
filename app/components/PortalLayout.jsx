@@ -1202,6 +1202,26 @@ export default function PortalLayout({
           width: 100% !important;
           min-height: 38px !important;
         }
+        /* SIDEBAR POLISH FINAL */
+        .portalSidebar {
+          padding-bottom: 16px !important;
+        }
+
+        .portalSidebarBottom {
+          position: static !important;
+          margin-top: auto !important;
+          padding-top: 14px !important;
+          background: #ffffff !important;
+        }
+
+        .portalOrderButton {
+          margin-bottom: 0 !important;
+        }
+
+        .portalLogoutButton {
+          margin-top: 0 !important;
+        }
+
 
 
 
