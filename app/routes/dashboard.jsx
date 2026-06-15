@@ -181,10 +181,10 @@ export default function DashboardPage() {
       }
       orderNowOnClick={handleOrderNow}
     >
-      <style>{`
+      <style>{
         .dashboardPage {
           width: 100%;
-          max-width: 1280px;
+          max-width: 1180px;
           display: grid;
           gap: 18px;
         }
@@ -192,76 +192,53 @@ export default function DashboardPage() {
         .dashboardHero {
           position: relative;
           overflow: hidden;
-          border-radius: 16px;
+          border-radius: 14px;
           border: 1px solid #e3e6ea;
           background: #ffffff;
           box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
-          padding: 24px;
-        };
-          background:
-            radial-gradient(circle at top left, rgba(200,169,106,0.16), transparent 30%),
-            linear-gradient(180deg, #ffffff 0%, #faf6ee 100%);
-          box-shadow: 0 22px 60px rgba(30,20,10,0.065);
-          padding: 34px;
+          padding: 22px;
         }
 
         .dashboardHeroInner {
           display: grid;
-          grid-template-columns: minmax(0, 1fr) auto;
+          grid-template-columns: minmax(0, 1fr) 340px;
           gap: 22px;
           align-items: center;
-          position: relative;
-          z-index: 1;
         }
 
         .dashboardEyebrow {
           display: inline-flex;
           width: fit-content;
-          align-items: center;
           margin-bottom: 8px;
           color: #a97d2f;
           font-size: 10px;
           font-weight: 800;
           letter-spacing: 0.09em;
           text-transform: uppercase;
-        };
-          font-size: 12px;
-          font-weight: 950;
-          letter-spacing: 0.13em;
-          text-transform: uppercase;
-          margin-bottom: 15px;
         }
 
         .dashboardHeroTitle {
           margin: 0;
-          max-width: 760px;
+          max-width: 720px;
           color: #191a1d;
-          font-size: clamp(26px, 3.2vw, 36px);
+          font-size: clamp(25px, 3vw, 34px);
           line-height: 1.12;
           letter-spacing: -0.035em;
           font-weight: 800;
-        };
-          font-size: clamp(34px, 5vw, 56px);
-          line-height: 0.98;
-          letter-spacing: -0.055em;
-          font-weight: 950;
         }
 
         .dashboardHeroText {
           margin: 9px 0 0;
-          max-width: 760px;
+          max-width: 720px;
           color: #667085;
           font-size: 13px;
           line-height: 1.6;
           font-weight: 500;
-        };
-          font-size: 16px;
-          line-height: 1.7;
-          font-weight: 600;
         }
 
         .dashboardHeroActions {
           display: flex;
+          align-items: center;
           gap: 10px;
           flex-wrap: wrap;
           margin-top: 18px;
@@ -269,65 +246,74 @@ export default function DashboardPage() {
 
         .dashboardPrimaryBtn,
         .dashboardSecondaryBtn {
-          border: 1px solid #e3e6ea;
-          background: #fff;
-          color: #191a1d;
+          min-height: 40px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 15px;
+          border-radius: 9px;
+          font-size: 13px;
+          line-height: 1;
+          font-weight: 750;
+          text-decoration: none;
+          cursor: pointer;
+          white-space: nowrap;
+          transition:
+            background 150ms ease,
+            border-color 150ms ease,
+            color 150ms ease,
+            transform 150ms ease;
         }
 
         .dashboardPrimaryBtn {
           border: 1px solid #a97d2f;
           background: #a97d2f;
-          color: #fff;
+          color: #ffffff;
           box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
-        }, ${colors.goldDark});
-          color: #fff;
-          box-shadow: 0 16px 30px rgba(200,169,106,0.24);
+        }
+
+        .dashboardPrimaryBtn:hover {
+          border-color: #8c6422;
+          background: #8c6422;
+          transform: translateY(-1px);
         }
 
         .dashboardSecondaryBtn {
           border: 1px solid #e3e6ea;
-          background: #fff;
+          background: #ffffff;
           color: #191a1d;
-        };
-          background: #fff;
-          color: ${colors.text};
+        }
+
+        .dashboardSecondaryBtn:hover {
+          border-color: #d0d5dd;
+          background: #f8f9fa;
+          transform: translateY(-1px);
         }
 
         .dashboardHeroBox {
-          min-width: 250px;
+          min-width: 0;
           border-radius: 12px;
           border: 1px solid #e3e6ea;
           background: #f8f9fa;
           padding: 16px;
           box-shadow: none;
-        };
-          background: rgba(255,255,255,0.78);
-          padding: 22px;
-          box-shadow: 0 14px 34px rgba(30,20,10,0.045);
         }
 
         .dashboardHeroBoxLabel {
+          margin-bottom: 7px;
+          color: #667085;
           font-size: 10px;
           font-weight: 800;
           letter-spacing: 0.08em;
           text-transform: uppercase;
-          color: #667085;
-          margin-bottom: 7px;
-        };
-          margin-bottom: 10px;
         }
 
         .dashboardHeroBoxValue {
           color: #191a1d;
-          font-size: 20px;
-          line-height: 1.2;
-          font-weight: 800;
-          letter-spacing: -0.025em;
-        };
-          font-size: 24px;
-          line-height: 1.15;
-          font-weight: 950;
-          letter-spacing: -0.025em;
+          font-size: 16px;
+          line-height: 1.35;
+          font-weight: 650;
+          letter-spacing: -0.01em;
         }
 
         .dashboardHeroBoxText {
@@ -336,10 +322,6 @@ export default function DashboardPage() {
           font-size: 12px;
           line-height: 1.5;
           font-weight: 500;
-        };
-          font-size: 13.5px;
-          line-height: 1.6;
-          font-weight: 650;
         }
 
         .dashboardStats {
@@ -350,41 +332,28 @@ export default function DashboardPage() {
 
         .dashboardStat {
           min-width: 0;
-          background: #fff;
+          background: #ffffff;
           border: 1px solid #e3e6ea;
           border-radius: 12px;
           padding: 16px;
           box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035);
-        };
-          border-radius: 22px;
-          padding: 20px;
-          box-shadow: 0 16px 42px rgba(30,20,10,0.045);
-          min-width: 0;
         }
 
         .dashboardStatLabel {
+          margin-bottom: 7px;
+          color: #667085;
           font-size: 10px;
           font-weight: 800;
           letter-spacing: 0.08em;
           text-transform: uppercase;
-          color: #667085;
-          margin-bottom: 7px;
-        };
-          margin-bottom: 10px;
         }
 
         .dashboardStatValue {
           color: #191a1d;
-          font-size: clamp(24px, 2.5vw, 30px);
+          font-size: clamp(23px, 2.4vw, 29px);
           line-height: 1.05;
           font-weight: 800;
           letter-spacing: -0.035em;
-          overflow-wrap: anywhere;
-        };
-          font-size: 34px;
-          line-height: 1;
-          font-weight: 950;
-          letter-spacing: -0.045em;
           overflow-wrap: anywhere;
         }
 
@@ -394,10 +363,6 @@ export default function DashboardPage() {
           font-size: 12px;
           line-height: 1.45;
           font-weight: 500;
-        };
-          font-size: 13.5px;
-          line-height: 1.55;
-          font-weight: 650;
         }
 
         .dashboardQuickGrid {
@@ -407,27 +372,28 @@ export default function DashboardPage() {
         }
 
         .quickCard {
+          min-width: 0;
+          display: grid;
+          grid-template-columns: 36px minmax(0, 1fr);
+          gap: 12px;
+          align-items: start;
+          padding: 16px;
           border: 1px solid #e3e6ea;
           border-radius: 12px;
-          background: #fff;
-          padding: 18px;
-          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035);
-          text-decoration: none;
+          background: #ffffff;
           color: #191a1d;
-          display: grid;
-          gap: 9px;
-          min-width: 0;
-          transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
-        };
-          border-radius: 24px;
-          background: #fff;
-          padding: 22px;
-          box-shadow: 0 16px 42px rgba(30,20,10,0.045);
           text-decoration: none;
-          color: ${colors.text};
-          display: grid;
-          gap: 10px;
-          min-width: 0;
+          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035);
+          transition:
+            border-color 150ms ease,
+            box-shadow 150ms ease,
+            transform 150ms ease;
+        }
+
+        .quickCard:hover {
+          border-color: #d0d5dd;
+          box-shadow: 0 4px 12px rgba(16, 24, 40, 0.055);
+          transform: translateY(-1px);
         }
 
         .quickCardIcon {
@@ -440,1094 +406,273 @@ export default function DashboardPage() {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          font-size: 16px;
+          font-size: 14px;
           font-weight: 800;
-        };
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 19px;
-          font-weight: 950;
         }
 
         .quickCardTitle {
-          font-size: 16px;
+          margin: 0;
+          color: #191a1d;
+          font-size: 15px;
           line-height: 1.25;
           font-weight: 800;
-          letter-spacing: -0.02em;
-          color: #191a1d;
-        };
+          letter-spacing: -0.015em;
         }
 
         .quickCardText {
+          margin-top: 4px;
           color: #667085;
           font-size: 12.5px;
-          line-height: 1.55;
+          line-height: 1.5;
           font-weight: 500;
-        };
-          font-size: 14px;
-          line-height: 1.6;
-          font-weight: 650;
         }
 
         .ordersCard {
+          overflow: hidden;
           border: 1px solid #e3e6ea;
           border-radius: 14px;
-          background: #fff;
+          background: #ffffff;
           box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
-          overflow: hidden;
-        };
-          border-radius: 28px;
-          background: #fff;
-          box-shadow: 0 18px 50px rgba(30,20,10,0.055);
-          padding: 28px;
         }
 
-        .ordersHead {
+        .ordersCardHead {
           display: flex;
-          justify-content: space-between;
           align-items: flex-start;
-          gap: 18px;
-          flex-wrap: wrap;
-          margin-bottom: 20px;
+          justify-content: space-between;
+          gap: 16px;
+          padding: 18px 18px 14px;
+          border-bottom: 1px solid #eaecf0;
         }
 
-        .ordersTitle {
+        .ordersCardTitle {
           margin: 0;
-          color: ${colors.text};
-          font-size: 28px;
-          line-height: 1.1;
-          letter-spacing: -0.035em;
-          font-weight: 950;
-        }
-
-        .ordersText {
-          margin: 8px 0 0;
-          color: ${colors.muted};
-          font-size: 14.5px;
-          line-height: 1.65;
-          font-weight: 600;
-        }
-
-        .ordersList {
-          display: grid;
-          gap: 10px;
-        }
-
-        .orderRow {
-          display: grid;
-          grid-template-columns: minmax(180px, 1.1fr) minmax(120px, 0.7fr) minmax(120px, 0.7fr) minmax(120px, 0.7fr) auto;
-          align-items: center;
-          gap: 12px;
-          border: 1px solid ${colors.line};
-          background: ${colors.soft};
-          border-radius: 18px;
-          padding: 15px 16px;
-        }
-
-        .orderNumber {
-          color: ${colors.text};
-          font-size: 16px;
-          line-height: 1.35;
-          font-weight: 950;
-          overflow-wrap: anywhere;
-        }
-
-        .orderSub {
-          margin-top: 4px;
-          color: ${colors.muted};
-          font-size: 13px;
-          line-height: 1.45;
-          font-weight: 650;
-        }
-
-        .orderLabel {
-          color: ${colors.muted};
-          font-size: 11px;
-          font-weight: 950;
-          letter-spacing: 0.09em;
-          text-transform: uppercase;
-          margin-bottom: 5px;
-        }
-
-        .orderValue {
-          color: ${colors.text};
-          font-size: 14px;
-          line-height: 1.45;
-          font-weight: 850;
-          overflow-wrap: anywhere;
-        }
-
-        .statusBadge {
-          display: inline-flex;
-          width: fit-content;
-          align-items: center;
-          justify-content: center;
-          padding: 7px 11px;
-          border-radius: 999px;
-          font-size: 12px;
-          font-weight: 950;
-          white-space: nowrap;
-        }
-
-        .emptyState {
-          border: 1px dashed #dccfba;
-          background: #fffdfa;
-          border-radius: 22px;
-          padding: 30px;
-          text-align: center;
-        }
-
-        .emptyTitle {
-          margin: 0 0 8px;
-          color: ${colors.text};
-          font-size: 24px;
-          line-height: 1.15;
-          font-weight: 950;
+          color: #191a1d;
+          font-size: 20px;
+          line-height: 1.2;
+          font-weight: 800;
           letter-spacing: -0.025em;
         }
 
-        .emptyText {
-          margin: 0 auto;
-          max-width: 620px;
-          color: ${colors.muted};
-          font-size: 15px;
-          line-height: 1.65;
-          font-weight: 600;
-        }
-
-        @media (max-width: 1100px) {
-          .dashboardHeroInner {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) auto;
-          gap: 22px;
-          align-items: center;
-          position: relative;
-          z-index: 1;
-        }
-
-          .dashboardHeroBox {
-          min-width: 250px;
-          border-radius: 12px;
-          border: 1px solid #e3e6ea;
-          background: #f8f9fa;
-          padding: 16px;
-          box-shadow: none;
-        }
-
-          .dashboardStats {
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 12px;
-        }
-
-          .dashboardQuickGrid {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 12px;
-        }
-
-          .orderRow {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            align-items: start;
-          }
-        }
-
-        @media (max-width: 720px) {
-          .dashboardPage {
-          width: 100%;
-          max-width: 1280px;
-          display: grid;
-          gap: 18px;
-        }
-
-          .dashboardHero,
-          .ordersCard {
-          border: 1px solid #e3e6ea;
-          border-radius: 14px;
-          background: #fff;
-          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
-          overflow: hidden;
-        }
-
-          .dashboardHeroTitle {
-          margin: 0;
-          max-width: 760px;
-          color: #191a1d;
-          font-size: clamp(26px, 3.2vw, 36px);
-          line-height: 1.12;
-          letter-spacing: -0.035em;
-          font-weight: 800;
-        }
-
-          .dashboardHeroText {
-          margin: 9px 0 0;
-          max-width: 760px;
+        .ordersCardText {
+          margin: 5px 0 0;
           color: #667085;
-          font-size: 13px;
-          line-height: 1.6;
+          font-size: 12.5px;
+          line-height: 1.5;
           font-weight: 500;
         }
 
-          .dashboardHeroActions {
-          display: flex;
-          gap: 10px;
-          flex-wrap: wrap;
-          margin-top: 18px;
-        }
-
-          .dashboardPrimaryBtn,
-        .dashboardSecondaryBtn {
+        .ordersCardLink {
+          min-height: 36px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          flex: 0 0 auto;
+          padding: 0 13px;
           border: 1px solid #e3e6ea;
-          background: #fff;
+          border-radius: 8px;
+          background: #ffffff;
           color: #191a1d;
-        }
-
-          .dashboardStats {
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 12px;
-        }
-
-          .dashboardStat {
-          min-width: 0;
-          background: #fff;
-          border: 1px solid #e3e6ea;
-          border-radius: 12px;
-          padding: 16px;
-          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035);
-        }
-
-          .dashboardStatValue {
-          color: #191a1d;
-          font-size: clamp(24px, 2.5vw, 30px);
-          line-height: 1.05;
-          font-weight: 800;
-          letter-spacing: -0.035em;
-          overflow-wrap: anywhere;
-        }
-
-          .quickCard {
-          border: 1px solid #e3e6ea;
-          border-radius: 12px;
-          background: #fff;
-          padding: 18px;
-          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035);
+          font-size: 12px;
+          line-height: 1;
+          font-weight: 700;
           text-decoration: none;
-          color: #191a1d;
+        }
+
+        .ordersCardLink:hover {
+          border-color: #d0d5dd;
+          background: #f8f9fa;
+        }
+
+        .recentOrdersList {
           display: grid;
-          gap: 9px;
-          min-width: 0;
-          transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+          gap: 0;
         }
 
-          .ordersHead {
-            display: grid;
-            grid-template-columns: 1fr;
-          }
-
-          .ordersTitle {
-            font-size: 24px;
-          }
-
-          .orderRow {
-            grid-template-columns: 1fr;
-            padding: 14px;
-            border-radius: 16px;
-          }
-        }
-
-        /* LMB PREMIUM DASHBOARD FINAL */
-
-        .dashboardPage {
-          width: 100%;
-          max-width: 1280px;
+        .recentOrderRow {
           display: grid;
-          gap: 18px;
-        }
-
-        .dashboardPage::before {
-          content: "";
-          position: absolute;
-          top: -130px;
-          right: -160px;
-          width: 460px;
-          height: 460px;
-          border-radius: 50%;
-          background:
-            radial-gradient(
-              circle,
-              rgba(198, 159, 87, 0.16) 0%,
-              rgba(198, 159, 87, 0.05) 42%,
-              transparent 72%
-            );
-          pointer-events: none;
-        }
-
-        .dashboardPage > * {
-          position: relative;
-          z-index: 1;
-        }
-
-        .dashboardHero {
-          position: relative;
-          overflow: hidden;
-          border-radius: 16px;
-          border: 1px solid #e3e6ea;
+          grid-template-columns: minmax(220px, 1.6fr) minmax(120px, 0.8fr) minmax(120px, 0.8fr) minmax(120px, 0.8fr) auto;
+          gap: 16px;
+          align-items: center;
+          padding: 15px 18px;
+          border-bottom: 1px solid #f0f2f4;
           background: #ffffff;
-          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
-          padding: 24px;
         }
 
-        .dashboardHero::after {
-          content: "";
-          position: absolute;
-          z-index: -1;
-          top: -105px;
-          right: -85px;
-          width: 320px;
-          height: 320px;
-          border-radius: 50%;
-          border: 1px solid rgba(181, 140, 72, 0.12);
-          box-shadow:
-            0 0 0 38px rgba(181, 140, 72, 0.035),
-            0 0 0 82px rgba(181, 140, 72, 0.018);
-          pointer-events: none;
+        .recentOrderRow:last-child {
+          border-bottom: 0;
         }
 
-        .dashboardHeroInner {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) auto;
-          gap: 22px;
-          align-items: center;
-          position: relative;
-          z-index: 1;
+        .recentOrderMain {
+          min-width: 0;
         }
 
-        .dashboardEyebrow {
-          display: inline-flex;
-          width: fit-content;
-          align-items: center;
-          margin-bottom: 8px;
-          color: #a97d2f;
-          font-size: 10px;
-          font-weight: 800;
-          letter-spacing: 0.09em;
-          text-transform: uppercase;
-        }
-
-        .dashboardHeroTitle {
-          margin: 0;
-          max-width: 760px;
+        .recentOrderNumber {
           color: #191a1d;
-          font-size: clamp(26px, 3.2vw, 36px);
-          line-height: 1.12;
-          letter-spacing: -0.035em;
+          font-size: 14px;
+          line-height: 1.25;
           font-weight: 800;
+          letter-spacing: -0.015em;
         }
 
-        .dashboardHeroText {
-          margin: 9px 0 0;
-          max-width: 760px;
+        .recentOrderSub {
+          margin-top: 3px;
           color: #667085;
-          font-size: 13px;
-          line-height: 1.6;
+          font-size: 12px;
+          line-height: 1.35;
           font-weight: 500;
         }
 
-        .dashboardHeroActions {
-          display: flex;
-          gap: 10px;
-          flex-wrap: wrap;
-          margin-top: 18px;
-        }
-
-        .dashboardPrimaryBtn,
-        .dashboardSecondaryBtn {
-          border: 1px solid #e3e6ea;
-          background: #fff;
-          color: #191a1d;
-        }
-
-        .dashboardPrimaryBtn {
-          border: 1px solid #a97d2f;
-          background: #a97d2f;
-          color: #fff;
-          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
-        }
-
-        .dashboardSecondaryBtn {
-          border: 1px solid #e3e6ea;
-          background: #fff;
-          color: #191a1d;
-        }
-
-        .dashboardPrimaryBtn:hover,
-        .dashboardSecondaryBtn:hover {
-          transform: translateY(-3px);
-        }
-
-        .dashboardPrimaryBtn:hover {
-          box-shadow:
-            0 22px 42px rgba(158, 113, 43, 0.33),
-            inset 0 1px 0 rgba(255, 255, 255, 0.45);
-        }
-
-        .dashboardSecondaryBtn:hover {
-          border-color: rgba(184, 147, 79, 0.38);
-          box-shadow: 0 17px 35px rgba(41, 29, 13, 0.11);
-        }
-
-        .dashboardHeroBox {
-          min-width: 250px;
-          border-radius: 12px;
-          border: 1px solid #e3e6ea;
-          background: #f8f9fa;
-          padding: 16px;
-          box-shadow: none;
-        }
-
-        .dashboardStats {
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 12px;
-        }
-
-        .dashboardStat {
-          min-width: 0;
-          background: #fff;
-          border: 1px solid #e3e6ea;
-          border-radius: 12px;
-          padding: 16px;
-          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035);
-        }
-
-        .dashboardStat::after {
-          content: "";
-          position: absolute;
-          right: -30px;
-          bottom: -40px;
-          width: 120px;
-          height: 120px;
-          border-radius: 50%;
-          background:
-            radial-gradient(
-              circle,
-              rgba(196, 156, 82, 0.13),
-              transparent 69%
-            );
-          pointer-events: none;
-        }
-
-        .dashboardStat:hover {
-          transform: translateY(-4px);
-          border-color: rgba(184, 147, 79, 0.3);
-          box-shadow:
-            0 24px 52px rgba(49, 34, 15, 0.11),
-            inset 0 1px 0 rgba(255, 255, 255, 0.99);
-        }
-
-        .dashboardStatValue {
-          color: #191a1d;
-          font-size: clamp(24px, 2.5vw, 30px);
-          line-height: 1.05;
-          font-weight: 800;
-          letter-spacing: -0.035em;
-          overflow-wrap: anywhere;
-        }
-
-        .dashboardQuickGrid {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 12px;
-        }
-
-        .dashboardQuickCard {
-          min-height: 165px;
-          padding: 24px;
-          border-radius: 25px;
-          border-color: rgba(91, 66, 29, 0.12);
-          background:
-            linear-gradient(
-              150deg,
-              rgba(255, 255, 255, 0.99),
-              rgba(249, 246, 239, 0.96)
-            );
-          box-shadow:
-            0 16px 37px rgba(49, 34, 15, 0.06),
-            inset 0 1px 0 rgba(255, 255, 255, 0.98);
-          transition:
-            transform 190ms ease,
-            border-color 190ms ease,
-            box-shadow 190ms ease;
-        }
-
-        .dashboardQuickCard:hover {
-          transform: translateY(-4px);
-          border-color: rgba(184, 147, 79, 0.3);
-          box-shadow:
-            0 24px 52px rgba(49, 34, 15, 0.11),
-            inset 0 1px 0 rgba(255, 255, 255, 0.99);
-        }
-
-        .dashboardQuickIcon {
-          width: 45px;
-          height: 45px;
-          border-radius: 15px;
-          border-color: rgba(184, 147, 79, 0.24);
-          background:
-            linear-gradient(
-              145deg,
-              rgba(255, 255, 255, 0.98),
-              rgba(201, 164, 95, 0.17)
-            );
-          box-shadow:
-            0 10px 22px rgba(119, 84, 31, 0.1),
-            inset 0 1px 0 rgba(255, 255, 255, 0.97);
-        }
-
-        .ordersCard {
-          border: 1px solid #e3e6ea;
-          border-radius: 14px;
-          background: #fff;
-          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
-          overflow: hidden;
-        }
-
-        .orderRow {
-          border-radius: 19px;
-          border-color: rgba(70, 52, 27, 0.1);
-          background: rgba(255, 255, 255, 0.9);
-          box-shadow:
-            0 10px 24px rgba(45, 31, 13, 0.045),
-            inset 0 1px 0 rgba(255, 255, 255, 0.94);
-          transition:
-            transform 180ms ease,
-            border-color 180ms ease,
-            box-shadow 180ms ease;
-        }
-
-        .orderRow:hover {
-          transform: translateY(-3px);
-          border-color: rgba(184, 147, 79, 0.28);
-          box-shadow: 0 17px 34px rgba(45, 31, 13, 0.085);
-        }
-
-        @media (max-width: 900px) {
-          .dashboardHero {
-          position: relative;
-          overflow: hidden;
-          border-radius: 16px;
-          border: 1px solid #e3e6ea;
-          background: #ffffff;
-          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
-          padding: 24px;
-        }
-
-          .dashboardHeroInner {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) auto;
-          gap: 22px;
-          align-items: center;
-          position: relative;
-          z-index: 1;
-        }
-        }
-
-        @media (max-width: 720px) {
-          .dashboardHero {
-          position: relative;
-          overflow: hidden;
-          border-radius: 16px;
-          border: 1px solid #e3e6ea;
-          background: #ffffff;
-          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
-          padding: 24px;
-        }
-
-          .dashboardHeroTitle {
-          margin: 0;
-          max-width: 760px;
-          color: #191a1d;
-          font-size: clamp(26px, 3.2vw, 36px);
-          line-height: 1.12;
-          letter-spacing: -0.035em;
-          font-weight: 800;
-        }
-
-          .dashboardHeroActions {
-          display: flex;
-          gap: 10px;
-          flex-wrap: wrap;
-          margin-top: 18px;
-        }
-
-          .dashboardPrimaryBtn,
-        .dashboardSecondaryBtn {
-          border: 1px solid #e3e6ea;
-          background: #fff;
-          color: #191a1d;
-        }
-        }
-
-        /* LMB LUXURY DASHBOARD V2 */
-
-        .dashboardPage {
-          width: 100%;
-          max-width: 1280px;
-          display: grid;
-          gap: 18px;
-        }
-
-        .dashboardPage::before {
-          top: -180px;
-          right: -190px;
-          width: 520px;
-          height: 520px;
-          background:
-            radial-gradient(
-              circle,
-              rgba(203, 176, 120, 0.14) 0%,
-              rgba(203, 176, 120, 0.045) 42%,
-              transparent 72%
-            );
-        }
-
-        .dashboardHero {
-          position: relative;
-          overflow: hidden;
-          border-radius: 16px;
-          border: 1px solid #e3e6ea;
-          background: #ffffff;
-          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
-          padding: 24px;
-        }
-
-        .dashboardHero::before {
-          content: "";
-          position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          background:
-            linear-gradient(
-              110deg,
-              transparent 0%,
-              rgba(255, 255, 255, 0.2) 48%,
-              transparent 70%
-            );
-          pointer-events: none;
-        }
-
-        .dashboardHero::after {
-          top: -115px;
-          right: -90px;
-          width: 340px;
-          height: 340px;
-          border-color: rgba(184, 146, 82, 0.11);
-          box-shadow:
-            0 0 0 42px rgba(184, 146, 82, 0.025),
-            0 0 0 88px rgba(184, 146, 82, 0.012);
-        }
-
-        .dashboardHeroInner {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) auto;
-          gap: 22px;
-          align-items: center;
-          position: relative;
-          z-index: 1;
-        }
-
-        .dashboardEyebrow {
-          display: inline-flex;
-          width: fit-content;
-          align-items: center;
-          margin-bottom: 8px;
-          color: #a97d2f;
-          font-size: 10px;
-          font-weight: 800;
-          letter-spacing: 0.09em;
-          text-transform: uppercase;
-        }
-
-        .dashboardHeroTitle {
-          margin: 0;
-          max-width: 760px;
-          color: #191a1d;
-          font-size: clamp(26px, 3.2vw, 36px);
-          line-height: 1.12;
-          letter-spacing: -0.035em;
-          font-weight: 800;
-        }
-
-        .dashboardHeroText {
-          margin: 9px 0 0;
-          max-width: 760px;
+        .recentOrderMetaLabel {
+          margin-bottom: 4px;
           color: #667085;
-          font-size: 13px;
-          line-height: 1.6;
-          font-weight: 500;
-        }
-
-        .dashboardHeroActions {
-          display: flex;
-          gap: 10px;
-          flex-wrap: wrap;
-          margin-top: 18px;
-        }
-
-        .dashboardPrimaryBtn,
-        .dashboardSecondaryBtn {
-          border: 1px solid #e3e6ea;
-          background: #fff;
-          color: #191a1d;
-        }
-
-        .dashboardPrimaryBtn {
-          border: 1px solid #a97d2f;
-          background: #a97d2f;
-          color: #fff;
-          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
-        }
-
-        .dashboardSecondaryBtn {
-          border: 1px solid #e3e6ea;
-          background: #fff;
-          color: #191a1d;
-        }
-
-        .dashboardPrimaryBtn:hover,
-        .dashboardSecondaryBtn:hover {
-          transform: translateY(-2px);
-        }
-
-        .dashboardPrimaryBtn:hover {
-          background:
-            linear-gradient(
-              145deg,
-              #dfc995 0%,
-              #c9a462 52%,
-              #ae7d3a 100%
-            );
-          box-shadow:
-            0 20px 38px rgba(129, 93, 43, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.42);
-        }
-
-        .dashboardSecondaryBtn:hover {
-          border-color: rgba(169, 128, 64, 0.31);
-          box-shadow:
-            0 15px 30px rgba(50, 39, 24, 0.085),
-            inset 0 1px 0 rgba(255, 255, 255, 1);
-        }
-
-        .dashboardHeroBox {
-          min-width: 250px;
-          border-radius: 12px;
-          border: 1px solid #e3e6ea;
-          background: #f8f9fa;
-          padding: 16px;
-          box-shadow: none;
-        }
-
-        .dashboardHeroBox::after {
-          content: "";
-          position: absolute;
-          left: 24px;
-          right: 24px;
-          bottom: 0;
-          height: 2px;
-          border-radius: 999px;
-          background:
-            linear-gradient(
-              90deg,
-              transparent,
-              rgba(187, 148, 80, 0.65),
-              transparent
-            );
-        }
-
-        .dashboardHeroBox strong,
-        .dashboardHeroBox h2,
-        .dashboardHeroBox h3 {
-          color: var(--luxury-espresso);
-        }
-
-        .dashboardStats {
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 12px;
-        }
-
-        .dashboardStat {
-          min-width: 0;
-          background: #fff;
-          border: 1px solid #e3e6ea;
-          border-radius: 12px;
-          padding: 16px;
-          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035);
-        }
-
-        .dashboardStat::before {
-          content: "";
-          position: absolute;
-          top: 0;
-          left: 20px;
-          right: 20px;
-          height: 1px;
-          background:
-            linear-gradient(
-              90deg,
-              transparent,
-              rgba(189, 151, 85, 0.38),
-              transparent
-            );
-        }
-
-        .dashboardStat::after {
-          right: -38px;
-          bottom: -48px;
-          width: 125px;
-          height: 125px;
-          background:
-            radial-gradient(
-              circle,
-              rgba(202, 171, 112, 0.11),
-              transparent 68%
-            );
-        }
-
-        .dashboardStat:hover {
-          transform: translateY(-3px);
-          border-color: rgba(171, 130, 66, 0.26);
-          box-shadow:
-            0 21px 45px rgba(52, 40, 23, 0.085),
-            inset 0 1px 0 rgba(255, 255, 255, 1);
-        }
-
-        .dashboardStatLabel {
-          font-size: 10px;
+          font-size: 9px;
+          line-height: 1.2;
           font-weight: 800;
           letter-spacing: 0.08em;
           text-transform: uppercase;
-          color: #667085;
-          margin-bottom: 7px;
         }
 
-        .dashboardStatValue {
+        .recentOrderMetaValue {
           color: #191a1d;
-          font-size: clamp(24px, 2.5vw, 30px);
-          line-height: 1.05;
-          font-weight: 800;
-          letter-spacing: -0.035em;
-          overflow-wrap: anywhere;
+          font-size: 13px;
+          line-height: 1.3;
+          font-weight: 750;
         }
 
-        .dashboardStatText {
-          margin-top: 7px;
-          color: #667085;
+        .statusBadge {
+          width: fit-content;
+          min-height: 28px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 10px;
+          border-radius: 999px;
+          border: 1px solid #e3e6ea;
+          background: #f8f9fa;
+          color: #344054;
+          font-size: 11px;
+          line-height: 1;
+          font-weight: 700;
+        }
+
+        .recentOrderAction {
+          min-height: 34px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 12px;
+          border: 1px solid #e3e6ea;
+          border-radius: 8px;
+          background: #ffffff;
+          color: #191a1d;
           font-size: 12px;
-          line-height: 1.45;
+          line-height: 1;
+          font-weight: 700;
+          text-decoration: none;
+          white-space: nowrap;
+        }
+
+        .recentOrderAction:hover {
+          border-color: #d0d5dd;
+          background: #f8f9fa;
+        }
+
+        .emptyDashboardBox {
+          padding: 24px;
+          border: 1px dashed #d0d5dd;
+          border-radius: 12px;
+          background: #f8f9fa;
+          text-align: center;
+        }
+
+        .emptyDashboardTitle {
+          margin: 0;
+          color: #191a1d;
+          font-size: 18px;
+          line-height: 1.3;
+          font-weight: 800;
+        }
+
+        .emptyDashboardText {
+          max-width: 560px;
+          margin: 8px auto 0;
+          color: #667085;
+          font-size: 13px;
+          line-height: 1.55;
           font-weight: 500;
         }
 
-        .dashboardQuickGrid {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 12px;
-        }
-
-        .dashboardQuickCard {
-          min-height: 166px;
-          padding: 24px;
-          border-radius: 22px;
-          border: 1px solid var(--luxury-line);
-          background:
-            radial-gradient(
-              circle at top right,
-              rgba(214, 190, 143, 0.1),
-              transparent 40%
-            ),
-            linear-gradient(
-              150deg,
-              #fffefb 0%,
-              #faf7f1 100%
-            );
-          box-shadow:
-            0 14px 34px rgba(52, 40, 23, 0.05),
-            inset 0 1px 0 rgba(255, 255, 255, 0.98);
-          transition:
-            transform 190ms ease,
-            border-color 190ms ease,
-            box-shadow 190ms ease;
-        }
-
-        .dashboardQuickCard:hover {
-          transform: translateY(-4px);
-          border-color: rgba(171, 130, 66, 0.27);
-          box-shadow:
-            0 22px 48px rgba(52, 40, 23, 0.09),
-            inset 0 1px 0 rgba(255, 255, 255, 1);
-        }
-
-        .dashboardQuickIcon {
-          width: 44px;
-          height: 44px;
-          border-radius: 13px;
-          border: 1px solid rgba(171, 130, 66, 0.21);
-          background:
-            linear-gradient(
-              145deg,
-              #fffefa,
-              rgba(205, 174, 113, 0.16)
-            );
-          color: var(--luxury-gold-dark);
-          box-shadow:
-            0 9px 20px rgba(102, 76, 38, 0.075),
-            inset 0 1px 0 rgba(255, 255, 255, 0.97);
-        }
-
-        .dashboardQuickTitle {
-          color: var(--luxury-espresso);
-          letter-spacing: -0.03em;
-        }
-
-        .dashboardQuickText {
-          color: var(--luxury-muted);
-          line-height: 1.6;
-        }
-
-        .ordersCard {
-          border: 1px solid #e3e6ea;
-          border-radius: 14px;
-          background: #fff;
-          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
-          overflow: hidden;
-        }
-
-        .orderRow {
-          border-radius: 17px;
-          border: 1px solid rgba(87, 67, 42, 0.1);
-          background:
-            linear-gradient(
-              145deg,
-              rgba(255, 255, 255, 0.94),
-              rgba(251, 248, 242, 0.91)
-            );
-          box-shadow:
-            0 8px 20px rgba(46, 35, 21, 0.035),
-            inset 0 1px 0 rgba(255, 255, 255, 0.96);
-          transition:
-            transform 180ms ease,
-            border-color 180ms ease,
-            box-shadow 180ms ease;
-        }
-
-        .orderRow:hover {
-          transform: translateY(-2px);
-          border-color: rgba(171, 130, 66, 0.24);
-          box-shadow:
-            0 15px 31px rgba(46, 35, 21, 0.07),
-            inset 0 1px 0 rgba(255, 255, 255, 1);
-        }
-
-        .dashboardPage h2,
-        .dashboardPage h3,
-        .dashboardPage strong {
-          color: var(--luxury-espresso);
-        }
-
-        .dashboardPage p {
-          color: var(--luxury-muted);
-        }
-
-        @media (max-width: 900px) {
-          .dashboardHero {
-          position: relative;
-          overflow: hidden;
-          border-radius: 16px;
-          border: 1px solid #e3e6ea;
-          background: #ffffff;
-          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
-          padding: 24px;
-        }
-
+        @media (max-width: 1180px) {
           .dashboardHeroInner {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) auto;
-          gap: 22px;
-          align-items: center;
-          position: relative;
-          z-index: 1;
-        }
+            grid-template-columns: 1fr;
+          }
 
           .dashboardHeroBox {
-          min-width: 250px;
-          border-radius: 12px;
-          border: 1px solid #e3e6ea;
-          background: #f8f9fa;
-          padding: 16px;
-          box-shadow: none;
-        }
+            max-width: none;
+          }
+
+          .dashboardStats {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+
+          .dashboardQuickGrid {
+            grid-template-columns: 1fr;
+          }
+
+          .recentOrderRow {
+            grid-template-columns: minmax(0, 1fr) minmax(120px, auto);
+          }
+
+          .recentOrderRow > div:nth-child(2),
+          .recentOrderRow > div:nth-child(3),
+          .recentOrderRow > div:nth-child(4) {
+            display: none;
+          }
         }
 
         @media (max-width: 720px) {
           .dashboardPage {
-          width: 100%;
-          max-width: 1280px;
-          display: grid;
-          gap: 18px;
-        }
+            gap: 14px;
+          }
+
+          .dashboardHero,
+          .dashboardStat,
+          .quickCard,
+          .ordersCard {
+            border-radius: 12px;
+          }
 
           .dashboardHero {
-          position: relative;
-          overflow: hidden;
-          border-radius: 16px;
-          border: 1px solid #e3e6ea;
-          background: #ffffff;
-          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
-          padding: 24px;
-        }
-
-          .dashboardHeroTitle {
-          margin: 0;
-          max-width: 760px;
-          color: #191a1d;
-          font-size: clamp(26px, 3.2vw, 36px);
-          line-height: 1.12;
-          letter-spacing: -0.035em;
-          font-weight: 800;
-        }
-
-          .dashboardHeroText {
-          margin: 9px 0 0;
-          max-width: 760px;
-          color: #667085;
-          font-size: 13px;
-          line-height: 1.6;
-          font-weight: 500;
-        }
+            padding: 18px;
+          }
 
           .dashboardHeroActions {
-          display: flex;
-          gap: 10px;
-          flex-wrap: wrap;
-          margin-top: 18px;
-        }
+            display: grid;
+          }
 
           .dashboardPrimaryBtn,
-        .dashboardSecondaryBtn {
-          border: 1px solid #e3e6ea;
-          background: #fff;
-          color: #191a1d;
-        }
+          .dashboardSecondaryBtn {
+            width: 100%;
+          }
 
-          .dashboardStat,
-          .dashboardQuickCard {
-            border-radius: 19px;
+          .dashboardStats {
+            grid-template-columns: 1fr;
+          }
+
+          .ordersCardHead {
+            display: grid;
+          }
+
+          .recentOrderRow {
+            grid-template-columns: 1fr;
+            gap: 10px;
+          }
+
+          .recentOrderAction {
+            width: 100%;
           }
         }
-      `}</style>
+      }</style>
 
       <div className="dashboardPage">
         <section className="dashboardHero">
