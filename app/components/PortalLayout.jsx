@@ -1222,81 +1222,98 @@ export default function PortalLayout({
           margin-top: 0 !important;
         }
 
-        /* COMPACT BUSINESS SIDEBAR */
-        .portalSidebar,
-        .sidebar,
-        .portal-side,
-        aside {
+        /* CLEAN PORTAL SIDEBAR */
+        .portalSidebar {
           width: 240px;
           min-width: 240px;
-        }
-
-        .portalSidebar,
-        .sidebar,
-        .portal-side {
-          min-height: 100vh;
+          max-width: 240px;
           background: #ffffff;
-          border-right: 1px solid #e7eaee;
+          border-right: 1px solid #e6e9ef;
+          padding: 18px 14px;
+          height: 100vh;
+          position: sticky;
+          top: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 18px;
+          overflow: hidden;
         }
 
-        .portalNav,
-        .sidebarNav,
-        nav {
+        .portalBrand {
+          flex: 0 0 auto;
+          border: 1px solid #e8edf3;
+          border-radius: 12px;
+          padding: 12px;
+          background: #ffffff;
+        }
+
+        .portalNav {
+          flex: 0 0 auto;
+          display: grid;
           gap: 6px;
         }
 
         .portalNav a,
-        .sidebarNav a,
-        aside a {
-          min-height: 38px;
-          border-radius: 9px;
-          font-size: 13px;
-        }
-
-        .portalSidebar button,
-        .sidebar button,
-        aside button {
-          min-height: 38px;
-          border-radius: 9px;
-          font-size: 13px;
-        }
-
-        /* GLOBAL SIDEBAR VIEWPORT FIX */
-        .portalSidebar {
-          position: sticky;
-          top: 0;
-          align-self: flex-start;
-          height: 100vh;
-          max-height: 100vh;
-          overflow: hidden;
+        .portalNavLink {
+          min-height: 40px;
+          padding: 0 12px;
+          border-radius: 10px;
           display: flex;
-          flex-direction: column;
+          align-items: center;
+          gap: 10px;
+          color: #344054;
+          font-size: 13px;
+          font-weight: 800;
+          text-decoration: none;
+          border: 1px solid transparent;
+          background: transparent;
         }
 
-        .portalSidebar nav {
-          flex: 1 1 auto;
-          overflow-y: auto;
-          min-height: 0;
-          padding-bottom: 12px;
+        .portalNav a:hover,
+        .portalNavLink:hover {
+          background: #f8fafc;
+          border-color: #edf0f3;
         }
 
-        .portalSidebarFooter,
-        .portalSidebarActions,
-        .sidebarFooter,
-        .sidebarActions {
-          margin-top: auto;
+        .portalNav a[aria-current="page"],
+        .portalNavLinkActive,
+        .portalNavLink.active {
+          background: #f8f0df;
+          border-color: #e0cda8;
+          color: #7a4f10;
+        }
+
+        .portalSidebarFooter {
           flex: 0 0 auto;
-          padding-top: 12px;
+          margin-top: auto;
+          display: grid;
+          gap: 8px;
+          padding-top: 14px;
+          border-top: 1px solid #edf0f3;
           background: #ffffff;
         }
 
-        .portalSidebar a,
-        .portalSidebar button {
+        .portalSidebarFooter a,
+        .portalSidebarFooter button {
           min-height: 38px;
+          border-radius: 9px;
+          font-size: 13px;
+          font-weight: 900;
         }
 
         .portalMain {
           min-width: 0;
+        }
+
+        @media (max-width: 900px) {
+          .portalSidebar {
+            position: relative;
+            width: 100%;
+            min-width: 0;
+            max-width: none;
+            height: auto;
+            overflow: visible;
+          }
         }
 
       `}</style>
