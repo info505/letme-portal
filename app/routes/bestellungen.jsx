@@ -1,7 +1,7 @@
 import { redirect, useLoaderData } from "react-router";
 import { prisma } from "../lib/prisma.server.js";
 import { getUserFromRequest } from "../lib/auth.server.js";
-import { getLocaleFromRequest, withLang } from "../lib/i18n.js";
+import { getLocaleFromRequest } from "../lib/i18n.js";
 import PortalLayout from "../components/PortalLayout.jsx";
 
 export async function loader({ request }) {
@@ -12,57 +12,43 @@ export async function loader({ request }) {
     throw redirect(`/login?lang=${locale}`);
   }
 
-  const user = await prisma.portalUser.findUnique({
-    where: { id: sessionUser.id },
-    select: {
-      id: true,
-      companyName: true,
-      firstName: true,
-      lastName: true,
-      email: true,
-      phone: true,
-      isActive: true,
-      invoicePurchaseEnabled: true,
-      isAdmin: true,
-    },
+  const url = new URL(request.url);
+  const detailId = url.searchParams.get("detail") || "";
+
+  const ordersRaw = await prisma.portalOrder.findMany({
+    where: { userId: sessionUser.id },
+    include: { items: true },
+    orderBy: { createdAt: "desc" },
   });
 
-  if (!user) {
-    throw redirect(`/login?lang=${locale}`);
-  }
-
-  const orders = await prisma.portalOrder.findMany({
-    where: { userId: user.id },
-    include: {
-      items: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
-
-  return {
-    locale,
-    orders: orders.map((order) => ({
-      id: order.id,
-      orderNumber: order.orderNumber,
-      companyName: order.companyName,
-      billingCompanyName: order.billingCompanyName,
-      status: order.status,
-      currency: order.currency || "EUR",
-      totalAmount: order.totalAmount ? order.totalAmount.toString() : "0",
-      createdAt: order.createdAt ? order.createdAt.toISOString() : null,
-      deliveryDate: order.deliveryDate ? order.deliveryDate.toISOString() : null,
-      items: (order.items || []).map((item) => ({
-        id: item.id,
-        shopifyVariantId: item.shopifyVariantId,
-      })),
+  const orders = ordersRaw.map((order) => ({
+    id: order.id,
+    orderNumber: order.orderNumber,
+    companyName: order.companyName,
+    billingCompanyName: order.billingCompanyName,
+    status: order.status,
+    currency: order.currency || "EUR",
+    totalAmount: order.totalAmount ? order.totalAmount.toString() : "0",
+    createdAt: order.createdAt ? order.createdAt.toISOString() : null,
+    deliveryDate: order.deliveryDate ? order.deliveryDate.toISOString() : null,
+    items: (order.items || []).map((item) => ({
+      id: item.id,
+      title: item.title || item.productTitle || item.name || "Position",
+      quantity: item.quantity || 1,
+      unitPrice: item.unitPrice ? item.unitPrice.toString() : "0",
+      totalPrice: item.totalPrice ? item.totalPrice.toString() : "0",
+      shopifyVariantId: item.shopifyVariantId,
     })),
-  };
+  }));
+
+  const selectedOrder =
+    orders.find((order) => order.id === detailId || order.orderNumber === detailId) || null;
+
+  return { locale, orders, selectedOrder, detailId };
 }
 
 export default function BestellungenPage() {
-  const { locale, orders } = useLoaderData();
+  const { locale, orders, selectedOrder, detailId } = useLoaderData();
 
   const activeOrders = orders.filter((order) =>
     ["OPEN", "CONFIRMED", "IN_PREPARATION"].includes(order.status)
@@ -76,85 +62,75 @@ export default function BestellungenPage() {
 
   return (
     <PortalLayout
-      title={"TEST BESTELLUNGEN 123"}
+      title={locale === "en" ? "Orders" : "Bestellungen"}
       subtitle={
         locale === "en"
-          ? "Review your company orders and delivery status."
-          : "Prüfe deine Firmenbestellungen und den Lieferstatus."
+          ? "Review company orders and delivery status."
+          : "Prüfe Firmenbestellungen und Lieferstatus."
       }
     >
       <style>{`
         .ordersPage {
+          width: 100%;
           display: grid;
           gap: 14px;
-          width: 100%;
         }
 
-        .ordersTop,
-        .ordersPanel,
-        .ordersStat {
+        .ordersCard {
           background: #ffffff;
           border: 1px solid #e5e7eb;
+          border-radius: 14px;
           box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
+          overflow: hidden;
         }
 
         .ordersTop {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 18px;
           padding: 18px;
-          border-radius: 14px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 16px;
         }
 
         .ordersKicker {
-          margin-bottom: 6px;
           color: #a97d2f;
-          font-size: 9.5px;
-          font-weight: 850;
+          font-size: 10px;
+          font-weight: 900;
           letter-spacing: 0.09em;
           text-transform: uppercase;
+          margin-bottom: 6px;
         }
 
-        .ordersTopTitle {
+        .ordersTitle {
           margin: 0;
           color: #17191c;
-          font-size: clamp(22px, 2.4vw, 30px);
-          line-height: 1.12;
+          font-size: 28px;
+          line-height: 1.1;
           font-weight: 900;
           letter-spacing: -0.04em;
         }
 
-        .ordersTopText {
+        .ordersText {
           margin: 7px 0 0;
           color: #667085;
-          font-size: 12.5px;
+          font-size: 13px;
           line-height: 1.5;
-          font-weight: 500;
-        }
-
-        .ordersTopActions {
-          display: flex;
-          gap: 9px;
-          flex-shrink: 0;
         }
 
         .ordersButton {
-          min-height: 38px;
+          min-height: 36px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          padding: 0 13px;
+          padding: 0 12px;
           border-radius: 8px;
           border: 1px solid #d0d5dd;
           background: #ffffff;
           color: #17191c;
           font-size: 12px;
-          line-height: 1;
           font-weight: 850;
           text-decoration: none;
           white-space: nowrap;
-          cursor: pointer;
         }
 
         .ordersButtonPrimary {
@@ -163,83 +139,114 @@ export default function BestellungenPage() {
           color: #ffffff;
         }
 
-        .ordersStats {
+        .statsGrid {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 10px;
         }
 
-        .ordersStat {
-          min-width: 0;
-          padding: 14px 15px;
+        .statBox {
+          padding: 14px;
           border-radius: 12px;
+          border: 1px solid #e5e7eb;
+          background: #ffffff;
         }
 
-        .ordersStatLabel {
-          margin-bottom: 6px;
+        .statLabel {
+          margin-bottom: 5px;
           color: #667085;
           font-size: 9px;
-          font-weight: 850;
+          font-weight: 900;
           letter-spacing: 0.08em;
           text-transform: uppercase;
         }
 
-        .ordersStatValue {
+        .statValue {
           color: #17191c;
-          font-size: 25px;
-          line-height: 1.05;
+          font-size: 24px;
           font-weight: 900;
+          line-height: 1;
         }
 
-        .ordersStatText {
+        .statText {
           margin-top: 6px;
           color: #667085;
           font-size: 11.5px;
-          line-height: 1.4;
-          font-weight: 500;
         }
 
-        .ordersPanel {
-          overflow: hidden;
+        .detailBox {
+          padding: 18px;
           border-radius: 14px;
+          border: 2px solid #a97d2f;
+          background: #fffaf1;
         }
 
-        .ordersPanelHead {
+        .detailHead {
           display: flex;
-          align-items: center;
           justify-content: space-between;
-          gap: 14px;
-          padding: 17px 18px;
-          border-bottom: 1px solid #eaecf0;
+          gap: 16px;
+          align-items: flex-start;
+          margin-bottom: 14px;
         }
 
-        .ordersPanelTitle {
+        .detailTitle {
+          margin: 0;
+          color: #17191c;
+          font-size: 22px;
+          font-weight: 900;
+        }
+
+        .detailGrid {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 10px;
+          margin-bottom: 14px;
+        }
+
+        .detailMini {
+          padding: 10px;
+          border-radius: 9px;
+          border: 1px solid #eadbc1;
+          background: #ffffff;
+        }
+
+        .detailLabel {
+          color: #667085;
+          font-size: 8.5px;
+          font-weight: 900;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          margin-bottom: 4px;
+        }
+
+        .detailValue {
+          color: #17191c;
+          font-size: 12.5px;
+          font-weight: 850;
+        }
+
+        .listHead {
+          padding: 16px 18px;
+          border-bottom: 1px solid #eaecf0;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 14px;
+        }
+
+        .listTitle {
           margin: 0;
           color: #17191c;
           font-size: 20px;
-          line-height: 1.2;
           font-weight: 900;
-          letter-spacing: -0.03em;
-        }
-
-        .ordersPanelText {
-          margin: 5px 0 0;
-          color: #667085;
-          font-size: 12px;
-          line-height: 1.45;
-          font-weight: 500;
-        }
-
-        .ordersList {
-          display: grid;
         }
 
         .orderRow {
           display: grid;
-          grid-template-columns: minmax(220px, 1fr) minmax(0, 1.4fr) 170px;
-          gap: 16px;
+          grid-template-columns: minmax(220px, 1.2fr) 110px 120px 110px 80px 115px 145px;
+          gap: 12px;
           align-items: center;
-          padding: 15px 18px;
+          padding: 14px 18px;
           border-bottom: 1px solid #f0f2f4;
           background: #ffffff;
         }
@@ -250,8 +257,7 @@ export default function BestellungenPage() {
 
         .orderNumber {
           color: #17191c;
-          font-size: 14.5px;
-          line-height: 1.2;
+          font-size: 14px;
           font-weight: 900;
         }
 
@@ -259,93 +265,44 @@ export default function BestellungenPage() {
           margin-top: 3px;
           color: #667085;
           font-size: 11.5px;
-          line-height: 1.3;
-          font-weight: 500;
         }
 
-        .orderBadges {
-          display: flex;
-          gap: 6px;
-          margin-top: 7px;
-          flex-wrap: wrap;
+        .orderLabel {
+          color: #667085;
+          font-size: 8.5px;
+          font-weight: 900;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          margin-bottom: 4px;
+        }
+
+        .orderValue {
+          color: #17191c;
+          font-size: 12px;
+          font-weight: 850;
         }
 
         .badge {
-          min-height: 25px;
           width: fit-content;
+          min-height: 25px;
+          padding: 0 9px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          padding: 0 9px;
           border-radius: 999px;
           font-size: 10.5px;
           font-weight: 850;
-          white-space: nowrap;
-        }
-
-        .badgeStatus {
           background: #f3f4f6;
           color: #344054;
           border: 1px solid #e5e7eb;
         }
 
-        .badgeReorder {
-          background: #edf7ee;
-          color: #1f6b36;
-          border: 1px solid #cfe8d4;
-        }
-
-        .badgeMuted {
-          background: #f3f4f6;
-          color: #667085;
-          border: 1px solid #e5e7eb;
-        }
-
-        .orderMeta {
+        .itemRow {
           display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 8px;
-        }
-
-        .orderMetaBox {
-          min-width: 0;
-          padding: 10px;
-          border-radius: 9px;
-          border: 1px solid #eaecf0;
-          background: #f8fafc;
-        }
-
-        .orderMetaLabel {
-          margin-bottom: 4px;
-          color: #667085;
-          font-size: 8.5px;
-          font-weight: 850;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-        }
-
-        .orderMetaValue {
-          color: #17191c;
-          font-size: 12px;
-          font-weight: 850;
-          white-space: nowrap;
-        }
-
-        .orderActions {
-          display: grid;
-          gap: 7px;
-        }
-
-        .orderActions .ordersButton {
-          width: 100%;
-          min-height: 34px;
-          font-size: 11.5px;
-        }
-
-        .emptyOrders {
-          padding: 34px 18px;
-          text-align: center;
-          background: #f8fafc;
+          grid-template-columns: minmax(0, 1fr) 80px 110px;
+          gap: 10px;
+          padding: 10px 0;
+          border-top: 1px solid #eadbc1;
         }
 
         @media (max-width: 1250px) {
@@ -354,155 +311,161 @@ export default function BestellungenPage() {
             align-items: start;
           }
 
-          .orderActions {
-            width: fit-content;
-            min-width: 170px;
-          }
-        }
-
-        @media (max-width: 900px) {
-          .ordersTop,
-          .ordersPanelHead {
-            display: grid;
-          }
-
-          .ordersStats {
+          .detailGrid,
+          .statsGrid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
         }
 
-        @media (max-width: 640px) {
-          .ordersStats,
-          .orderMeta {
-            grid-template-columns: 1fr;
+        @media (max-width: 700px) {
+          .ordersTop,
+          .detailHead,
+          .listHead {
+            display: grid;
           }
 
-          .ordersTopActions,
-          .orderActions,
-          .ordersButton {
-            width: 100%;
+          .detailGrid,
+          .statsGrid {
+            grid-template-columns: 1fr;
           }
         }
       `}</style>
 
       <div className="ordersPage">
-        <section className="ordersTop">
+        <section className="ordersCard ordersTop">
           <div>
-            <div className="ordersKicker">
-              {locale === "en" ? "Order overview" : "Bestellübersicht"}
-            </div>
-            <h2 className="ordersTopTitle">
-              {locale === "en" ? "Company orders in one place." : "Firmenbestellungen an einem Ort."}
-            </h2>
-            <p className="ordersTopText">
-              {locale === "en"
-                ? "Review status, delivery dates, amounts and details."
-                : "Prüfe Status, Liefertermine, Beträge und Details."}
+            <div className="ordersKicker">Bestellübersicht</div>
+            <h2 className="ordersTitle">Firmenbestellungen</h2>
+            <p className="ordersText">
+              Details öffnen sich jetzt direkt hier in der Übersicht.
             </p>
           </div>
 
-          <div className="ordersTopActions">
-            <a href="https://letmebowl-catering.de/pages/bestellen" className="ordersButton ordersButtonPrimary">
-              {locale === "en" ? "Start new order" : "Neue Bestellung starten"}
-            </a>
-            <a href={withLang("/dashboard", locale)} className="ordersButton">
-              Dashboard
-            </a>
-          </div>
+          <a href="https://letmebowl-catering.de/pages/bestellen" className="ordersButton ordersButtonPrimary">
+            Neue Bestellung starten
+          </a>
         </section>
 
-        <section className="ordersStats">
-          <StatCard label={locale === "en" ? "Orders total" : "Bestellungen gesamt"} value={String(orders.length)} text={locale === "en" ? "All linked orders." : "Alle verknüpften Firmenbestellungen."} />
-          <StatCard label={locale === "en" ? "Active" : "Aktiv"} value={String(activeOrders.length)} text={locale === "en" ? "Open or in preparation." : "Offen, bestätigt oder in Vorbereitung."} />
-          <StatCard label={locale === "en" ? "Delivered" : "Geliefert"} value={String(deliveredOrders.length)} text={locale === "en" ? "Completed orders." : "Erfolgreich abgeschlossene Bestellungen."} />
-          <StatCard label={locale === "en" ? "Total value" : "Gesamtwert"} value={formatMoney(totalAmount, "EUR", locale)} text={locale === "en" ? "Sum of all orders." : "Summe aller verknüpften Bestellungen."} />
+        <section className="statsGrid">
+          <Stat label="Bestellungen" value={orders.length} text="Alle Bestellungen" />
+          <Stat label="Aktiv" value={activeOrders.length} text="Offen oder in Vorbereitung" />
+          <Stat label="Geliefert" value={deliveredOrders.length} text="Abgeschlossen" />
+          <Stat label="Gesamtwert" value={formatMoney(totalAmount, "EUR", locale)} text="Summe aller Bestellungen" />
         </section>
 
-        <section className="ordersPanel">
-          <div className="ordersPanelHead">
+        {detailId && !selectedOrder ? (
+          <section className="detailBox">
+            <div className="detailHead">
+              <div>
+                <h3 className="detailTitle">Detail angefragt, aber nicht gefunden</h3>
+                <p className="ordersText">Gesuchte ID: {detailId}</p>
+              </div>
+              <a href={`/bestellungen?lang=${locale}`} className="ordersButton">Schließen</a>
+            </div>
+          </section>
+        ) : null}
+
+        {selectedOrder ? (
+          <section className="detailBox">
+            <div className="detailHead">
+              <div>
+                <div className="ordersKicker">Bestelldetails</div>
+                <h3 className="detailTitle">{selectedOrder.orderNumber || selectedOrder.id}</h3>
+                <p className="ordersText">
+                  {selectedOrder.billingCompanyName || selectedOrder.companyName || "Firmenbestellung"}
+                </p>
+              </div>
+
+              <a href={`/bestellungen?lang=${locale}`} className="ordersButton">Schließen</a>
+            </div>
+
+            <div className="detailGrid">
+              <Mini label="Status" value={getStatusLabel(selectedOrder.status)} />
+              <Mini label="Erstellt" value={formatDate(selectedOrder.createdAt, locale)} />
+              <Mini label="Lieferdatum" value={formatDate(selectedOrder.deliveryDate, locale)} />
+              <Mini label="Gesamt" value={formatMoney(selectedOrder.totalAmount, selectedOrder.currency, locale)} />
+            </div>
+
+            {selectedOrder.items.length === 0 ? (
+              <div className="ordersText">Keine Positionen gespeichert.</div>
+            ) : (
+              selectedOrder.items.map((item) => (
+                <div className="itemRow" key={item.id}>
+                  <div className="orderValue">{item.title}</div>
+                  <div className="orderValue">x {item.quantity}</div>
+                  <div className="orderValue">{formatMoney(item.totalPrice, selectedOrder.currency, locale)}</div>
+                </div>
+              ))
+            )}
+          </section>
+        ) : null}
+
+        <section className="ordersCard">
+          <div className="listHead">
             <div>
-              <h3 className="ordersPanelTitle">
-                {locale === "en" ? "Your orders" : "Deine Bestellungen"}
-              </h3>
-              <p className="ordersPanelText">
-                {locale === "en" ? "Sorted by latest order first." : "Sortiert nach der neuesten Bestellung zuerst."}
-              </p>
+              <h3 className="listTitle">Deine Bestellungen</h3>
+              <p className="ordersText">Sortiert nach der neuesten Bestellung zuerst.</p>
             </div>
           </div>
 
-          {orders.length === 0 ? (
-            <section className="emptyOrders">
-              {locale === "en" ? "No orders yet." : "Noch keine Bestellungen."}
-            </section>
-          ) : (
-            <div className="ordersList">
-              {orders.map((order) => (
-                <OrderRow key={order.id} order={order} locale={locale} />
-              ))}
-            </div>
-          )}
+          {orders.map((order) => (
+            <article className="orderRow" key={order.id}>
+              <div>
+                <div className="orderNumber">{order.orderNumber || "—"}</div>
+                <div className="orderCompany">
+                  {order.billingCompanyName || order.companyName || "Firmenbestellung"}
+                </div>
+              </div>
+
+              <Cell label="Erstellt" value={formatDate(order.createdAt, locale)} />
+              <Cell label="Lieferdatum" value={formatDate(order.deliveryDate, locale)} />
+              <Cell label="Betrag" value={formatMoney(order.totalAmount, order.currency, locale)} />
+              <Cell label="Pos." value={String(order.items.length)} />
+
+              <div>
+                <span className="badge">{getStatusLabel(order.status)}</span>
+              </div>
+
+              <div style={{ display: "grid", gap: 7 }}>
+                <a href={`/bestellungen?detail=${encodeURIComponent(order.id)}&lang=${locale}`} className="ordersButton">
+                  Details
+                </a>
+                <a href="https://letmebowl-catering.de/pages/bestellen" className="ordersButton ordersButtonPrimary">
+                  Erneut bestellen
+                </a>
+              </div>
+            </article>
+          ))}
         </section>
       </div>
     </PortalLayout>
   );
 }
 
-function StatCard({ label, value, text }) {
+function Stat({ label, value, text }) {
   return (
-    <div className="ordersStat">
-      <div className="ordersStatLabel">{label}</div>
-      <div className="ordersStatValue">{value}</div>
-      <div className="ordersStatText">{text}</div>
+    <div className="statBox">
+      <div className="statLabel">{label}</div>
+      <div className="statValue">{value}</div>
+      <div className="statText">{text}</div>
     </div>
   );
 }
 
-function OrderRow({ order, locale }) {
-  const itemCount = Array.isArray(order.items) ? order.items.length : 0;
-  const hasReorder = Array.isArray(order.items)
-    ? order.items.some((item) => item.shopifyVariantId)
-    : false;
-
+function Cell({ label, value }) {
   return (
-    <article className="orderRow">
-      <div>
-        <div className="orderNumber">{order.orderNumber || "—"}</div>
-        <div className="orderCompany">
-          {order.billingCompanyName || order.companyName || (locale === "en" ? "Company order" : "Firmenbestellung")}
-        </div>
-
-        <div className="orderBadges">
-          <span className="badge badgeStatus">{getStatusLabel(order.status, locale)}</span>
-          <span className={`badge ${hasReorder ? "badgeReorder" : "badgeMuted"}`}>
-            {hasReorder ? (locale === "en" ? "Reorder possible" : "Reorder möglich") : (locale === "en" ? "No reorder" : "Kein Reorder")}
-          </span>
-        </div>
-      </div>
-
-      <div className="orderMeta">
-        <Meta label={locale === "en" ? "Created" : "Erstellt"} value={formatDate(order.createdAt, locale)} />
-        <Meta label={locale === "en" ? "Delivery" : "Lieferdatum"} value={formatDate(order.deliveryDate, locale)} />
-        <Meta label={locale === "en" ? "Amount" : "Betrag"} value={formatMoney(order.totalAmount, order.currency, locale)} />
-        <Meta label={locale === "en" ? "Items" : "Positionen"} value={String(itemCount)} />
-      </div>
-
-      <div className="orderActions">
-        <a href={withLang(`/bestellungen/${order.id}`, locale)} className="ordersButton">
-          Details
-        </a>
-        <a href="https://letmebowl-catering.de/pages/bestellen" className="ordersButton ordersButtonPrimary">
-          {locale === "en" ? "Order again" : "Erneut bestellen"}
-        </a>
-      </div>
-    </article>
+    <div>
+      <div className="orderLabel">{label}</div>
+      <div className="orderValue">{value}</div>
+    </div>
   );
 }
 
-function Meta({ label, value }) {
+function Mini({ label, value }) {
   return (
-    <div className="orderMetaBox">
-      <div className="orderMetaLabel">{label}</div>
-      <div className="orderMetaValue">{value || "—"}</div>
+    <div className="detailMini">
+      <div className="detailLabel">{label}</div>
+      <div className="detailValue">{value || "—"}</div>
     </div>
   );
 }
@@ -526,13 +489,14 @@ function formatMoney(value, currency = "EUR", locale = "de") {
   }).format(Number.isNaN(num) ? 0 : num);
 }
 
-function getStatusLabel(status, locale) {
+function getStatusLabel(status) {
   const map = {
-    OPEN: locale === "en" ? "Open" : "Offen",
-    CONFIRMED: locale === "en" ? "Confirmed" : "Bestätigt",
-    IN_PREPARATION: locale === "en" ? "In preparation" : "In Vorbereitung",
-    DELIVERED: locale === "en" ? "Delivered" : "Geliefert",
-    CANCELLED: locale === "en" ? "Cancelled" : "Storniert",
+    OPEN: "Offen",
+    CONFIRMED: "Bestätigt",
+    IN_PREPARATION: "In Vorbereitung",
+    DELIVERED: "Geliefert",
+    CANCELLED: "Storniert",
   };
+
   return map[status] || status || "—";
 }
