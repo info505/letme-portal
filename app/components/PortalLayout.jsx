@@ -939,6 +939,355 @@ export default function PortalLayout({
             padding-left: 13px;
           }
         }
+        /* MINIMAL PREMIUM PORTAL FINAL */
+
+        html,
+        body,
+        .portalRoot {
+          overflow-x: hidden !important;
+          background: #f4f5f7 !important;
+        }
+
+        .portalLayout {
+          grid-template-columns: 220px minmax(0, 1fr) !important;
+        }
+
+        .portalSidebar {
+          padding: 18px 12px !important;
+          background: #ffffff !important;
+          border-right: 1px solid #e5e7eb !important;
+        }
+
+        .portalBrand {
+          padding: 0 6px 18px !important;
+          margin: 0 !important;
+          border-bottom: 1px solid #e5e7eb !important;
+        }
+
+        .portalBrandMark {
+          width: 32px !important;
+          height: 32px !important;
+          flex: 0 0 32px !important;
+          border-radius: 8px !important;
+          font-size: 10px !important;
+        }
+
+        .portalBrandTitle {
+          font-size: 12px !important;
+          line-height: 1.15 !important;
+          font-weight: 800 !important;
+          letter-spacing: 0.035em !important;
+        }
+
+        .portalBrandSub {
+          margin-top: 1px !important;
+          font-size: 10px !important;
+          line-height: 1.2 !important;
+          font-weight: 500 !important;
+          letter-spacing: 0 !important;
+          text-transform: none !important;
+          color: #667085 !important;
+        }
+
+        .portalUserCard {
+          display: none !important;
+        }
+
+        .portalNav {
+          margin-top: 18px !important;
+          gap: 2px !important;
+        }
+
+        .portalNavLink {
+          min-height: 38px !important;
+          padding: 0 10px !important;
+          border-radius: 8px !important;
+          font-size: 12.5px !important;
+          font-weight: 650 !important;
+          color: #475467 !important;
+          border: 1px solid transparent !important;
+          background: transparent !important;
+        }
+
+        .portalNavLink:hover {
+          background: #f8fafc !important;
+          border-color: #eef0f3 !important;
+          color: #191a1d !important;
+        }
+
+        .portalNavLink.isActive {
+          background: #f8f2e7 !important;
+          border-color: #e2d7c3 !important;
+          color: #6f501c !important;
+          box-shadow: none !important;
+        }
+
+        .portalNavLink.isActive::before {
+          display: none !important;
+        }
+
+        .portalNavIcon {
+          width: 20px !important;
+          height: 20px !important;
+          flex: 0 0 20px !important;
+        }
+
+        .portalSidebarBottom {
+          gap: 8px !important;
+          padding-top: 14px !important;
+          border-top: 1px solid #e5e7eb !important;
+        }
+
+        .portalSecurity {
+          display: none !important;
+        }
+
+        .portalOrderButton,
+        .portalLogoutButton {
+          min-height: 38px !important;
+          border-radius: 8px !important;
+          font-size: 12px !important;
+          font-weight: 750 !important;
+          box-shadow: none !important;
+        }
+
+        .portalOrderButton {
+          background: #a97d2f !important;
+          border-color: #a97d2f !important;
+        }
+
+        .portalLogoutButton {
+          background: #ffffff !important;
+          color: #667085 !important;
+          border-color: #e5e7eb !important;
+        }
+
+        .portalHeader {
+          position: sticky !important;
+          top: 0 !important;
+          background: #ffffff !important;
+          border-bottom: 1px solid #e5e7eb !important;
+          padding: 20px 28px !important;
+        }
+
+        .portalHeaderInner {
+          max-width: 1120px !important;
+          margin: 0 auto !important;
+        }
+
+        .portalKicker {
+          margin-bottom: 5px !important;
+          color: #a97d2f !important;
+          font-size: 9.5px !important;
+          font-weight: 800 !important;
+          letter-spacing: 0.09em !important;
+        }
+
+        .portalTitle {
+          font-size: clamp(25px, 2.8vw, 32px) !important;
+          line-height: 1.12 !important;
+          font-weight: 850 !important;
+          letter-spacing: -0.04em !important;
+          color: #17191c !important;
+        }
+
+        .portalSubtitle {
+          margin-top: 6px !important;
+          max-width: 680px !important;
+          color: #667085 !important;
+          font-size: 13px !important;
+          line-height: 1.5 !important;
+          font-weight: 500 !important;
+        }
+
+        .portalLangSwitch {
+          border-radius: 8px !important;
+          background: #f8fafc !important;
+          border-color: #e5e7eb !important;
+          box-shadow: none !important;
+        }
+
+        .portalLangLink {
+          min-height: 28px !important;
+          min-width: 36px !important;
+          border-radius: 6px !important;
+          font-size: 10.5px !important;
+        }
+
+        .portalContent {
+          max-width: 1120px !important;
+          margin: 0 auto !important;
+          padding: 22px 28px 36px !important;
+          overflow-x: hidden !important;
+        }
+
+        /* Dashboard komplett ruhiger */
+
+        .dashboardPage {
+          max-width: 100% !important;
+          margin: 0 !important;
+          display: grid !important;
+          gap: 14px !important;
+          overflow-x: hidden !important;
+        }
+
+        .dashboardHero {
+          display: none !important;
+        }
+
+        .dashboardStats {
+          display: grid !important;
+          grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+          gap: 10px !important;
+        }
+
+        .dashboardStat {
+          min-width: 0 !important;
+          padding: 16px !important;
+          border-radius: 12px !important;
+          border: 1px solid #e5e7eb !important;
+          background: #ffffff !important;
+          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035) !important;
+        }
+
+        .dashboardStatLabel {
+          margin-bottom: 7px !important;
+          color: #667085 !important;
+          font-size: 9.5px !important;
+          font-weight: 800 !important;
+          letter-spacing: 0.08em !important;
+          text-transform: uppercase !important;
+        }
+
+        .dashboardStatValue {
+          color: #17191c !important;
+          font-size: 28px !important;
+          line-height: 1.05 !important;
+          font-weight: 850 !important;
+          letter-spacing: -0.035em !important;
+        }
+
+        .dashboardStatText {
+          margin-top: 7px !important;
+          color: #667085 !important;
+          font-size: 11.5px !important;
+          line-height: 1.45 !important;
+          font-weight: 500 !important;
+        }
+
+        .dashboardQuickGrid {
+          display: grid !important;
+          grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+          gap: 10px !important;
+        }
+
+        .quickCard {
+          min-width: 0 !important;
+          display: block !important;
+          padding: 16px !important;
+          border-radius: 12px !important;
+          border: 1px solid #e5e7eb !important;
+          background: #ffffff !important;
+          color: #17191c !important;
+          text-decoration: none !important;
+          box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035) !important;
+        }
+
+        .quickCard:hover {
+          border-color: #d0d5dd !important;
+          box-shadow: 0 4px 12px rgba(16, 24, 40, 0.055) !important;
+          transform: translateY(-1px) !important;
+        }
+
+        .quickCardIcon {
+          width: 34px !important;
+          height: 34px !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          margin-bottom: 12px !important;
+          border-radius: 9px !important;
+          border: 1px solid #e2d7c3 !important;
+          background: #f8f2e7 !important;
+          color: #a97d2f !important;
+          font-size: 14px !important;
+          font-weight: 800 !important;
+        }
+
+        .quickCardTitle {
+          margin: 0 !important;
+          color: #17191c !important;
+          font-size: 15px !important;
+          line-height: 1.25 !important;
+          font-weight: 850 !important;
+          letter-spacing: -0.015em !important;
+        }
+
+        .quickCardText {
+          margin-top: 7px !important;
+          color: #667085 !important;
+          font-size: 12.5px !important;
+          line-height: 1.5 !important;
+          font-weight: 500 !important;
+        }
+
+        .ordersCard {
+          overflow: hidden !important;
+          border-radius: 14px !important;
+          border: 1px solid #e5e7eb !important;
+          background: #ffffff !important;
+          box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04) !important;
+        }
+
+        .ordersCard h2,
+        .ordersCardTitle {
+          margin: 0 !important;
+          color: #17191c !important;
+          font-size: 21px !important;
+          line-height: 1.2 !important;
+          font-weight: 850 !important;
+          letter-spacing: -0.03em !important;
+        }
+
+        .ordersCard a {
+          color: #17191c !important;
+          text-decoration: none !important;
+        }
+
+        .ordersCard a:hover {
+          text-decoration: none !important;
+        }
+
+        @media (max-width: 1180px) {
+          .dashboardStats {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          }
+
+          .dashboardQuickGrid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+
+        @media (max-width: 900px) {
+          .portalLayout {
+            display: block !important;
+          }
+
+          .portalSidebar {
+            display: none !important;
+          }
+
+          .portalContent {
+            padding: 16px 14px 28px !important;
+          }
+        }
+
+        @media (max-width: 720px) {
+          .dashboardStats {
+            grid-template-columns: 1fr !important;
+          }
+        }
+
       `}</style>
 
       <div className="portalLayout">
