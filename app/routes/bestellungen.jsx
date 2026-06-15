@@ -329,7 +329,159 @@ export default function BestellungenPage() {
             grid-template-columns: 1fr;
           }
         }
-      `}</style>
+      `
+        /* VIEW ONLY CLEANUP */
+        .ordersPage {
+          gap: 10px !important;
+        }
+
+        .ordersTop {
+          padding: 14px 16px !important;
+          border-radius: 12px !important;
+        }
+
+        .ordersTitle {
+          font-size: 23px !important;
+          line-height: 1.08 !important;
+        }
+
+        .ordersText {
+          font-size: 12px !important;
+          line-height: 1.35 !important;
+          margin-top: 4px !important;
+        }
+
+        .statsGrid {
+          grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+          gap: 8px !important;
+        }
+
+        .statBox {
+          padding: 10px 12px !important;
+          border-radius: 10px !important;
+        }
+
+        .statLabel {
+          font-size: 8px !important;
+          margin-bottom: 4px !important;
+        }
+
+        .statValue {
+          font-size: 21px !important;
+        }
+
+        .statText {
+          font-size: 10.5px !important;
+          margin-top: 4px !important;
+        }
+
+        .detailBox {
+          padding: 12px 14px !important;
+          border-width: 1px !important;
+          border-radius: 12px !important;
+          background: #fffdf8 !important;
+        }
+
+        .detailHead {
+          margin-bottom: 8px !important;
+          align-items: center !important;
+        }
+
+        .detailTitle {
+          font-size: 18px !important;
+          line-height: 1.1 !important;
+        }
+
+        .detailGrid {
+          grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+          gap: 8px !important;
+          margin-bottom: 6px !important;
+        }
+
+        .detailMini {
+          padding: 8px 9px !important;
+          border-radius: 8px !important;
+        }
+
+        .detailLabel {
+          font-size: 8px !important;
+          margin-bottom: 3px !important;
+        }
+
+        .detailValue {
+          font-size: 11.5px !important;
+        }
+
+        .itemRow {
+          padding: 6px 0 !important;
+          grid-template-columns: minmax(0, 1fr) 55px 95px !important;
+          gap: 8px !important;
+        }
+
+        .listHead {
+          padding: 12px 16px !important;
+        }
+
+        .listTitle {
+          font-size: 18px !important;
+        }
+
+        .orderRow {
+          min-height: 58px !important;
+          padding: 9px 16px !important;
+          grid-template-columns: minmax(220px, 1.5fr) 90px 100px 90px 50px 75px 125px !important;
+          gap: 9px !important;
+        }
+
+        .orderNumber {
+          font-size: 13px !important;
+        }
+
+        .orderCompany {
+          font-size: 10.5px !important;
+          margin-top: 2px !important;
+        }
+
+        .orderLabel {
+          font-size: 7.5px !important;
+          margin-bottom: 2px !important;
+        }
+
+        .orderValue {
+          font-size: 11px !important;
+        }
+
+        .badge {
+          min-height: 21px !important;
+          padding: 0 8px !important;
+          font-size: 9.5px !important;
+        }
+
+        .ordersButton {
+          min-height: 30px !important;
+          border-radius: 7px !important;
+          font-size: 10.5px !important;
+          padding: 0 9px !important;
+        }
+
+        @media (max-width: 1250px) {
+          .orderRow {
+            grid-template-columns: 1fr !important;
+          }
+
+          .detailGrid,
+          .statsGrid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          }
+        }
+
+        @media (max-width: 700px) {
+          .detailGrid,
+          .statsGrid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+}</style>
 
       <div className="ordersPage">
         <section className="ordersCard ordersTop">
