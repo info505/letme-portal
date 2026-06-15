@@ -76,7 +76,7 @@ export default function BestellungenPage() {
 
   return (
     <PortalLayout
-      title={locale === "en" ? "Orders" : "Bestellungen"}
+      title={"TEST BESTELLUNGEN 123"}
       subtitle={
         locale === "en"
           ? "Review your company orders and delivery status."
