@@ -1261,6 +1261,47 @@ export default function PortalLayout({
           font-size: 13px;
         }
 
+        /* COMPACT SIDEBAR FIX */
+        .portalSidebar,
+        .sidebar,
+        aside {
+          width: 230px;
+          min-width: 230px;
+          max-width: 230px;
+        }
+
+        .portalSidebar,
+        .sidebar {
+          padding: 14px 12px;
+        }
+
+        aside nav,
+        .portalNav,
+        .sidebarNav {
+          gap: 4px;
+        }
+
+        aside a,
+        aside button,
+        .portalNav a,
+        .sidebarNav a {
+          min-height: 34px;
+          padding-top: 0;
+          padding-bottom: 0;
+          border-radius: 8px;
+          font-size: 12.5px;
+        }
+
+        aside [class*="footer"],
+        aside [class*="bottom"] {
+          margin-top: 16px;
+        }
+
+        aside a[href*="bestellen"],
+        aside button {
+          min-height: 36px;
+        }
+
       `}</style>
 
       <div className="portalLayout">
