@@ -760,21 +760,18 @@ export default function BestellungenPage() {
             white-space: normal;
           }
         }
-        /* ORDERS SAFE CARD RESET */
+        /* ORDERS FINAL FLAT TABLE */
+        .ordersHero,
+        .ordersNotice {
+          display: none !important;
+        }
+
         .ordersPage {
           width: 100% !important;
           max-width: none !important;
           margin: 0 !important;
           display: grid !important;
           gap: 14px !important;
-        }
-
-        .ordersHero {
-          display: none !important;
-        }
-
-        .ordersNotice {
-          display: none !important;
         }
 
         .ordersStats {
@@ -784,7 +781,6 @@ export default function BestellungenPage() {
         }
 
         .ordersStat {
-          min-width: 0 !important;
           padding: 14px 15px !important;
           border-radius: 12px !important;
           border: 1px solid #e5e7eb !important;
@@ -861,16 +857,16 @@ export default function BestellungenPage() {
 
         .orderCard {
           display: grid !important;
-          grid-template-columns: 260px minmax(0, 1fr) 170px !important;
+          grid-template-columns: minmax(245px, 1fr) minmax(0, 2.3fr) 160px !important;
           gap: 18px !important;
           align-items: center !important;
-          padding: 16px 18px !important;
+          min-height: 82px !important;
+          padding: 14px 18px !important;
           border: 0 !important;
           border-bottom: 1px solid #f0f2f4 !important;
           border-radius: 0 !important;
           background: #ffffff !important;
           box-shadow: none !important;
-          min-height: 96px !important;
         }
 
         .orderCard:last-child {
@@ -920,15 +916,16 @@ export default function BestellungenPage() {
         .orderInfoGrid {
           display: grid !important;
           grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-          gap: 8px !important;
-          min-width: 0 !important;
+          gap: 16px !important;
+          align-items: center !important;
         }
 
         .orderInfoBox {
-          padding: 10px !important;
-          border-radius: 9px !important;
-          border: 1px solid #eaecf0 !important;
-          background: #f8fafc !important;
+          padding: 0 !important;
+          border: 0 !important;
+          border-radius: 0 !important;
+          background: transparent !important;
+          box-shadow: none !important;
           min-width: 0 !important;
         }
 
@@ -984,7 +981,7 @@ export default function BestellungenPage() {
           white-space: nowrap !important;
         }
 
-        @media (max-width: 1300px) {
+        @media (max-width: 1200px) {
           .orderCard {
             grid-template-columns: 1fr !important;
             align-items: start !important;
@@ -992,6 +989,14 @@ export default function BestellungenPage() {
 
           .orderInfoGrid {
             grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 8px !important;
+          }
+
+          .orderInfoBox {
+            padding: 10px !important;
+            border-radius: 9px !important;
+            border: 1px solid #eaecf0 !important;
+            background: #f8fafc !important;
           }
 
           .orderFooter {
@@ -1019,11 +1024,6 @@ export default function BestellungenPage() {
           }
         }
 
-
-
-
-
-      `}</style>
 
       <div className="ordersPage">
         <section className="ordersHero">
