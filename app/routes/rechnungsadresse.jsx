@@ -467,6 +467,41 @@ export default function RechnungsadressePage() {
             font-size: 16px;
           }
         }
+        /* BILLING CLEAN FINAL */
+        .billingPage,
+        .addressPage,
+        .accountPage {
+          max-width: none !important;
+          width: 100% !important;
+        }
+
+        .billingCard,
+        .addressCard,
+        .formCard,
+        .panel,
+        form section {
+          border-radius: 14px !important;
+          border: 1px solid #e5e7eb !important;
+          background: #ffffff !important;
+          box-shadow: 0 1px 3px rgba(16,24,40,0.04) !important;
+        }
+
+        input,
+        select,
+        textarea {
+          border-radius: 9px !important;
+          border: 1px solid #d0d5dd !important;
+          background: #ffffff !important;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+          outline: none !important;
+          border-color: #a97d2f !important;
+          box-shadow: 0 0 0 3px rgba(169,125,47,0.12) !important;
+        }
+
       `}</style>
 
       <div className="lmbBillingPage">

@@ -1118,6 +1118,180 @@ export default function BestellungenPage() {
             width: 100% !important;
           }
         }
+        /* ORDERS COMPACT FINAL */
+        .ordersPage {
+          max-width: none !important;
+          width: 100% !important;
+          gap: 14px !important;
+        }
+
+        .ordersHero {
+          display: grid !important;
+          grid-template-columns: minmax(0, 1fr) auto !important;
+          align-items: center !important;
+          gap: 20px !important;
+          padding: 22px !important;
+          border-radius: 14px !important;
+          border: 1px solid #e5e7eb !important;
+          background: #ffffff !important;
+          box-shadow: 0 1px 3px rgba(16,24,40,0.04) !important;
+        }
+
+        .ordersHeroTitle {
+          max-width: 760px !important;
+          font-size: clamp(25px, 2.8vw, 34px) !important;
+          line-height: 1.1 !important;
+          font-weight: 900 !important;
+          letter-spacing: -0.045em !important;
+        }
+
+        .ordersHeroCopy {
+          max-width: 720px !important;
+          font-size: 13px !important;
+          line-height: 1.55 !important;
+          color: #667085 !important;
+        }
+
+        .ordersStats {
+          display: grid !important;
+          grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+          gap: 10px !important;
+        }
+
+        .ordersStat {
+          padding: 15px !important;
+          border-radius: 12px !important;
+          border: 1px solid #e5e7eb !important;
+          background: #ffffff !important;
+          box-shadow: 0 1px 2px rgba(16,24,40,0.035) !important;
+        }
+
+        .ordersStatLabel {
+          font-size: 9.5px !important;
+          font-weight: 850 !important;
+          letter-spacing: 0.08em !important;
+          color: #667085 !important;
+          text-transform: uppercase !important;
+        }
+
+        .ordersStatValue {
+          font-size: 27px !important;
+          line-height: 1.05 !important;
+          font-weight: 900 !important;
+          color: #17191c !important;
+        }
+
+        .ordersNotice {
+          display: none !important;
+        }
+
+        .ordersListPanel {
+          padding: 0 !important;
+          overflow: hidden !important;
+          border-radius: 14px !important;
+          border: 1px solid #e5e7eb !important;
+          background: #ffffff !important;
+          box-shadow: 0 1px 3px rgba(16,24,40,0.04) !important;
+        }
+
+        .ordersListHead {
+          padding: 18px !important;
+          margin: 0 !important;
+          border-bottom: 1px solid #eaecf0 !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: space-between !important;
+        }
+
+        .ordersList {
+          display: grid !important;
+          gap: 0 !important;
+        }
+
+        .orderCard {
+          display: grid !important;
+          grid-template-columns: minmax(190px, 1.3fr) minmax(420px, 2fr) auto !important;
+          align-items: center !important;
+          gap: 18px !important;
+          padding: 16px 18px !important;
+          border: 0 !important;
+          border-bottom: 1px solid #f0f2f4 !important;
+          border-radius: 0 !important;
+          background: #ffffff !important;
+          box-shadow: none !important;
+        }
+
+        .orderCard:last-child {
+          border-bottom: 0 !important;
+        }
+
+        .orderTop {
+          display: grid !important;
+          gap: 6px !important;
+        }
+
+        .orderBadges {
+          display: flex !important;
+          gap: 6px !important;
+          flex-wrap: wrap !important;
+        }
+
+        .orderInfoGrid {
+          display: grid !important;
+          grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+          gap: 8px !important;
+        }
+
+        .orderMetaGrid,
+        .orderItemsPreview,
+        .orderNote {
+          display: none !important;
+        }
+
+        .orderInfoBox {
+          padding: 10px !important;
+          border-radius: 9px !important;
+          border: 1px solid #eaecf0 !important;
+          background: #f8fafc !important;
+        }
+
+        .orderFooter {
+          display: flex !important;
+          justify-content: flex-end !important;
+          padding: 0 !important;
+          border: 0 !important;
+        }
+
+        .orderActions {
+          display: flex !important;
+          gap: 8px !important;
+          justify-content: flex-end !important;
+        }
+
+        @media (max-width: 1250px) {
+          .orderCard {
+            grid-template-columns: 1fr !important;
+            align-items: start !important;
+          }
+
+          .orderInfoGrid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          }
+        }
+
+        @media (max-width: 760px) {
+          .ordersStats,
+          .orderInfoGrid {
+            grid-template-columns: 1fr !important;
+          }
+
+          .ordersHero,
+          .ordersListHead {
+            grid-template-columns: 1fr !important;
+            display: grid !important;
+          }
+        }
+
 
       `}</style>
 
