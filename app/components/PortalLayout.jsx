@@ -1222,9 +1222,44 @@ export default function PortalLayout({
           margin-top: 0 !important;
         }
 
+        /* COMPACT BUSINESS SIDEBAR */
+        .portalSidebar,
+        .sidebar,
+        .portal-side,
+        aside {
+          width: 240px;
+          min-width: 240px;
+        }
 
+        .portalSidebar,
+        .sidebar,
+        .portal-side {
+          min-height: 100vh;
+          background: #ffffff;
+          border-right: 1px solid #e7eaee;
+        }
 
+        .portalNav,
+        .sidebarNav,
+        nav {
+          gap: 6px;
+        }
 
+        .portalNav a,
+        .sidebarNav a,
+        aside a {
+          min-height: 38px;
+          border-radius: 9px;
+          font-size: 13px;
+        }
+
+        .portalSidebar button,
+        .sidebar button,
+        aside button {
+          min-height: 38px;
+          border-radius: 9px;
+          font-size: 13px;
+        }
 
       `}</style>
 

@@ -329,6 +329,186 @@ export default function BestellungenPage() {
             grid-template-columns: 1fr;
           }
         }
+
+        /* COMPACT BUSINESS ORDERS VIEW */
+        .ordersPage {
+          gap: 10px;
+        }
+
+        .ordersTop {
+          padding: 16px 18px;
+          border-radius: 14px;
+          min-height: unset;
+        }
+
+        .ordersTitle {
+          font-size: 21px;
+          line-height: 1.15;
+          margin-bottom: 4px;
+        }
+
+        .ordersText {
+          font-size: 12px;
+          line-height: 1.35;
+          margin: 0;
+        }
+
+        .statsGrid {
+          gap: 10px;
+        }
+
+        .statCard {
+          padding: 12px 14px;
+          border-radius: 12px;
+          min-height: unset;
+        }
+
+        .statValue {
+          font-size: 22px;
+          line-height: 1.1;
+        }
+
+        .statText {
+          font-size: 11px;
+          margin-top: 4px;
+        }
+
+        .listHead {
+          padding: 12px 16px;
+          border-bottom: 1px solid #edf0f2;
+        }
+
+        .listTitle {
+          font-size: 18px;
+          line-height: 1.15;
+        }
+
+        .ordersList {
+          border-radius: 14px;
+          overflow: hidden;
+        }
+
+        .orderRow {
+          min-height: unset;
+          padding: 12px 16px;
+          grid-template-columns: minmax(260px, 1.5fr) 92px 104px 92px 50px 74px 126px;
+          gap: 10px;
+          align-items: center;
+          border-bottom: 1px solid #edf0f2;
+          background: #fff;
+        }
+
+        .orderRow:hover {
+          background: #fffaf1;
+        }
+
+        .orderNumber {
+          font-size: 13px;
+          line-height: 1.15;
+          letter-spacing: -0.01em;
+        }
+
+        .orderCompany {
+          font-size: 11px;
+          line-height: 1.25;
+          margin-top: 3px;
+          color: #607083;
+        }
+
+        .orderLabel {
+          font-size: 8px;
+          line-height: 1;
+          margin-bottom: 4px;
+          letter-spacing: 0.08em;
+          color: #707b88;
+        }
+
+        .orderValue {
+          font-size: 11px;
+          line-height: 1.15;
+        }
+
+        .badge {
+          min-height: 22px;
+          padding: 0 8px;
+          font-size: 10px;
+          border-radius: 999px;
+          white-space: nowrap;
+        }
+
+        .ordersButton {
+          min-height: 31px;
+          border-radius: 8px;
+          font-size: 10.5px;
+          padding: 0 10px;
+          width: 100%;
+        }
+
+        .detailBox {
+          padding: 14px 16px;
+          border: 1px solid #e5dccd;
+          border-radius: 14px;
+          background: #fffdf8;
+          box-shadow: 0 10px 28px rgba(20, 18, 15, 0.06);
+        }
+
+        .detailHead {
+          margin-bottom: 10px;
+          align-items: center;
+        }
+
+        .detailTitle {
+          font-size: 18px;
+          line-height: 1.15;
+        }
+
+        .detailGrid {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 8px;
+          margin-bottom: 8px;
+        }
+
+        .detailMini {
+          padding: 9px 10px;
+          border-radius: 10px;
+          background: #fff;
+          border: 1px solid #eee4d5;
+        }
+
+        .detailLabel {
+          font-size: 8px;
+          margin-bottom: 3px;
+        }
+
+        .detailValue {
+          font-size: 11.5px;
+        }
+
+        .itemRow {
+          padding: 7px 0;
+          grid-template-columns: minmax(0, 1fr) 55px 95px;
+          gap: 8px;
+        }
+
+        @media (max-width: 1250px) {
+          .orderRow {
+            grid-template-columns: 1fr;
+            align-items: start;
+          }
+
+          .detailGrid,
+          .statsGrid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+
+        @media (max-width: 700px) {
+          .detailGrid,
+          .statsGrid {
+            grid-template-columns: 1fr;
+          }
+        }
+
       `}</style>
 
       <div className="ordersPage">
