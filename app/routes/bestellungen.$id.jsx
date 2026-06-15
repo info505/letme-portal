@@ -1,71 +1,62 @@
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { prisma } from "../lib/prisma.server.js";
-import { getUserFromRequest } from "../lib/auth.server.js";
 import { getLocaleFromRequest, withLang } from "../lib/i18n.js";
 import PortalLayout from "../components/PortalLayout.jsx";
 
 export async function loader({ request, params }) {
   const locale = getLocaleFromRequest(request);
-  const sessionUser = await getUserFromRequest(request);
+  const orderId = String(params.id || "").trim();
 
-  if (!sessionUser) {
-    throw redirect(`/login?lang=${locale}`);
-  }
+  let order = null;
 
-  const orderId = String(params.id || "");
-
-  const order = await prisma.portalOrder.findFirst({
-    where: {
-      OR: [
-        { id: orderId },
-        { orderNumber: orderId },
-      ],
-    },
-    include: {
-      items: true,
-    },
-  });
-
-  if (!order) {
-    throw redirect(`/bestellungen?lang=${locale}`);
+  if (orderId) {
+    order = await prisma.portalOrder.findFirst({
+      where: {
+        OR: [
+          { id: orderId },
+          { orderNumber: orderId },
+        ],
+      },
+      include: {
+        items: true,
+      },
+    });
   }
 
   return {
     locale,
-    order: {
-      id: order.id,
-      orderNumber: order.orderNumber,
-      companyName: order.companyName,
-      billingCompanyName: order.billingCompanyName,
-      status: order.status,
-      currency: order.currency || "EUR",
-      subtotalAmount: order.subtotalAmount ? order.subtotalAmount.toString() : "0",
-      taxAmount: order.taxAmount ? order.taxAmount.toString() : "0",
-      totalAmount: order.totalAmount ? order.totalAmount.toString() : "0",
-      createdAt: order.createdAt ? order.createdAt.toISOString() : null,
-      deliveryDate: order.deliveryDate ? order.deliveryDate.toISOString() : null,
-      items: (order.items || []).map((item) => ({
-        id: item.id,
-        title: item.title || item.productTitle || item.name || "Position",
-        quantity: item.quantity || 1,
-        unitPrice: item.unitPrice ? item.unitPrice.toString() : "0",
-        totalPrice: item.totalPrice ? item.totalPrice.toString() : "0",
-      })),
-    },
+    orderId,
+    found: Boolean(order),
+    order: order
+      ? {
+          id: order.id,
+          orderNumber: order.orderNumber,
+          companyName: order.companyName,
+          billingCompanyName: order.billingCompanyName,
+          status: order.status,
+          currency: order.currency || "EUR",
+          totalAmount: order.totalAmount ? order.totalAmount.toString() : "0",
+          createdAt: order.createdAt ? order.createdAt.toISOString() : null,
+          deliveryDate: order.deliveryDate ? order.deliveryDate.toISOString() : null,
+          items: (order.items || []).map((item) => ({
+            id: item.id,
+            title: item.title || item.productTitle || item.name || "Position",
+            quantity: item.quantity || 1,
+            unitPrice: item.unitPrice ? item.unitPrice.toString() : "0",
+            totalPrice: item.totalPrice ? item.totalPrice.toString() : "0",
+          })),
+        }
+      : null,
   };
 }
 
 export default function BestellungDetailPage() {
-  const { locale, order } = useLoaderData();
+  const { locale, orderId, found, order } = useLoaderData();
 
   return (
     <PortalLayout
-      title={"DETAILSEITE TEST 123"}
-      subtitle={
-        locale === "en"
-          ? "Review all information for this order."
-          : "Prüfe alle Informationen zu dieser Bestellung."
-      }
+      title={found ? (locale === "en" ? "Order details" : "Bestelldetails") : "DETAIL ROUTE GELADEN"}
+      subtitle={found ? (order.orderNumber || orderId) : `Route funktioniert, aber Bestellung wurde nicht gefunden: ${orderId}`}
     >
       <style>{`
         .detailPage {
@@ -88,6 +79,7 @@ export default function BestellungDetailPage() {
           justify-content: space-between;
           gap: 18px;
           padding: 20px;
+          border-bottom: 1px solid #eaecf0;
         }
 
         .detailKicker {
@@ -108,10 +100,10 @@ export default function BestellungDetailPage() {
           letter-spacing: -0.04em;
         }
 
-        .detailSub {
+        .detailText {
           margin-top: 7px;
           color: #667085;
-          font-size: 12.5px;
+          font-size: 13px;
           line-height: 1.5;
           font-weight: 500;
         }
@@ -142,7 +134,7 @@ export default function BestellungDetailPage() {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 10px;
-          padding: 0 20px 20px;
+          padding: 20px;
         }
 
         .detailBox {
@@ -167,27 +159,18 @@ export default function BestellungDetailPage() {
           font-weight: 850;
         }
 
-        .itemsHead {
+        .itemsTitle {
           padding: 17px 20px;
           border-top: 1px solid #eaecf0;
           border-bottom: 1px solid #eaecf0;
-          background: #ffffff;
-        }
-
-        .itemsTitle {
-          margin: 0;
           color: #17191c;
           font-size: 18px;
           font-weight: 900;
         }
 
-        .itemsList {
-          display: grid;
-        }
-
         .itemRow {
           display: grid;
-          grid-template-columns: minmax(0, 1fr) 90px 120px;
+          grid-template-columns: minmax(0, 1fr) 100px 120px;
           gap: 12px;
           align-items: center;
           padding: 14px 20px;
@@ -211,16 +194,13 @@ export default function BestellungDetailPage() {
         }
 
         @media (max-width: 900px) {
-          .detailHero {
+          .detailHero,
+          .itemRow {
             display: grid;
           }
 
           .detailGrid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
-
-          .itemRow {
-            grid-template-columns: 1fr;
           }
         }
 
@@ -228,90 +208,82 @@ export default function BestellungDetailPage() {
           .detailGrid {
             grid-template-columns: 1fr;
           }
-
-          .detailButton {
-            width: 100%;
-          }
         }
       `}</style>
 
       <div className="detailPage">
-        <section className="detailCard">
-          <div className="detailHero">
-            <div>
-              <div className="detailKicker">
-                {locale === "en" ? "Order" : "Bestellung"}
+        {!found ? (
+          <section className="detailCard">
+            <div className="detailHero">
+              <div>
+                <div className="detailKicker">Debug</div>
+                <h2 className="detailTitle">DETAIL ROUTE GELADEN</h2>
+                <div className="detailText">
+                  Die Detailseite wird jetzt geladen, aber diese Bestellung wurde in der Datenbank nicht gefunden.
+                  <br />
+                  Gesuchte ID: <strong>{orderId}</strong>
+                </div>
               </div>
 
-              <h2 className="detailTitle">{order.orderNumber || "—"}</h2>
-
-              <div className="detailSub">
-                {order.billingCompanyName || order.companyName || "Let Me Bowl Firmenkonto"}
-              </div>
-            </div>
-
-            <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
               <a href={withLang("/bestellungen", locale)} className="detailButton">
-                {locale === "en" ? "Back" : "Zurück"}
-              </a>
-
-              <a
-                href="https://letmebowl-catering.de/pages/bestellen"
-                className="detailButton detailButtonPrimary"
-              >
-                {locale === "en" ? "Order again" : "Erneut bestellen"}
+                Zurück zu Bestellungen
               </a>
             </div>
-          </div>
+          </section>
+        ) : (
+          <section className="detailCard">
+            <div className="detailHero">
+              <div>
+                <div className="detailKicker">{locale === "en" ? "Order" : "Bestellung"}</div>
+                <h2 className="detailTitle">{order.orderNumber || order.id}</h2>
+                <div className="detailText">
+                  {order.billingCompanyName || order.companyName || "Let Me Bowl Firmenkonto"}
+                </div>
+              </div>
 
-          <div className="detailGrid">
-            <DetailBox label={locale === "en" ? "Status" : "Status"} value={getStatusLabel(order.status, locale)} />
-            <DetailBox label={locale === "en" ? "Created" : "Erstellt"} value={formatDate(order.createdAt, locale)} />
-            <DetailBox label={locale === "en" ? "Delivery" : "Lieferdatum"} value={formatDate(order.deliveryDate, locale)} />
-            <DetailBox label={locale === "en" ? "Total" : "Gesamt"} value={formatMoney(order.totalAmount, order.currency, locale)} />
-          </div>
+              <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
+                <a href={withLang("/bestellungen", locale)} className="detailButton">
+                  Zurück
+                </a>
+                <a href="https://letmebowl-catering.de/pages/bestellen" className="detailButton detailButtonPrimary">
+                  Erneut bestellen
+                </a>
+              </div>
+            </div>
 
-          <div className="itemsHead">
-            <h3 className="itemsTitle">
-              {locale === "en" ? "Items" : "Positionen"}
-            </h3>
-          </div>
+            <div className="detailGrid">
+              <Box label="Status" value={order.status} />
+              <Box label="Erstellt" value={formatDate(order.createdAt, locale)} />
+              <Box label="Lieferdatum" value={formatDate(order.deliveryDate, locale)} />
+              <Box label="Gesamt" value={formatMoney(order.totalAmount, order.currency, locale)} />
+            </div>
 
-          <div className="itemsList">
+            <div className="itemsTitle">Positionen</div>
+
             {order.items.length === 0 ? (
               <div className="itemRow">
-                <div className="itemMuted">
-                  {locale === "en" ? "No items saved." : "Keine Positionen gespeichert."}
-                </div>
+                <div className="itemMuted">Keine Positionen gespeichert.</div>
               </div>
             ) : (
               order.items.map((item) => (
                 <div className="itemRow" key={item.id}>
                   <div>
                     <div className="itemTitle">{item.title}</div>
-                    <div className="itemMuted">
-                      {locale === "en" ? "Quantity" : "Menge"}: {item.quantity}
-                    </div>
+                    <div className="itemMuted">Menge: {item.quantity}</div>
                   </div>
-
-                  <div className="itemMuted">
-                    {formatMoney(item.unitPrice, order.currency, locale)}
-                  </div>
-
-                  <div className="itemTitle">
-                    {formatMoney(item.totalPrice, order.currency, locale)}
-                  </div>
+                  <div className="itemMuted">{formatMoney(item.unitPrice, order.currency, locale)}</div>
+                  <div className="itemTitle">{formatMoney(item.totalPrice, order.currency, locale)}</div>
                 </div>
               ))
             )}
-          </div>
-        </section>
+          </section>
+        )}
       </div>
     </PortalLayout>
   );
 }
 
-function DetailBox({ label, value }) {
+function Box({ label, value }) {
   return (
     <div className="detailBox">
       <div className="detailLabel">{label}</div>
@@ -324,7 +296,6 @@ function formatDate(value, locale) {
   if (!value) return "—";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
-
   return new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "de-DE", {
     day: "2-digit",
     month: "2-digit",
@@ -334,21 +305,8 @@ function formatDate(value, locale) {
 
 function formatMoney(value, currency = "EUR", locale = "de") {
   const num = Number(value || 0);
-
   return new Intl.NumberFormat(locale === "en" ? "en-GB" : "de-DE", {
     style: "currency",
     currency: currency || "EUR",
   }).format(Number.isNaN(num) ? 0 : num);
-}
-
-function getStatusLabel(status, locale) {
-  const map = {
-    OPEN: locale === "en" ? "Open" : "Offen",
-    CONFIRMED: locale === "en" ? "Confirmed" : "Bestätigt",
-    IN_PREPARATION: locale === "en" ? "In preparation" : "In Vorbereitung",
-    DELIVERED: locale === "en" ? "Delivered" : "Geliefert",
-    CANCELLED: locale === "en" ? "Cancelled" : "Storniert",
-  };
-
-  return map[status] || status || "—";
 }
