@@ -67,7 +67,7 @@ export default function AdminLayout({ title, subtitle, user, children }) {
         .lmbAdminLayout {
           min-height: 100vh;
           background:
-            radial-gradient(circle at top left, rgba(200,169,106,0.10), transparent 28%),
+            radial-gradient(circle at top left, rgba(35,76,48,0.08), transparent 28%),
             linear-gradient(180deg, ${colors.bg} 0%, #e9ecdc 100%);
           display: grid;
           grid-template-columns: 292px minmax(0, 1fr);
@@ -80,7 +80,7 @@ export default function AdminLayout({ title, subtitle, user, children }) {
           top: 0;
           height: 100vh;
           background:
-            radial-gradient(circle at top left, rgba(200,169,106,0.17), transparent 34%),
+            radial-gradient(circle at top left, rgba(96,126,54,0.14), transparent 34%),
             linear-gradient(180deg, #111111 0%, #17281d 54%, #17281d 100%);
           padding: 24px 18px;
           color: #fff;
@@ -114,7 +114,7 @@ export default function AdminLayout({ title, subtitle, user, children }) {
           background: linear-gradient(135deg, ${colors.gold}, ${colors.goldDark});
           color: #111;
           font-weight: 950;
-          box-shadow: 0 14px 28px rgba(200,169,106,0.18);
+          box-shadow: 0 14px 28px rgba(35,76,48,0.12);
           flex-shrink: 0;
         }
 
@@ -212,7 +212,7 @@ export default function AdminLayout({ title, subtitle, user, children }) {
         }
 
         .lmbAdminNavButton.isActive .lmbAdminNavIcon {
-          background: rgba(200,169,106,0.20);
+          background: rgba(96,126,54,0.18);
           color: #fff;
         }
 
@@ -642,7 +642,7 @@ export default function AdminLayout({ title, subtitle, user, children }) {
         <aside className="lmbAdminSidebar">
           <div className="lmbAdminBrandCard">
             <div className="lmbAdminBrand">
-              <div className="lmbAdminBrandMark">LMB</div>
+              <img src="/brand/let-me-bowl-logo.webp" className="lmbAdminBrandMark" width="44" height="44" alt="Let Me Bowl" style={{ objectFit: "contain" }} />
               <div className="lmbAdminBrandText">
                 <div className="lmbAdminBrandTitle">LET ME BOWL</div>
                 <div className="lmbAdminBrandSub">Adminbereich</div>
@@ -678,7 +678,7 @@ export default function AdminLayout({ title, subtitle, user, children }) {
         <main className="lmbAdminMain">
           <div className="lmbAdminMobileHeader">
             <div className="lmbAdminMobileBrand">
-              <div className="lmbAdminMobileMark">LMB</div>
+              <img src="/brand/let-me-bowl-logo.webp" className="lmbAdminMobileMark" width="40" height="40" alt="Let Me Bowl" style={{ objectFit: "contain" }} />
               <div>
                 <div className="lmbAdminMobileBrandTitle">LET ME BOWL</div>
                 <div className="lmbAdminMobileBrandSub">Adminbereich</div>
