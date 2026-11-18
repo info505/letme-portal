@@ -13,8 +13,8 @@ import {
   invalidateAllUserResetTokens,
 } from "../lib/password-reset.server.js";
 import { prisma } from "../lib/prisma.server.js";
-import { card, button, input, colors, layout } from "../lib/ui.js";
-import LanguageSwitch from "../components/LanguageSwitch.jsx";
+
+import AuthFrame from "../components/AuthFrame.jsx";
 
 export async function loader({ request }) {
   const locale = getLocaleFromRequest(request);
@@ -113,190 +113,27 @@ export async function action({ request }) {
 export default function ResetPasswordPage() {
   const { locale, token, valid } = useLoaderData();
   const actionData = useActionData();
-  const navigation = useNavigation();
-
-  const isSubmitting = navigation.state === "submitting";
-  const tokenStillValid =
-    actionData?.tokenValid !== undefined ? actionData.tokenValid : valid;
-
+  const busy = useNavigation().state === "submitting";
+  const en = locale === "en";
+  const stillValid = actionData?.tokenValid !== undefined ? actionData.tokenValid : valid;
   return (
-    <div style={layout.page}>
-      <style>{`
-        .auth-wrap {
-          min-height: 100vh;
-          display: grid;
-          place-items: center;
-          padding: 24px;
-          background:
-            radial-gradient(circle at top right, rgba(200,169,106,0.08), transparent 28%),
-            ${colors.bg};
-        }
-      `}</style>
-
-      <div className="auth-wrap">
-        <div
-          style={{
-            ...card.base,
-            width: "100%",
-            maxWidth: "520px",
-            padding: "34px",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: "16px",
-              alignItems: "center",
-              marginBottom: "24px",
-              flexWrap: "wrap",
-            }}
-          >
-            <a
-              href="https://letmebowl-catering.de"
-              style={{
-                textDecoration: "none",
-                color: colors.text,
-                fontWeight: 800,
-                letterSpacing: "0.08em",
-                fontSize: "15px",
-              }}
-            >
-              LET ME BOWL
-            </a>
-
-            <LanguageSwitch />
+    <AuthFrame locale={locale} title={en ? "Set a new password." : "Neues Passwort setzen."}
+      description={stillValid ? (en ? "Choose a strong new password to sign in securely." : "Vergeben Sie ein neues Passwort für Ihr Firmenkonto.") : (en ? "This reset link is invalid or expired." : "Dieser Reset-Link ist ungültig oder abgelaufen.")}>
+      {actionData?.message && <p className="lmb-auth-notice" role="alert">{actionData.message}</p>}
+      {stillValid ? (
+        <Form method="post" className="lmb-auth-form">
+          <input type="hidden" name="token" value={token} />
+          <div className="lmb-auth-field">
+            <label htmlFor="reset-new-password">{en ? "New password" : "Neues Passwort"}</label>
+            <input className="lmb-auth-input" id="reset-new-password" type="password" name="password" autoComplete="new-password" minLength={8} required />
           </div>
-
-          <h1 style={{ margin: "0 0 10px", fontSize: "30px", color: colors.text }}>
-            {locale === "en" ? "Set new password" : "Neues Passwort setzen"}
-          </h1>
-
-          <p
-            style={{
-              margin: "0 0 20px",
-              color: colors.muted,
-              lineHeight: 1.7,
-              fontSize: "15px",
-            }}
-          >
-            {tokenStillValid
-              ? locale === "en"
-                ? "Please enter your new password."
-                : "Bitte gib dein neues Passwort ein."
-              : locale === "en"
-                ? "The reset link is invalid or expired."
-                : "Der Reset-Link ist ungültig oder abgelaufen."}
-          </p>
-
-          {actionData?.message ? (
-            <div
-              style={{
-                marginBottom: "18px",
-                padding: "14px 16px",
-                borderRadius: "14px",
-                background: "#fff4f4",
-                color: "#8b2222",
-                border: "1px solid #efcaca",
-                fontWeight: 700,
-              }}
-            >
-              {actionData.message}
-            </div>
-          ) : null}
-
-          {tokenStillValid ? (
-            <Form method="post">
-              <input type="hidden" name="token" value={token} />
-
-              <label style={{ display: "block", marginBottom: "16px" }}>
-                <span
-                  style={{
-                    display: "block",
-                    marginBottom: "8px",
-                    fontWeight: 700,
-                    color: colors.text,
-                    fontSize: "14px",
-                  }}
-                >
-                  {locale === "en" ? "New password" : "Neues Passwort"}
-                </span>
-
-                <input
-                  name="password"
-                  type="password"
-                  placeholder={
-                    locale === "en"
-                      ? "At least 8 characters"
-                      : "Mindestens 8 Zeichen"
-                  }
-                  style={input.base}
-                />
-              </label>
-
-              <label style={{ display: "block", marginBottom: "16px" }}>
-                <span
-                  style={{
-                    display: "block",
-                    marginBottom: "8px",
-                    fontWeight: 700,
-                    color: colors.text,
-                    fontSize: "14px",
-                  }}
-                >
-                  {locale === "en" ? "Confirm password" : "Passwort bestätigen"}
-                </span>
-
-                <input
-                  name="confirmPassword"
-                  type="password"
-                  placeholder={
-                    locale === "en"
-                      ? "Repeat new password"
-                      : "Neues Passwort wiederholen"
-                  }
-                  style={input.base}
-                />
-              </label>
-
-              <button
-                type="submit"
-                style={{
-                  ...button.primary,
-                  width: "100%",
-                  background: "linear-gradient(135deg, #234c30, #193c26)",
-                  color: "#111",
-                  cursor: isSubmitting ? "not-allowed" : "pointer",
-                  opacity: isSubmitting ? 0.7 : 1,
-                }}
-                disabled={isSubmitting}
-              >
-                {isSubmitting
-                  ? locale === "en"
-                    ? "Saving..."
-                    : "Wird gespeichert..."
-                  : locale === "en"
-                    ? "Save new password"
-                    : "Neues Passwort speichern"}
-              </button>
-            </Form>
-          ) : (
-            <a
-              href={withLang("/passwort-vergessen", locale)}
-              style={{
-                ...button.secondary,
-                textDecoration: "none",
-                color: colors.text,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              {locale === "en" ? "Request new reset link" : "Neuen Reset-Link anfordern"}
-            </a>
-          )}
-        </div>
-      </div>
-    </div>
+          <div className="lmb-auth-field">
+            <label htmlFor="reset-confirm">{en ? "Confirm password" : "Passwort bestätigen"}</label>
+            <input className="lmb-auth-input" id="reset-confirm" type="password" name="confirmPassword" autoComplete="new-password" minLength={8} required />
+          </div>
+          <button className="lmb-auth-submit" type="submit" disabled={busy}>{busy ? (en ? "Saving …" : "Wird gespeichert …") : (en ? "Save new password" : "Neues Passwort speichern")}</button>
+        </Form>
+      ) : <div className="lmb-auth-links"><a href={withLang("/passwort-vergessen",locale)}>{en ? "Request a new reset link" : "Neuen Reset-Link anfordern"}</a></div>}
+    </AuthFrame>
   );
 }
