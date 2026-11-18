@@ -243,3 +243,33 @@ a {color:inherit}
   .lmb-unified-page-content .deliveryNoteTable td {overflow-wrap:anywhere}
   .lmb-unified-page-content .deliveryNotePrintButton {background:var(--lmb-forest)!important;border-color:var(--lmb-forest)!important;box-shadow:none!important;border-radius:11px!important}
 }
+
+/* Consistent controls on the customer detail, accounting and order screens. */
+.lmb-unified-shell :is(.lmbBtnGold,.lmbBtnApprove,.lmbPdf,.lmbPdfBtn) {
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  background:var(--lmb-forest)!important;border:1px solid var(--lmb-forest)!important;
+  border-radius:11px!important;color:#fff!important;text-decoration:none!important;
+  box-shadow:none!important;font-weight:740!important;
+}
+.lmb-unified-shell :is(.lmbBtnGold,.lmbBtnApprove,.lmbPdf,.lmbPdfBtn):hover {
+  background:var(--lmb-forest-hover)!important;
+}
+.lmb-unified-shell :is(.lmbCardGold,.lmbStatGold,.lmbStatBox.isImportant) {
+  background:var(--lmb-sage)!important;border-color:#d7dfc9!important;
+  box-shadow:none!important;
+}
+.lmb-unified-shell :is(.lmbBadge,.lmbRolePill,.lmbStatusPill,.lmbProductBadge,.default-badge,.cost-badge) {
+  border-radius:999px!important;
+}
+.lmb-unified-shell :is(.lmbCustomerDetail,.lmbOrdersPage,.lmbAdminCustomers,.lmbInvoicesPage,.lmbAdminDashboard) {
+  color:var(--lmb-ink);min-width:0;
+}
+.lmb-unified-shell :is(.lmbAlert,.lmbNotice,.lmbInfoBox) {border-radius:12px!important}
+.lmb-unified-shell .lmbCard h2,.lmb-unified-shell .lmbCard h3 {color:var(--lmb-ink)}
+.lmb-unified-shell :is(.lmbGrid,.lmbFormGrid,.lmbMetaGrid,.lmbOrderGrid) {min-width:0}
+.lmb-unified-shell :is(.lmbBtn,.lmbInput,.lmbPrimaryButton) {transition:background .17s,border-color .17s}
+.lmb-unified-shell :is(.lmbOrderNumber,.lmbInvoiceNumber,.lmbCustomerCompany) {color:var(--lmb-forest)!important}
+.lmb-unified-shell .lmbItemOrder {background:var(--lmb-ivory)!important}
+.lmb-unified-shell .lmbSmallLink {color:var(--lmb-forest)!important}
+.lmb-unified-shell :is(.lmbOrderTotalFinal,.lmbInvoiceAmount,.lmbAmount) {font-variant-numeric:tabular-nums}
+.lmb-unified-shell .lmbEmptyState,.lmb-unified-shell .lmbEmpty {border-radius:14px!important}
