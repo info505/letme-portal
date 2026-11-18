@@ -584,7 +584,7 @@ export default function AdminInvoicesPage() {
 
         .lmbCard {
           background: #fff;
-          border: 1px solid #e8decd;
+          border: 1px solid #e7e5df;
           border-radius: 26px;
           padding: 28px;
           box-shadow: 0 18px 45px rgba(30,20,10,0.05);
@@ -606,14 +606,14 @@ export default function AdminInvoicesPage() {
           font-size: 28px;
           line-height: 1.08;
           letter-spacing: -0.035em;
-          color: #171717;
+          color: #17281d;
         }
 
         .lmbText {
           margin: 0 0 22px;
           font-size: 15px;
           line-height: 1.7;
-          color: #756b5f;
+          color: #727a73;
           font-weight: 600;
         }
 
@@ -625,7 +625,7 @@ export default function AdminInvoicesPage() {
 
         .lmbStat {
           background: #fff;
-          border: 1px solid #e8decd;
+          border: 1px solid #e7e5df;
           border-radius: 22px;
           padding: 22px;
           box-shadow: 0 12px 30px rgba(30,20,10,0.035);
@@ -636,7 +636,7 @@ export default function AdminInvoicesPage() {
           font-size: 11px;
           letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: #756b5f;
+          color: #727a73;
           font-weight: 950;
           margin-bottom: 10px;
         }
@@ -646,7 +646,7 @@ export default function AdminInvoicesPage() {
           line-height: 1.05;
           font-weight: 950;
           letter-spacing: -0.04em;
-          color: #171717;
+          color: #17281d;
           overflow-wrap: anywhere;
         }
 
@@ -654,7 +654,7 @@ export default function AdminInvoicesPage() {
           margin-top: 7px;
           font-size: 13px;
           line-height: 1.5;
-          color: #756b5f;
+          color: #727a73;
           font-weight: 700;
         }
 
@@ -664,7 +664,7 @@ export default function AdminInvoicesPage() {
           border: 1px solid #eadfcd;
           border-radius: 24px;
           padding: 22px;
-          background: #fbf8f2;
+          background: #fdfcf9;
         }
 
         .lmbFormGrid {
@@ -696,22 +696,22 @@ export default function AdminInvoicesPage() {
           width: 100%;
           padding: 14px 15px;
           border-radius: 15px;
-          border: 1px solid #dfd3bf;
+          border: 1px solid #cfd5c9;
           background: #fff;
-          color: #171717;
+          color: #17281d;
           font-size: 15px;
           box-sizing: border-box;
           outline: none;
         }
 
         .lmbInput:focus {
-          border-color: #c8a96a;
+          border-color: #234c30;
           box-shadow: 0 0 0 4px rgba(200,169,106,0.12);
         }
 
         .lmbSmallText {
           font-size: 13px;
-          color: #756b5f;
+          color: #727a73;
           line-height: 1.5;
           font-weight: 650;
           overflow-wrap: anywhere;
@@ -746,9 +746,9 @@ export default function AdminInvoicesPage() {
         }
 
         .lmbBtnLight {
-          border: 1px solid #dfd3bf;
+          border: 1px solid #cfd5c9;
           background: #fff;
-          color: #171717;
+          color: #17281d;
         }
 
         .lmbBtnDanger {
@@ -779,7 +779,7 @@ export default function AdminInvoicesPage() {
           border: 1px solid #ece5d8;
           border-radius: 22px;
           padding: 20px;
-          background: #fbf8f2;
+          background: #fdfcf9;
           display: grid;
           gap: 16px;
           min-width: 0;
@@ -801,7 +801,7 @@ export default function AdminInvoicesPage() {
           line-height: 1.15;
           font-weight: 950;
           letter-spacing: -0.025em;
-          color: #171717;
+          color: #17281d;
           margin-bottom: 12px;
           overflow-wrap: anywhere;
         }
@@ -843,7 +843,7 @@ export default function AdminInvoicesPage() {
           line-height: 1.1;
           font-weight: 950;
           letter-spacing: -0.035em;
-          color: #171717;
+          color: #17281d;
           text-align: right;
           overflow-wrap: anywhere;
         }
@@ -895,10 +895,10 @@ export default function AdminInvoicesPage() {
         }
 
         .lmbEmpty {
-          border: 1px dashed #dfd3bf;
+          border: 1px dashed #cfd5c9;
           border-radius: 20px;
           padding: 24px;
-          color: #756b5f;
+          color: #727a73;
           background: #fffdfa;
           font-weight: 800;
           text-align: center;
