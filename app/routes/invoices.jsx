@@ -100,24 +100,24 @@ export default function InvoicesPage() {
 
   return (
     <PortalLayout user={user}>
-      <div style={styles.card}>
-        <h1 style={styles.title}>Rechnungen</h1>
-        <p style={styles.text}>
+      <div className="lmb-ui-invoices-1">
+        <h1 className="lmb-ui-invoices-2">Rechnungen</h1>
+        <p className="lmb-ui-invoices-3">
           Hier findest du alle Rechnungen, die deinem Kundenkonto zugeordnet sind.
         </p>
 
         {invoices.length === 0 ? (
-          <div style={styles.text}>Aktuell sind keine Rechnungen vorhanden.</div>
+          <div className="lmb-ui-invoices-4">Aktuell sind keine Rechnungen vorhanden.</div>
         ) : (
-          <div style={styles.list}>
+          <div className="lmb-ui-invoices-5">
             {invoices.map((invoice) => (
-              <div key={invoice.id} style={styles.item}>
-                <div style={styles.row}>
+              <div key={invoice.id} className="lmb-ui-invoices-6">
+                <div className="lmb-ui-invoices-7">
                   <div>
-                    <div style={styles.strong}>
+                    <div className="lmb-ui-invoices-8">
                       {invoice.title || invoice.invoiceNumber}
                     </div>
-                    <div style={styles.meta}>
+                    <div className="lmb-ui-invoices-9">
                       Rechnungsnummer: {invoice.invoiceNumber}
                       <br />
                       Status: {prettyStatus(invoice.status)}
@@ -135,7 +135,7 @@ export default function InvoicesPage() {
                   href={invoice.pdfUrl}
                   target="_blank"
                   rel="noreferrer"
-                  style={styles.link}
+                  className="lmb-ui-invoices-10"
                 >
                   PDF öffnen
                 </a>

@@ -1,3 +1,4 @@
+import AuthLayout from "../components/AuthLayout.jsx";
 import {
   Form,
   redirect,
@@ -5,16 +6,9 @@ import {
   useLoaderData,
   useNavigation,
 } from "react-router";
-import { prisma } from "../lib/prisma.server.js";
 import { getUserFromRequest } from "../lib/auth.server.js";
-import { getLocaleFromRequest, dict, withLang } from "../lib/i18n.js";
-import {
-  createPasswordResetToken,
-  sendPasswordResetEmail,
-  invalidateAllUserResetTokens,
-} from "../lib/password-reset.server.js";
-import { card, button, input, colors, layout } from "../lib/ui.js";
-import LanguageSwitch from "../components/LanguageSwitch.jsx";
+import { getLocaleFromRequest, withLang } from "../lib/i18n.js";
+import { requestPortalPasswordReset } from "../lib/password-reset-request.server.js";
 
 export async function loader({ request }) {
   const locale = getLocaleFromRequest(request);
@@ -28,207 +22,17 @@ export async function loader({ request }) {
 }
 
 export async function action({ request }) {
-  const locale = getLocaleFromRequest(request);
-  const t = dict[locale] || dict.de;
-
   const formData = await request.formData();
-  const email = String(formData.get("email") || "").trim().toLowerCase();
-
-  if (!email || !email.includes("@")) {
-    return {
-      ok: false,
-      message: t.forgotPasswordInvalidEmail || "Bitte gib eine gültige E-Mail ein.",
-    };
-  }
-
-  const user = await prisma.portalUser.findUnique({
-    where: { email },
-  });
-
-  if (user) {
-    try {
-      await invalidateAllUserResetTokens(user.id);
-
-      const { rawToken } = await createPasswordResetToken(user.id);
-
-      await sendPasswordResetEmail({
-        user,
-        locale,
-        rawToken,
-        request,
-      });
-    } catch (error) {
-      console.error("PASSWORD_RESET_MAIL_ERROR:", error);
-
-      return {
-        ok: false,
-        message: String(error.message || error),
-      };
-    }
-  }
-
-  return {
-    ok: true,
-    message:
-      locale === "en"
-        ? "If the email exists, you will receive a reset link."
-        : "Wenn die E-Mail existiert, erhältst du einen Reset-Link.",
-  };
+  return requestPortalPasswordReset({ email: formData.get("email"), locale: getLocaleFromRequest(request) });
 }
 
 export default function ForgotPasswordPage() {
   const { locale } = useLoaderData();
-  const actionData = useActionData();
-  const navigation = useNavigation();
-
-  const isSubmitting = navigation.state === "submitting";
-
-  return (
-    <div style={layout.page}>
-      <style>{`
-        .auth-wrap {
-          min-height: 100vh;
-          display: grid;
-          place-items: center;
-          padding: 24px;
-          background:
-            radial-gradient(circle at top right, rgba(200,169,106,0.08), transparent 28%),
-            ${colors.bg};
-        }
-      `}</style>
-
-      <div className="auth-wrap">
-        <div
-          style={{
-            ...card.base,
-            width: "100%",
-            maxWidth: "520px",
-            padding: "34px",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: "16px",
-              alignItems: "center",
-              marginBottom: "24px",
-              flexWrap: "wrap",
-            }}
-          >
-            <a
-              href="https://letmebowl-catering.de"
-              style={{
-                textDecoration: "none",
-                color: colors.text,
-                fontWeight: 800,
-                letterSpacing: "0.08em",
-                fontSize: "15px",
-              }}
-            >
-              LET ME BOWL
-            </a>
-
-            <LanguageSwitch />
-          </div>
-
-          <h1
-            style={{
-              margin: "0 0 10px",
-              fontSize: "30px",
-              color: colors.text,
-            }}
-          >
-            {locale === "en" ? "Forgot password" : "Passwort vergessen"}
-          </h1>
-
-          <p
-            style={{
-              margin: "0 0 20px",
-              color: colors.muted,
-              lineHeight: 1.7,
-              fontSize: "15px",
-            }}
-          >
-            {locale === "en"
-              ? "Enter your email and we will send you a reset link."
-              : "Gib deine E-Mail ein und wir senden dir einen Reset-Link."}
-          </p>
-
-          {actionData?.message ? (
-            <div
-              style={{
-                marginBottom: "18px",
-                padding: "14px 16px",
-                borderRadius: "14px",
-                background: actionData.ok ? "#edf7ee" : "#fff4f4",
-                color: actionData.ok ? "#1f6b36" : "#8b2222",
-                border: actionData.ok ? "1px solid #cfe8d4" : "1px solid #efcaca",
-                fontWeight: 700,
-              }}
-            >
-              {actionData.message}
-            </div>
-          ) : null}
-
-          <Form method="post">
-            <label style={{ display: "block", marginBottom: "16px" }}>
-              <span
-                style={{
-                  display: "block",
-                  marginBottom: "8px",
-                  fontWeight: 700,
-                  color: colors.text,
-                  fontSize: "14px",
-                }}
-              >
-                {locale === "en" ? "Email" : "E-Mail"}
-              </span>
-
-              <input
-                name="email"
-                type="email"
-                placeholder="name@firma.de"
-                style={input.base}
-              />
-            </label>
-
-            <button
-              type="submit"
-              style={{
-                ...button.primary,
-                width: "100%",
-                background: "linear-gradient(135deg, #c8a96a, #b8934f)",
-                color: "#111",
-                cursor: isSubmitting ? "not-allowed" : "pointer",
-                opacity: isSubmitting ? 0.7 : 1,
-              }}
-              disabled={isSubmitting}
-            >
-              {isSubmitting
-                ? locale === "en"
-                  ? "Sending..."
-                  : "Wird gesendet..."
-                : locale === "en"
-                  ? "Send reset link"
-                  : "Reset-Link senden"}
-            </button>
-          </Form>
-
-          <div style={{ marginTop: "16px", fontSize: "14px" }}>
-            <a
-              href={withLang("/login", locale)}
-              style={{
-                color: colors.text,
-                textDecoration: "none",
-                fontWeight: 700,
-              }}
-            >
-              {locale === "en" ? "Back to login" : "Zurück zum Login"}
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  const actionData = useActionData(), navigation = useNavigation();
+  const isSubmitting = navigation.state === "submitting", en = locale === "en";
+  return <AuthLayout locale={locale} title={en ? "Forgot your password?" : "Passwort vergessen?"} intro={en ? "Enter your email address. We will send you a link to set a new password." : "Gib deine E-Mail-Adresse ein. Wir senden dir einen Link, mit dem du ein neues Passwort festlegen kannst."}>
+    {actionData?.message && <p className={`lmb-portal-alert ${actionData.ok ? "is-success" : "is-error"}`} role={actionData.ok ? "status" : "alert"}>{actionData.message}</p>}
+    <Form method="post" className="lmb-auth-form"><label className="lmb-portal-field"><span>{en ? "Email address" : "E-Mail-Adresse"}</span><input name="email" type="email" autoComplete="email" placeholder="name@firma.de" required /></label><button type="submit" className="lmb-portal-button" disabled={isSubmitting}>{isSubmitting ? en ? "Sending…" : "Wird gesendet…" : en ? "Send reset link" : "Reset-Link senden"}</button></Form>
+    <p className="lmb-auth-back"><a href={withLang("/login", locale)}>{en ? "Back to sign in" : "Zurück zur Anmeldung"}</a></p>
+  </AuthLayout>;
 }

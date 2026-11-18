@@ -98,7 +98,9 @@ export async function getUserFromRequest(request) {
 
   if (!session.user.isActive) return null;
 
-  return session.user;
+  // Routes may serialize this object. Authentication hashes stay server-side.
+  const { passwordHash, ...publicUser } = session.user;
+  return publicUser;
 }
 
 export async function destroySessionFromRequest(request) {

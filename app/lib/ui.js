@@ -1,17 +1,17 @@
 export const colors = {
-  bg: "#f8f6f2",
-  card: "#ffffff",
-  text: "#1a1a1a",
-  muted: "#6b6b6b",
-  border: "#e5e5e5",
-  gold: "#c8a96a",
+  bg: "var(--lmb-ivory)",
+  card: "var(--lmb-white)",
+  text: "var(--lmb-ink)",
+  muted: "var(--lmb-muted)",
+  border: "var(--lmb-stroke)",
+  gold: "var(--lmb-forest)",
 };
 
 export const layout = {
   page: {
     background: colors.bg,
     minHeight: "100vh",
-    fontFamily: "Inter, sans-serif",
+    fontFamily: "var(--lmb-font-body)",
   },
   container: {
     maxWidth: "1100px",
