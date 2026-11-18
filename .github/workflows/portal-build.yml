@@ -18,5 +18,6 @@ jobs:
       - run: npm run build
       - name: Inspect generated React Router types
         run: |
-          test ! -f .react-router/types/+routes.ts || sed -n "195,218p" .react-router/types/+routes.ts
+          npx react-router typegen
+          if test -f .react-router/types/+routes.ts; then nl -ba .react-router/types/+routes.ts | sed -n "192,220p"; fi
       - run: npm run typecheck
