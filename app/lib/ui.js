@@ -1,10 +1,10 @@
 export const colors = {
-  bg: "#f8f6f2",
+  bg: "#f9f7f3",
   card: "#ffffff",
-  text: "#1a1a1a",
-  muted: "#6b6b6b",
+  text: "#17281d",
+  muted: "#727a73",
   border: "#e5e5e5",
-  gold: "#c8a96a",
+  gold: "#234c30",
 };
 
 export const layout = {

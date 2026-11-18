@@ -370,7 +370,7 @@ const styles = {
   },
 
   eyebrow: {
-    color: "#c8a96a",
+    color: "#234c30",
     fontWeight: 800,
     letterSpacing: "0.14em",
     textTransform: "uppercase",
@@ -454,7 +454,7 @@ const styles = {
     marginTop: "8px",
     border: "none",
     borderRadius: "14px",
-    background: "linear-gradient(135deg, #c8a96a, #b8934f)",
+    background: "linear-gradient(135deg, #234c30, #193c26)",
     color: "#fff",
     fontSize: "16px",
     fontWeight: 800,

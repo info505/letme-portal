@@ -398,7 +398,7 @@ export default function CustomerDetailPage() {
 
         .lmbStat {
           background: #fff;
-          border: 1px solid #e8decd;
+          border: 1px solid #e7e5df;
           border-radius: 22px;
           padding: 20px;
           box-shadow: 0 14px 35px rgba(30,20,10,0.04);
@@ -416,7 +416,7 @@ export default function CustomerDetailPage() {
           font-size: 11.5px;
           letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: #756b5f;
+          color: #727a73;
           font-weight: 950;
           margin-bottom: 8px;
         }
@@ -426,7 +426,7 @@ export default function CustomerDetailPage() {
           line-height: 1.08;
           font-weight: 950;
           letter-spacing: -0.035em;
-          color: #171717;
+          color: #17281d;
           overflow-wrap: anywhere;
         }
 
@@ -439,7 +439,7 @@ export default function CustomerDetailPage() {
 
         .lmbCard {
           background: #fff;
-          border: 1px solid #e8decd;
+          border: 1px solid #e7e5df;
           border-radius: 26px;
           padding: 28px;
           box-shadow: 0 18px 45px rgba(30,20,10,0.05);
@@ -477,7 +477,7 @@ export default function CustomerDetailPage() {
           font-size: 26px;
           line-height: 1.08;
           letter-spacing: -0.03em;
-          color: #171717;
+          color: #17281d;
         }
 
         .lmbMeta {
@@ -489,7 +489,7 @@ export default function CustomerDetailPage() {
         }
 
         .lmbMeta strong {
-          color: #171717;
+          color: #17281d;
           font-weight: 900;
         }
 
@@ -520,7 +520,7 @@ export default function CustomerDetailPage() {
           border: 1px solid #ece5d8;
           border-radius: 20px;
           padding: 18px;
-          background: #fbf8f2;
+          background: #fdfcf9;
           line-height: 1.6;
           color: #6b6258;
           font-size: 14px;
@@ -532,11 +532,11 @@ export default function CustomerDetailPage() {
         .lmbItemOrder {
           background:
             radial-gradient(circle at top right, rgba(200,169,106,0.10), transparent 34%),
-            #fffdf8;
+            #fdfcf9;
         }
 
         .lmbItem strong {
-          color: #171717;
+          color: #17281d;
           font-weight: 950;
         }
 
@@ -574,14 +574,14 @@ export default function CustomerDetailPage() {
           font-size: 10px;
           letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: #756b5f;
+          color: #727a73;
           font-weight: 950;
           margin-bottom: 6px;
         }
 
         .lmbOrderInfoValue {
           font-size: 13px;
-          color: #171717;
+          color: #17281d;
           font-weight: 850;
           line-height: 1.4;
           overflow-wrap: anywhere;
@@ -658,16 +658,16 @@ export default function CustomerDetailPage() {
           width: 100%;
           padding: 13px 14px;
           border-radius: 14px;
-          border: 1px solid #dfd3bf;
+          border: 1px solid #cfd5c9;
           background: #fff;
-          color: #171717;
+          color: #17281d;
           font-size: 15px;
           box-sizing: border-box;
           outline: none;
         }
 
         .lmbInput:focus {
-          border-color: #c8a96a;
+          border-color: #234c30;
           box-shadow: 0 0 0 4px rgba(200,169,106,0.12);
         }
 
@@ -694,7 +694,7 @@ export default function CustomerDetailPage() {
         }
 
         .lmbBtnGold {
-          background: linear-gradient(135deg, #c8a96a, #b8934f);
+          background: linear-gradient(135deg, #234c30, #193c26);
           color: #fff;
           box-shadow: 0 12px 24px rgba(200,169,106,0.18);
         }
@@ -705,8 +705,8 @@ export default function CustomerDetailPage() {
           padding: 0 13px;
           border-radius: 999px;
           background: #fff;
-          border: 1px solid #e8decd;
-          color: #171717;
+          border: 1px solid #e7e5df;
+          color: #17281d;
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -740,9 +740,9 @@ export default function CustomerDetailPage() {
           margin: 0;
           padding: 18px;
           border-radius: 18px;
-          background: #fbf8f2;
+          background: #fdfcf9;
           border: 1px dashed #dccfba;
-          color: #756b5f;
+          color: #727a73;
           font-weight: 800;
           text-align: center;
         }

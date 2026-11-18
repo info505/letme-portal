@@ -115,7 +115,7 @@ export default function RechnungenPage() {
           border-radius: 28px;
           background:
             radial-gradient(circle at top left, rgba(200,169,106,0.13), transparent 32%),
-            linear-gradient(180deg, #fcfaf6 0%, #f7f2e8 100%);
+            linear-gradient(180deg, #fdfcf9 0%, #e9ecdc 100%);
           border: 1px solid rgba(226,218,203,0.95);
           box-shadow: 0 18px 50px rgba(24,24,24,0.05);
         }
@@ -141,7 +141,7 @@ export default function RechnungenPage() {
           border-radius: 999px;
           border: 1px solid rgba(200,169,106,0.28);
           background: rgba(255,255,255,0.72);
-          color: #b8934f;
+          color: #193c26;
           font-size: 12px;
           font-weight: 900;
           letter-spacing: 0.14em;
@@ -243,7 +243,7 @@ export default function RechnungenPage() {
           border: 1px solid #ece3d6;
           border-radius: 22px;
           padding: 20px;
-          background: #fcfaf6;
+          background: #fdfcf9;
           display: grid;
           grid-template-columns: minmax(0, 1fr) auto;
           gap: 18px;
@@ -311,7 +311,7 @@ export default function RechnungenPage() {
         }
 
         .lmbInvoiceBadge.open {
-          background: #fbf3e3;
+          background: #f9f7f3;
           color: #7a5a18;
           border: 1px solid #efdcae;
         }

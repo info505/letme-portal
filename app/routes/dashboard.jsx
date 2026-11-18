@@ -187,7 +187,7 @@ export default function DashboardPage() {
         .quickCard,
         .ordersPanel {
           background: #ffffff;
-          border: 1px solid #e5e7eb;
+          border: 1px solid #e7e5df;
           border-radius: 14px;
           box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04);
         }
@@ -200,7 +200,7 @@ export default function DashboardPage() {
 
         .dashboardKicker {
           margin-bottom: 9px;
-          color: #a97d2f;
+          color: #607e36;
           font-size: 10px;
           line-height: 1.2;
           font-weight: 850;
@@ -209,9 +209,10 @@ export default function DashboardPage() {
         }
 
         .dashboardIntroTitle {
+          font-family: Georgia, Cambria, "Times New Roman", serif;
           margin: 0;
           max-width: 720px;
-          color: #17191c;
+          color: #17281d;
           font-size: clamp(28px, 3vw, 38px);
           line-height: 1.08;
           font-weight: 900;
@@ -221,7 +222,7 @@ export default function DashboardPage() {
         .dashboardIntroText {
           margin: 10px 0 0;
           max-width: 690px;
-          color: #667085;
+          color: #727a73;
           font-size: 13.5px;
           line-height: 1.6;
           font-weight: 500;
@@ -256,25 +257,25 @@ export default function DashboardPage() {
         }
 
         .dashboardPrimaryBtn {
-          border: 1px solid #a97d2f;
-          background: #a97d2f;
+          border: 1px solid #607e36;
+          background: #607e36;
           color: #ffffff;
         }
 
         .dashboardPrimaryBtn:hover {
-          border-color: #8c6422;
-          background: #8c6422;
+          border-color: #234c30;
+          background: #234c30;
           transform: translateY(-1px);
         }
 
         .dashboardSecondaryBtn {
-          border: 1px solid #d0d5dd;
+          border: 1px solid #cfd5c9;
           background: #ffffff;
-          color: #17191c;
+          color: #17281d;
         }
 
         .dashboardSecondaryBtn:hover {
-          background: #f8fafc;
+          background: #fdfcf9;
           border-color: #bfc5ce;
           transform: translateY(-1px);
         }
@@ -292,7 +293,7 @@ export default function DashboardPage() {
         }
 
         .accountLabel {
-          color: #667085;
+          color: #727a73;
           font-size: 10px;
           line-height: 1.2;
           font-weight: 850;
@@ -301,7 +302,7 @@ export default function DashboardPage() {
         }
 
         .accountCompany {
-          color: #17191c;
+          color: #17281d;
           font-size: 16px;
           line-height: 1.35;
           font-weight: 850;
@@ -309,7 +310,7 @@ export default function DashboardPage() {
         }
 
         .accountText {
-          color: #667085;
+          color: #727a73;
           font-size: 12.5px;
           line-height: 1.55;
           font-weight: 500;
@@ -332,9 +333,9 @@ export default function DashboardPage() {
         }
 
         .accountStatus.isMuted {
-          border-color: #e5e7eb;
-          background: #f8fafc;
-          color: #667085;
+          border-color: #e7e5df;
+          background: #fdfcf9;
+          color: #727a73;
         }
 
         .dashboardStats {
@@ -350,7 +351,7 @@ export default function DashboardPage() {
 
         .dashboardStatLabel {
           margin-bottom: 7px;
-          color: #667085;
+          color: #727a73;
           font-size: 9.5px;
           line-height: 1.2;
           font-weight: 850;
@@ -359,7 +360,7 @@ export default function DashboardPage() {
         }
 
         .dashboardStatValue {
-          color: #17191c;
+          color: #17281d;
           font-size: 28px;
           line-height: 1.05;
           font-weight: 900;
@@ -369,7 +370,7 @@ export default function DashboardPage() {
 
         .dashboardStatText {
           margin-top: 7px;
-          color: #667085;
+          color: #727a73;
           font-size: 11.5px;
           line-height: 1.45;
           font-weight: 500;
@@ -392,12 +393,12 @@ export default function DashboardPage() {
           justify-content: space-between;
           gap: 16px;
           padding: 18px;
-          border-bottom: 1px solid #eaecf0;
+          border-bottom: 1px solid #e7e5df;
         }
 
         .ordersTitle {
           margin: 0;
-          color: #17191c;
+          color: #17281d;
           font-size: 21px;
           line-height: 1.2;
           font-weight: 900;
@@ -406,7 +407,7 @@ export default function DashboardPage() {
 
         .ordersText {
           margin: 5px 0 0;
-          color: #667085;
+          color: #727a73;
           font-size: 12.5px;
           line-height: 1.5;
           font-weight: 500;
@@ -431,7 +432,7 @@ export default function DashboardPage() {
         }
 
         .orderNumber {
-          color: #17191c;
+          color: #17281d;
           font-size: 14px;
           line-height: 1.25;
           font-weight: 900;
@@ -441,7 +442,7 @@ export default function DashboardPage() {
 
         .orderSub {
           margin-top: 3px;
-          color: #667085;
+          color: #727a73;
           font-size: 12px;
           line-height: 1.35;
           font-weight: 500;
@@ -449,7 +450,7 @@ export default function DashboardPage() {
 
         .orderLabel {
           margin-bottom: 4px;
-          color: #667085;
+          color: #727a73;
           font-size: 9px;
           line-height: 1.2;
           font-weight: 850;
@@ -458,7 +459,7 @@ export default function DashboardPage() {
         }
 
         .orderValue {
-          color: #17191c;
+          color: #17281d;
           font-size: 12.5px;
           line-height: 1.3;
           font-weight: 800;
@@ -489,7 +490,7 @@ export default function DashboardPage() {
           gap: 12px;
           align-items: start;
           padding: 15px;
-          color: #17191c;
+          color: #17281d;
           text-decoration: none;
           transition:
             border-color 150ms ease,
@@ -498,7 +499,7 @@ export default function DashboardPage() {
         }
 
         .quickCard:hover {
-          border-color: #d0d5dd;
+          border-color: #cfd5c9;
           box-shadow: 0 4px 12px rgba(16, 24, 40, 0.055);
           transform: translateY(-1px);
         }
@@ -510,16 +511,16 @@ export default function DashboardPage() {
           align-items: center;
           justify-content: center;
           border-radius: 9px;
-          border: 1px solid #e2d7c3;
-          background: #f8f2e7;
-          color: #a97d2f;
+          border: 1px solid #cfd5c9;
+          background: #e9ecdc;
+          color: #607e36;
           font-size: 13px;
           font-weight: 900;
         }
 
         .quickCardTitle {
           margin: 0;
-          color: #17191c;
+          color: #17281d;
           font-size: 14px;
           line-height: 1.25;
           font-weight: 900;
@@ -528,7 +529,7 @@ export default function DashboardPage() {
 
         .quickCardText {
           margin-top: 4px;
-          color: #667085;
+          color: #727a73;
           font-size: 12px;
           line-height: 1.45;
           font-weight: 500;
@@ -537,12 +538,12 @@ export default function DashboardPage() {
         .emptyState {
           padding: 28px;
           text-align: center;
-          background: #f8fafc;
+          background: #fdfcf9;
         }
 
         .emptyTitle {
           margin: 0;
-          color: #17191c;
+          color: #17281d;
           font-size: 18px;
           line-height: 1.25;
           font-weight: 900;
@@ -552,7 +553,7 @@ export default function DashboardPage() {
         .emptyText {
           max-width: 540px;
           margin: 8px auto 0;
-          color: #667085;
+          color: #727a73;
           font-size: 13px;
           line-height: 1.55;
           font-weight: 500;
@@ -979,7 +980,7 @@ function getStatusStyle(status) {
       return {
         background: "#f3f4f6",
         color: "#344054",
-        border: "1px solid #e5e7eb",
+        border: "1px solid #e7e5df",
       };
   }
 }

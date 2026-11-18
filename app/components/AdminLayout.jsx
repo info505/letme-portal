@@ -1,12 +1,12 @@
 const colors = {
-  bg: "#f7f4ee",
+  bg: "#f9f7f3",
   card: "#ffffff",
-  text: "#171717",
-  muted: "#756b5f",
-  line: "#e8decd",
-  gold: "#c8a96a",
-  goldDark: "#b8934f",
-  dark: "#151515",
+  text: "#17281d",
+  muted: "#727a73",
+  line: "#e7e5df",
+  gold: "#234c30",
+  goldDark: "#193c26",
+  dark: "#17281d",
 };
 
 function go(to) {
@@ -67,8 +67,8 @@ export default function AdminLayout({ title, subtitle, user, children }) {
         .lmbAdminLayout {
           min-height: 100vh;
           background:
-            radial-gradient(circle at top left, rgba(200,169,106,0.10), transparent 28%),
-            linear-gradient(180deg, ${colors.bg} 0%, #efe9dd 100%);
+            radial-gradient(circle at top left, rgba(35,76,48,0.08), transparent 28%),
+            linear-gradient(180deg, ${colors.bg} 0%, #e9ecdc 100%);
           display: grid;
           grid-template-columns: 292px minmax(0, 1fr);
           font-family: Inter, Arial, sans-serif;
@@ -80,8 +80,8 @@ export default function AdminLayout({ title, subtitle, user, children }) {
           top: 0;
           height: 100vh;
           background:
-            radial-gradient(circle at top left, rgba(200,169,106,0.17), transparent 34%),
-            linear-gradient(180deg, #111111 0%, #1d1b16 54%, #252016 100%);
+            radial-gradient(circle at top left, rgba(96,126,54,0.14), transparent 34%),
+            linear-gradient(180deg, #111111 0%, #17281d 54%, #17281d 100%);
           padding: 24px 18px;
           color: #fff;
           overflow-y: auto;
@@ -114,7 +114,7 @@ export default function AdminLayout({ title, subtitle, user, children }) {
           background: linear-gradient(135deg, ${colors.gold}, ${colors.goldDark});
           color: #111;
           font-weight: 950;
-          box-shadow: 0 14px 28px rgba(200,169,106,0.18);
+          box-shadow: 0 14px 28px rgba(35,76,48,0.12);
           flex-shrink: 0;
         }
 
@@ -135,7 +135,7 @@ export default function AdminLayout({ title, subtitle, user, children }) {
         .lmbAdminBrandSub {
           margin-top: 5px;
           font-size: 11px;
-          color: #d8c391;
+          color: #cfd5c9;
           letter-spacing: 0.13em;
           text-transform: uppercase;
           font-weight: 850;
@@ -206,13 +206,13 @@ export default function AdminLayout({ title, subtitle, user, children }) {
           align-items: center;
           justify-content: center;
           background: rgba(255,255,255,0.07);
-          color: #d8c391;
+          color: #cfd5c9;
           flex-shrink: 0;
           font-size: 16px;
         }
 
         .lmbAdminNavButton.isActive .lmbAdminNavIcon {
-          background: rgba(200,169,106,0.20);
+          background: rgba(96,126,54,0.18);
           color: #fff;
         }
 
@@ -310,7 +310,7 @@ export default function AdminLayout({ title, subtitle, user, children }) {
           max-width: 310px;
           min-width: 0;
           color: ${colors.text};
-          background: #faf6ee;
+          background: #fdfcf9;
           border: 1px solid ${colors.line};
           padding: 8px 12px 8px 8px;
           border-radius: 999px;
@@ -439,7 +439,7 @@ export default function AdminLayout({ title, subtitle, user, children }) {
             padding: 12px 14px;
             background:
               radial-gradient(circle at top left, rgba(200,169,106,0.16), transparent 34%),
-              linear-gradient(180deg, #111111 0%, #201d17 100%);
+              linear-gradient(180deg, #111111 0%, #17281d 100%);
             border-bottom: 1px solid rgba(255,255,255,0.08);
             box-shadow: 0 14px 32px rgba(0,0,0,0.14);
           }
@@ -479,7 +479,7 @@ export default function AdminLayout({ title, subtitle, user, children }) {
           .lmbAdminMobileBrandSub {
             margin-top: 3px;
             font-size: 10px;
-            color: #d8c391;
+            color: #cfd5c9;
             letter-spacing: 0.12em;
             text-transform: uppercase;
             font-weight: 850;
@@ -580,7 +580,7 @@ export default function AdminLayout({ title, subtitle, user, children }) {
           .lmbAdminMobileNavButton span:first-child {
             font-size: 18px;
             line-height: 1;
-            color: #d8c391;
+            color: #cfd5c9;
           }
 
           .lmbAdminMobileNavButton.isActive {
@@ -642,7 +642,7 @@ export default function AdminLayout({ title, subtitle, user, children }) {
         <aside className="lmbAdminSidebar">
           <div className="lmbAdminBrandCard">
             <div className="lmbAdminBrand">
-              <div className="lmbAdminBrandMark">LMB</div>
+              <img src="/brand/let-me-bowl-logo.webp" className="lmbAdminBrandMark" width="44" height="44" alt="Let Me Bowl" style={{ objectFit: "contain" }} />
               <div className="lmbAdminBrandText">
                 <div className="lmbAdminBrandTitle">LET ME BOWL</div>
                 <div className="lmbAdminBrandSub">Adminbereich</div>
@@ -678,7 +678,7 @@ export default function AdminLayout({ title, subtitle, user, children }) {
         <main className="lmbAdminMain">
           <div className="lmbAdminMobileHeader">
             <div className="lmbAdminMobileBrand">
-              <div className="lmbAdminMobileMark">LMB</div>
+              <img src="/brand/let-me-bowl-logo.webp" className="lmbAdminMobileMark" width="40" height="40" alt="Let Me Bowl" style={{ objectFit: "contain" }} />
               <div>
                 <div className="lmbAdminMobileBrandTitle">LET ME BOWL</div>
                 <div className="lmbAdminMobileBrandSub">Adminbereich</div>

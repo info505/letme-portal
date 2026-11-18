@@ -224,12 +224,12 @@ export default function KostenstellenPage() {
         .cost-item:hover {
           transform: translateY(-1px);
           box-shadow: 0 14px 36px rgba(24,24,24,0.05);
-          border-color: #d8c49a;
+          border-color: #cfd5c9;
         }
 
         .cost-item.active {
-          background: linear-gradient(180deg, #fffdf8 0%, #fcf8ef 100%);
-          border-color: #d8b46a;
+          background: linear-gradient(180deg, #fdfcf9 0%, #fdfcf9 100%);
+          border-color: #607e36;
           box-shadow: 0 18px 42px rgba(200,169,106,0.12);
         }
 
@@ -261,11 +261,11 @@ export default function KostenstellenPage() {
           align-items: center;
           padding: 6px 10px;
           border-radius: 999px;
-          background: #f6f1e8;
-          border: 1px solid #eadfc8;
+          background: #e9ecdc;
+          border: 1px solid #cfd5c9;
           font-size: 12px;
           font-weight: 700;
-          color: #8d6a2f;
+          color: #234c30;
         }
 
         .cost-active-badge {
@@ -273,8 +273,8 @@ export default function KostenstellenPage() {
           align-items: center;
           padding: 6px 10px;
           border-radius: 999px;
-          background: #f2eadb;
-          color: #8d6a2f;
+          background: #e9ecdc;
+          color: #234c30;
           font-size: 12px;
           font-weight: 800;
         }
@@ -422,7 +422,7 @@ export default function KostenstellenPage() {
                 type="submit"
                 style={{
                   ...button.primary,
-                  background: "linear-gradient(135deg, #c8a96a, #b8934f)",
+                  background: "linear-gradient(135deg, #234c30, #193c26)",
                 }}
                 disabled={isSubmitting}
               >

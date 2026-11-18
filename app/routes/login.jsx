@@ -189,7 +189,8 @@ export default function LoginPage() {
     <div style={styles.page}>
       <div style={styles.topbar}>
         <a href="https://letmebowl-catering.de" style={styles.logo}>
-          LET ME BOWL
+          <img src="/brand/let-me-bowl-logo.webp" width="64" height="53" alt="Let Me Bowl" style={{ width: 64, height: 53, objectFit: "contain" }} />
+          <span>LET ME BOWL</span>
         </a>
 
         <div style={styles.lang}>
@@ -287,7 +288,7 @@ export default function LoginPage() {
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#efebe2",
+    background: "#f9f7f3",
     fontFamily:
       'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     display: "flex",
@@ -298,15 +299,18 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: "28px 34px 0",
+    padding: "22px 24px 0",
   },
 
   logo: {
     textDecoration: "none",
-    color: "#111",
+    color: "#17281d",
     fontWeight: 800,
     letterSpacing: "0.08em",
     fontSize: "15px",
+    display: "flex",
+    alignItems: "center",
+    gap: "9px",
   },
 
   lang: {
@@ -318,7 +322,7 @@ const styles = {
 
   langLink: {
     textDecoration: "none",
-    color: "#6f6a61",
+    color: "#727a73",
     fontWeight: 700,
   },
 
@@ -329,7 +333,7 @@ const styles = {
   },
 
   langSep: {
-    color: "#8b857b",
+    color: "#727a73",
   },
 
   center: {
@@ -343,15 +347,15 @@ const styles = {
   card: {
     width: "100%",
     maxWidth: "520px",
-    background: "#fffdf9",
-    border: "1px solid #e5dcc8",
+    background: "#ffffff",
+    border: "1px solid #e7e5df",
     borderRadius: "24px",
-    padding: "36px",
+    padding: "clamp(22px, 5vw, 36px)",
     boxShadow: "0 18px 50px rgba(0,0,0,0.06)",
   },
 
   eyebrow: {
-    color: "#c8a96a",
+    color: "#607e36",
     fontWeight: 800,
     letterSpacing: "0.14em",
     textTransform: "uppercase",
@@ -361,7 +365,8 @@ const styles = {
 
   title: {
     margin: "0 0 10px",
-    fontSize: "54px",
+    fontSize: "clamp(36px, 6vw, 52px)",
+    fontFamily: "Georgia, Cambria, Times New Roman, serif",
     lineHeight: 0.95,
     letterSpacing: "-0.04em",
     color: "#111",
@@ -369,7 +374,7 @@ const styles = {
 
   text: {
     margin: "0 0 24px",
-    color: "#5f5a52",
+    color: "#3e4640",
     fontSize: "18px",
     lineHeight: 1.6,
   },
@@ -400,7 +405,7 @@ const styles = {
   input: {
     width: "100%",
     boxSizing: "border-box",
-    border: "1px solid #e2d8c5",
+    border: "1px solid #cfd5c9",
     background: "#fff",
     borderRadius: "14px",
     padding: "15px 16px",
@@ -413,13 +418,13 @@ const styles = {
     marginTop: "8px",
     border: "none",
     borderRadius: "14px",
-    background: "linear-gradient(135deg, #c8a96a, #b8934f)",
+    background: "#234c30",
     color: "#fff",
     fontSize: "16px",
     fontWeight: 800,
     padding: "15px 18px",
     cursor: "pointer",
-    boxShadow: "0 10px 24px rgba(184,147,79,0.22)",
+    boxShadow: "0 8px 24px rgba(35,76,48,0.14)",
   },
 
   links: {

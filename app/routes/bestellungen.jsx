@@ -85,7 +85,7 @@ export default function BestellungenPage() {
         .ordersIntro {
           flex: 0 0 auto;
           background: #ffffff;
-          border: 1px solid #e5e9ef;
+          border: 1px solid #e7e5df;
           border-radius: 16px;
           padding: 16px 18px;
           display: flex;
@@ -100,13 +100,13 @@ export default function BestellungenPage() {
           font-weight: 900;
           letter-spacing: 0.09em;
           text-transform: uppercase;
-          color: #b5822d;
+          color: #234c30;
           margin-bottom: 4px;
         }
 
         .ordersTitle {
           margin: 0;
-          color: #101828;
+          color: #17281d;
           font-size: 24px;
           line-height: 1.08;
           font-weight: 950;
@@ -115,7 +115,7 @@ export default function BestellungenPage() {
 
         .ordersText {
           margin: 4px 0 0;
-          color: #667085;
+          color: #727a73;
           font-size: 12.5px;
           line-height: 1.35;
           font-weight: 600;
@@ -125,9 +125,9 @@ export default function BestellungenPage() {
           min-height: 32px;
           padding: 0 13px;
           border-radius: 9px;
-          border: 1px solid #d6dce5;
+          border: 1px solid #cfd5c9;
           background: #ffffff;
-          color: #101828;
+          color: #17281d;
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -139,8 +139,8 @@ export default function BestellungenPage() {
         }
 
         .ordersButtonPrimary {
-          border-color: #b5822d;
-          background: #b5822d;
+          border-color: #234c30;
+          background: #234c30;
           color: #ffffff;
         }
 
@@ -153,14 +153,14 @@ export default function BestellungenPage() {
 
         .statCard {
           background: #ffffff;
-          border: 1px solid #e5e9ef;
+          border: 1px solid #e7e5df;
           border-radius: 14px;
           padding: 13px 15px;
           box-shadow: 0 8px 22px rgba(15, 23, 42, 0.025);
         }
 
         .statLabel {
-          color: #667085;
+          color: #727a73;
           font-size: 8.5px;
           font-weight: 900;
           letter-spacing: 0.08em;
@@ -169,7 +169,7 @@ export default function BestellungenPage() {
         }
 
         .statValue {
-          color: #101828;
+          color: #17281d;
           font-size: 24px;
           line-height: 1;
           font-weight: 950;
@@ -178,7 +178,7 @@ export default function BestellungenPage() {
 
         .statText {
           margin-top: 5px;
-          color: #667085;
+          color: #727a73;
           font-size: 11.5px;
           font-weight: 600;
         }
@@ -187,7 +187,7 @@ export default function BestellungenPage() {
           flex: 1 1 auto;
           min-height: 0;
           background: #ffffff;
-          border: 1px solid #e5e9ef;
+          border: 1px solid #e7e5df;
           border-radius: 16px;
           overflow-y: auto;
           overflow-x: hidden;
@@ -200,12 +200,12 @@ export default function BestellungenPage() {
           z-index: 5;
           background: #ffffff;
           padding: 15px 17px;
-          border-bottom: 1px solid #edf0f3;
+          border-bottom: 1px solid #f2f4e9;
         }
 
         .ordersPanelTitle {
           margin: 0;
-          color: #101828;
+          color: #17281d;
           font-size: 20px;
           line-height: 1.1;
           font-weight: 950;
@@ -214,7 +214,7 @@ export default function BestellungenPage() {
 
         .ordersPanelSub {
           margin: 3px 0 0;
-          color: #667085;
+          color: #727a73;
           font-size: 12px;
           font-weight: 600;
         }
@@ -233,9 +233,9 @@ export default function BestellungenPage() {
           z-index: 4;
           min-height: 38px;
           padding: 0 17px;
-          background: #f8fafc;
-          border-bottom: 1px solid #edf0f3;
-          color: #667085;
+          background: #fdfcf9;
+          border-bottom: 1px solid #f2f4e9;
+          color: #727a73;
           font-size: 8.5px;
           font-weight: 950;
           letter-spacing: 0.08em;
@@ -243,7 +243,7 @@ export default function BestellungenPage() {
         }
 
         .orderBlock {
-          border-bottom: 1px solid #edf0f3;
+          border-bottom: 1px solid #f2f4e9;
           background: #ffffff;
         }
 
@@ -265,7 +265,7 @@ export default function BestellungenPage() {
         }
 
         .orderNumber {
-          color: #101828;
+          color: #17281d;
           font-size: 14px;
           line-height: 1.15;
           font-weight: 950;
@@ -273,7 +273,7 @@ export default function BestellungenPage() {
         }
 
         .orderCompany {
-          color: #536174;
+          color: #3e4640;
           font-size: 12px;
           line-height: 1.25;
           font-weight: 650;
@@ -283,7 +283,7 @@ export default function BestellungenPage() {
         }
 
         .orderValue {
-          color: #101828;
+          color: #17281d;
           font-size: 11.5px;
           line-height: 1.2;
           font-weight: 850;
@@ -294,9 +294,9 @@ export default function BestellungenPage() {
           min-height: 22px;
           padding: 0 8px;
           border-radius: 999px;
-          background: #f8fafc;
-          border: 1px solid #e1e6ee;
-          color: #101828;
+          background: #fdfcf9;
+          border: 1px solid #e7e5df;
+          color: #17281d;
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -321,9 +321,9 @@ export default function BestellungenPage() {
         .detailsPanel {
           margin: 0 17px 13px;
           padding: 14px;
-          border: 1px solid #eadfcf;
+          border: 1px solid #e7e5df;
           border-radius: 14px;
-          background: #fffdf8;
+          background: #fdfcf9;
           box-shadow: inset 0 1px 0 rgba(255,255,255,0.75);
         }
 
@@ -337,7 +337,7 @@ export default function BestellungenPage() {
 
         .detailsTitle {
           margin: 0;
-          color: #101828;
+          color: #17281d;
           font-size: 17px;
           line-height: 1.12;
           font-weight: 950;
@@ -352,14 +352,14 @@ export default function BestellungenPage() {
         }
 
         .detailMini {
-          border: 1px solid #edf0f3;
+          border: 1px solid #f2f4e9;
           background: #ffffff;
           border-radius: 11px;
           padding: 10px;
         }
 
         .detailLabel {
-          color: #667085;
+          color: #727a73;
           font-size: 8px;
           font-weight: 950;
           letter-spacing: 0.08em;
@@ -368,14 +368,14 @@ export default function BestellungenPage() {
         }
 
         .detailValue {
-          color: #101828;
+          color: #17281d;
           font-size: 11.5px;
           font-weight: 850;
           line-height: 1.15;
         }
 
         .itemsList {
-          border-top: 1px solid #edf0f3;
+          border-top: 1px solid #f2f4e9;
         }
 
         .itemRow {
@@ -384,7 +384,7 @@ export default function BestellungenPage() {
           gap: 10px;
           align-items: center;
           padding: 8px 0;
-          border-bottom: 1px solid #edf0f3;
+          border-bottom: 1px solid #f2f4e9;
         }
 
         .itemRow:last-child {
@@ -392,7 +392,7 @@ export default function BestellungenPage() {
         }
 
         .itemTitle {
-          color: #475467;
+          color: #3e4640;
           font-size: 11.5px;
           font-weight: 700;
           line-height: 1.25;
@@ -401,7 +401,7 @@ export default function BestellungenPage() {
         .emptyState {
           padding: 28px 16px;
           text-align: center;
-          color: #667085;
+          color: #727a73;
           font-size: 13px;
           font-weight: 700;
         }
@@ -430,7 +430,7 @@ export default function BestellungenPage() {
           .orderCell::before {
             content: attr(data-label);
             display: block;
-            color: #667085;
+            color: #727a73;
             font-size: 8px;
             font-weight: 950;
             letter-spacing: 0.08em;

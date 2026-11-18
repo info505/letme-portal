@@ -12,14 +12,14 @@ import { syncCustomerToShopify } from "../lib/shopify.server.js";
 import LanguageSwitch from "../components/LanguageSwitch.jsx";
 
 const colors = {
-  bg: "#f7f4ee",
+  bg: "#f9f7f3",
   card: "#ffffff",
-  soft: "#faf7f1",
-  text: "#171717",
-  muted: "#756b5f",
-  line: "#e8decd",
-  gold: "#c8a96a",
-  goldDark: "#b8934f",
+  soft: "#fdfcf9",
+  text: "#17281d",
+  muted: "#727a73",
+  line: "#e7e5df",
+  gold: "#234c30",
+  goldDark: "#193c26",
   dangerBg: "#fff4f4",
   dangerText: "#8b2222",
   dangerLine: "#efcaca",
@@ -304,6 +304,9 @@ export default function RegisterPage() {
         }
 
         .lmbRegisterLogo {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
           text-decoration: none;
           color: ${colors.text};
           font-weight: 950;
@@ -719,6 +722,7 @@ export default function RegisterPage() {
       <div className="lmbRegisterPage">
         <div className="lmbRegisterTopbar">
           <a href="https://letmebowl-catering.de" className="lmbRegisterLogo">
+            <img src="/brand/let-me-bowl-logo.webp" alt="Let Me Bowl" width="58" height="48" style={{ width: 58, height: 48, objectFit: "contain" }} />
             LET ME BOWL
           </a>
 

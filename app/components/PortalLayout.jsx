@@ -249,17 +249,17 @@ export default function PortalLayout({
           --portal-bg: #f5f6f7;
           --portal-sidebar: #ffffff;
           --portal-surface: #ffffff;
-          --portal-surface-muted: #f8f9fa;
-          --portal-surface-soft: #fbfbfc;
-          --portal-text: #191a1d;
-          --portal-text-soft: #344054;
-          --portal-muted: #667085;
+          --portal-surface-muted: #f9f7f3;
+          --portal-surface-soft: #fdfcf9;
+          --portal-text: #17281d;
+          --portal-text-soft: #3e4640;
+          --portal-muted: #727a73;
           --portal-muted-light: #98a2b3;
-          --portal-border: #e3e6ea;
-          --portal-border-strong: #d0d5dd;
-          --portal-brand: #a97d2f;
-          --portal-brand-hover: #8c6422;
-          --portal-brand-soft: #f8f2e7;
+          --portal-border: #e7e5df;
+          --portal-border-strong: #cfd5c9;
+          --portal-brand: #234c30;
+          --portal-brand-hover: #193c26;
+          --portal-brand-soft: #e9ecdc;
           --portal-green: #16794f;
           --portal-green-soft: #edf8f2;
           --portal-red: #b42318;
@@ -328,7 +328,7 @@ export default function PortalLayout({
           align-items: center;
           justify-content: center;
           border-radius: 9px;
-          border: 1px solid #dfd3bd;
+          border: 1px solid #cfd5c9;
           background: var(--portal-brand-soft);
           color: var(--portal-brand);
           font-size: 11px;
@@ -468,9 +468,9 @@ export default function PortalLayout({
         }
 
         .portalNavLink.isActive {
-          border-color: #e2d7c3;
-          background: #f8f2e7;
-          color: #6e4f1c;
+          border-color: #cfd5c9;
+          background: #e9ecdc;
+          color: #234c30;
           font-weight: 750;
         }
 
@@ -781,7 +781,7 @@ export default function PortalLayout({
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            border: 1px solid #dfd3bd;
+            border: 1px solid #cfd5c9;
             border-radius: 9px;
             background: var(--portal-brand-soft);
             color: var(--portal-brand);
@@ -860,9 +860,9 @@ export default function PortalLayout({
           }
 
           .portalMobileNavLink.isActive {
-            border-color: #dfd3bd;
+            border-color: #cfd5c9;
             background: var(--portal-brand-soft);
-            color: #6e4f1c;
+            color: #234c30;
           }
 
           .portalMobileNavIcon {
@@ -944,7 +944,7 @@ export default function PortalLayout({
         body,
         .portalRoot {
           overflow-x: hidden !important;
-          background: #f4f5f7 !important;
+          background: #f9f7f3 !important;
         }
 
         .portalLayout {
@@ -954,13 +954,13 @@ export default function PortalLayout({
         .portalSidebar {
           padding: 16px 12px !important;
           background: #ffffff !important;
-          border-right: 1px solid #e5e7eb !important;
+          border-right: 1px solid #e7e5df !important;
         }
 
         .portalBrand {
           padding: 0 5px 14px !important;
           margin: 0 !important;
-          border-bottom: 1px solid #e5e7eb !important;
+          border-bottom: 1px solid #e7e5df !important;
         }
 
         .portalBrandMark {
@@ -985,7 +985,7 @@ export default function PortalLayout({
           font-weight: 500 !important;
           letter-spacing: 0 !important;
           text-transform: none !important;
-          color: #667085 !important;
+          color: #727a73 !important;
         }
 
         .portalUserCard {
@@ -1003,21 +1003,21 @@ export default function PortalLayout({
           border-radius: 8px !important;
           font-size: 12.5px !important;
           font-weight: 650 !important;
-          color: #475467 !important;
+          color: #3e4640 !important;
           border: 1px solid transparent !important;
           background: transparent !important;
         }
 
         .portalNavLink:hover {
-          background: #f8fafc !important;
+          background: #fdfcf9 !important;
           border-color: #eef0f3 !important;
-          color: #191a1d !important;
+          color: #17281d !important;
         }
 
         .portalNavLink.isActive {
-          background: #f8f2e7 !important;
-          border-color: #e2d7c3 !important;
-          color: #6f501c !important;
+          background: #e9ecdc !important;
+          border-color: #cfd5c9 !important;
+          color: #234c30 !important;
           box-shadow: none !important;
         }
 
@@ -1034,7 +1034,7 @@ export default function PortalLayout({
         .portalSidebarBottom {
           gap: 8px !important;
           padding-top: 14px !important;
-          border-top: 1px solid #e5e7eb !important;
+          border-top: 1px solid #e7e5df !important;
         }
 
         .portalSecurity {
@@ -1051,21 +1051,21 @@ export default function PortalLayout({
         }
 
         .portalOrderButton {
-          background: #a97d2f !important;
-          border-color: #a97d2f !important;
+          background: #234c30 !important;
+          border-color: #234c30 !important;
         }
 
         .portalLogoutButton {
           background: #ffffff !important;
-          color: #667085 !important;
-          border-color: #e5e7eb !important;
+          color: #727a73 !important;
+          border-color: #e7e5df !important;
         }
 
         .portalHeader {
           position: sticky !important;
           top: 0 !important;
           background: #ffffff !important;
-          border-bottom: 1px solid #e5e7eb !important;
+          border-bottom: 1px solid #e7e5df !important;
           padding: 16px 26px !important;
         }
 
@@ -1077,7 +1077,7 @@ export default function PortalLayout({
 
         .portalKicker {
           margin-bottom: 4px !important;
-          color: #a97d2f !important;
+          color: #234c30 !important;
           font-size: 9.5px !important;
           font-weight: 850 !important;
           letter-spacing: 0.09em !important;
@@ -1088,13 +1088,13 @@ export default function PortalLayout({
           line-height: 1.08 !important;
           font-weight: 900 !important;
           letter-spacing: -0.045em !important;
-          color: #17191c !important;
+          color: #17281d !important;
         }
 
         .portalSubtitle {
           margin-top: 5px !important;
           max-width: 680px !important;
-          color: #667085 !important;
+          color: #727a73 !important;
           font-size: 12.5px !important;
           line-height: 1.45 !important;
           font-weight: 500 !important;
@@ -1102,8 +1102,8 @@ export default function PortalLayout({
 
         .portalLangSwitch {
           border-radius: 8px !important;
-          background: #f8fafc !important;
-          border-color: #e5e7eb !important;
+          background: #fdfcf9 !important;
+          border-color: #e7e5df !important;
           box-shadow: none !important;
         }
 
@@ -1307,6 +1307,46 @@ export default function PortalLayout({
           }
         }
 
+
+        /* The customer portal follows the shop's central Calm Premium palette. */
+        .portalRoot {
+          --portal-bg: #f9f7f3;
+          --portal-sidebar: #ffffff;
+          --portal-surface: #ffffff;
+          --portal-surface-muted: #f9f7f3;
+          --portal-surface-soft: #fdfcf9;
+          --portal-text: #17281d;
+          --portal-text-soft: #3e4640;
+          --portal-muted: #727a73;
+          --portal-border: #e7e5df;
+          --portal-border-strong: #cfd5c9;
+          --portal-brand: #234c30;
+          --portal-brand-hover: #193c26;
+          --portal-brand-soft: #e9ecdc;
+          --portal-green: #24673e;
+          --portal-green-soft: #e6f3e8;
+          --portal-radius: 14px;
+          --portal-radius-lg: 18px;
+          font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        .portalBrandLogo { display: block; width: 52px; height: 44px; flex: 0 0 52px; object-fit: contain; }
+        .portalBrand { gap: 8px !important; }
+        .portalNavLink.isActive { color: #234c30 !important; border-color: #cfd5c9 !important; background: #e9ecdc !important; }
+        .portalNavLink:hover { color: #234c30 !important; background: #f1f4e9 !important; }
+        .portalOrderButton { background: #234c30 !important; border-color: #234c30 !important; color: #fff !important; }
+        .portalOrderButton:hover { background: #193c26 !important; }
+        .portalKicker { color: #607e36 !important; }
+        .portalTitle { color: #17281d !important; font-family: Georgia, Cambria, "Times New Roman", serif !important; font-weight: 700 !important; }
+        .portalHeader { border-color: #e7e5df !important; background: #ffffff !important; }
+        .portalSidebar { border-color: #e7e5df !important; }
+        .portalLogoutButton { border-color: #e7e5df !important; }
+        .portalMobileNavLink.isActive { color: #234c30 !important; border-color: #cfd5c9 !important; background: #e9ecdc !important; }
+        .portalRoot :is(button, a, input, select, textarea, summary):focus-visible { outline: 3px solid #7ba15f; outline-offset: 2px; }
+        @media (max-width: 900px) {
+          .portalBrandLogo { width: 45px; height: 39px; flex-basis: 45px; }
+          .portalRoot .portalHeader { padding: 16px !important; }
+          .portalRoot .portalContent { padding: 16px 14px 28px !important; }
+        }
       `}</style>
 
       <div className="portalLayout">
@@ -1315,7 +1355,7 @@ export default function PortalLayout({
             href="https://letmebowl-catering.de"
             className="portalBrand"
           >
-            <span className="portalBrandMark">LMB</span>
+            <img className="portalBrandLogo" src="/brand/let-me-bowl-logo.webp" width="52" height="44" alt="Let Me Bowl" />
 
             <span className="portalBrandText">
               <span className="portalBrandTitle">LET ME BOWL</span>

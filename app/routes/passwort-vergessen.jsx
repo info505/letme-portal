@@ -198,7 +198,7 @@ export default function ForgotPasswordPage() {
               style={{
                 ...button.primary,
                 width: "100%",
-                background: "linear-gradient(135deg, #c8a96a, #b8934f)",
+                background: "linear-gradient(135deg, #234c30, #193c26)",
                 color: "#111",
                 cursor: isSubmitting ? "not-allowed" : "pointer",
                 opacity: isSubmitting ? 0.7 : 1,

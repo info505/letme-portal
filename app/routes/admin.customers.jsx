@@ -133,7 +133,7 @@ Mit freundlichen Grüßen
 Let Me Bowl Catering
     `.trim(),
     HTMLPart: `
-      <div style="font-family: Arial, sans-serif; color:#171717; line-height:1.6;">
+      <div style="font-family: Arial, sans-serif; color:#17281d; line-height:1.6;">
         <h2>Ihr Firmenkonto wurde freigeschaltet</h2>
 
         <p>Guten Tag ${escapeHtml(customer.firstName || "")},</p>
@@ -642,7 +642,7 @@ export default function AdminCustomersPage() {
 
         .lmbCard {
           background: #fff;
-          border: 1px solid #e8decd;
+          border: 1px solid #e7e5df;
           border-radius: 26px;
           padding: 28px;
           box-shadow: 0 18px 45px rgba(30,20,10,0.05);
@@ -663,14 +663,14 @@ export default function AdminCustomersPage() {
           font-size: 28px;
           line-height: 1.08;
           letter-spacing: -0.035em;
-          color: #171717;
+          color: #17281d;
         }
 
         .lmbText {
           margin: 0 0 22px;
           font-size: 15px;
           line-height: 1.7;
-          color: #756b5f;
+          color: #727a73;
           font-weight: 600;
         }
 
@@ -694,7 +694,7 @@ export default function AdminCustomersPage() {
 
         .lmbStat {
           background: #fff;
-          border: 1px solid #e8decd;
+          border: 1px solid #e7e5df;
           border-radius: 22px;
           padding: 22px;
           box-shadow: 0 12px 30px rgba(30,20,10,0.035);
@@ -704,7 +704,7 @@ export default function AdminCustomersPage() {
           font-size: 11px;
           letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: #756b5f;
+          color: #727a73;
           font-weight: 950;
           margin-bottom: 10px;
         }
@@ -713,7 +713,7 @@ export default function AdminCustomersPage() {
           font-size: 34px;
           font-weight: 950;
           letter-spacing: -0.04em;
-          color: #171717;
+          color: #17281d;
         }
 
         .lmbCreateBox {
@@ -721,7 +721,7 @@ export default function AdminCustomersPage() {
           border: 1px solid #eadfcd;
           border-radius: 24px;
           padding: 22px;
-          background: #fbf8f2;
+          background: #fdfcf9;
         }
 
         .lmbFormGrid {
@@ -749,16 +749,16 @@ export default function AdminCustomersPage() {
           width: 100%;
           padding: 14px 15px;
           border-radius: 15px;
-          border: 1px solid #dfd3bf;
+          border: 1px solid #cfd5c9;
           background: #fff;
-          color: #171717;
+          color: #17281d;
           font-size: 15px;
           box-sizing: border-box;
           outline: none;
         }
 
         .lmbInput:focus {
-          border-color: #c8a96a;
+          border-color: #234c30;
           box-shadow: 0 0 0 4px rgba(200,169,106,0.12);
         }
 
@@ -790,9 +790,9 @@ export default function AdminCustomersPage() {
         }
 
         .lmbBtnLight {
-          border: 1px solid #dfd3bf;
+          border: 1px solid #cfd5c9;
           background: #fff;
-          color: #171717;
+          color: #17281d;
         }
 
         .lmbBtnApprove {
@@ -829,7 +829,7 @@ export default function AdminCustomersPage() {
           border: 1px solid #ece5d8;
           border-radius: 22px;
           padding: 20px;
-          background: #fbf8f2;
+          background: #fdfcf9;
           min-width: 0;
         }
 
@@ -854,7 +854,7 @@ export default function AdminCustomersPage() {
           line-height: 1.15;
           font-weight: 950;
           letter-spacing: -0.025em;
-          color: #171717;
+          color: #17281d;
           margin-bottom: 12px;
           overflow-wrap: anywhere;
         }
@@ -949,7 +949,7 @@ export default function AdminCustomersPage() {
 
         .lmbCreatedText {
           font-size: 13px;
-          color: #756b5f;
+          color: #727a73;
           text-align: right;
           line-height: 1.45;
           font-weight: 700;
@@ -971,8 +971,8 @@ export default function AdminCustomersPage() {
           border: 1px dashed #dccfba;
           border-radius: 20px;
           padding: 24px;
-          background: #fbf8f2;
-          color: #756b5f;
+          background: #fdfcf9;
+          color: #727a73;
           font-weight: 800;
           text-align: center;
         }

@@ -153,7 +153,7 @@ export default function AdminOrdersPage() {
 
         .lmbStat {
           background: #fff;
-          border: 1px solid #e8decd;
+          border: 1px solid #e7e5df;
           border-radius: 22px;
           padding: 20px;
           box-shadow: 0 14px 35px rgba(30,20,10,0.04);
@@ -163,7 +163,7 @@ export default function AdminOrdersPage() {
           font-size: 11.5px;
           letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: #756b5f;
+          color: #727a73;
           font-weight: 950;
           margin-bottom: 8px;
         }
@@ -173,13 +173,13 @@ export default function AdminOrdersPage() {
           line-height: 1.08;
           font-weight: 950;
           letter-spacing: -0.035em;
-          color: #171717;
+          color: #17281d;
           overflow-wrap: anywhere;
         }
 
         .lmbCard {
           background: #fff;
-          border: 1px solid #e8decd;
+          border: 1px solid #e7e5df;
           border-radius: 26px;
           padding: 28px;
           box-shadow: 0 18px 45px rgba(30,20,10,0.05);
@@ -199,14 +199,14 @@ export default function AdminOrdersPage() {
           font-size: 28px;
           line-height: 1.08;
           letter-spacing: -0.035em;
-          color: #171717;
+          color: #17281d;
         }
 
         .lmbText {
           margin: 0 0 22px;
           font-size: 15px;
           line-height: 1.7;
-          color: #756b5f;
+          color: #727a73;
           font-weight: 600;
         }
 
@@ -219,7 +219,7 @@ export default function AdminOrdersPage() {
           border: 1px solid #ece5d8;
           border-radius: 22px;
           padding: 20px;
-          background: #fbf8f2;
+          background: #fdfcf9;
           display: grid;
           gap: 16px;
         }
@@ -236,7 +236,7 @@ export default function AdminOrdersPage() {
           line-height: 1.15;
           font-weight: 950;
           letter-spacing: -0.025em;
-          color: #171717;
+          color: #17281d;
           margin-bottom: 12px;
           overflow-wrap: anywhere;
         }
@@ -277,7 +277,7 @@ export default function AdminOrdersPage() {
           line-height: 1.1;
           font-weight: 950;
           letter-spacing: -0.035em;
-          color: #171717;
+          color: #17281d;
           text-align: right;
         }
 
@@ -351,14 +351,14 @@ export default function AdminOrdersPage() {
           border-radius: 14px;
           font-size: 14px;
           font-weight: 700;
-          color: #171717;
+          color: #17281d;
         }
 
         .lmbEmpty {
-          border: 1px dashed #dfd3bf;
+          border: 1px dashed #cfd5c9;
           border-radius: 20px;
           padding: 24px;
-          color: #756b5f;
+          color: #727a73;
           background: #fffdfa;
           font-weight: 800;
           text-align: center;
