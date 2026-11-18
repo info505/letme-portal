@@ -16,4 +16,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      - name: Inspect generated React Router types
+        run: |
+          test ! -f .react-router/types/+routes.ts || sed -n "195,218p" .react-router/types/+routes.ts
       - run: npm run typecheck
