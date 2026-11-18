@@ -1,4 +1,5 @@
-﻿function getMailjetConfig() {
+import { brandPortalEmail, sendBrevoPortalMessage } from "./portal-email-brand.server.js";
+function getMailjetConfig() {
   const apiKey = process.env.MAILJET_API_KEY;
   const secretKey = process.env.MAILJET_SECRET_KEY;
 
@@ -60,6 +61,15 @@ export async function sendMail({
   cc,
   bcc,
 }) {
+  // Brevo takes over only after the explicit provider setting and API key are installed.
+  // Until then the existing Mailjet route remains untouched for live customers.
+  if (String(process.env.MAIL_PROVIDER || "").toLowerCase() === "brevo") {
+    return sendBrevoPortalMessage({
+      to, cc, bcc, subject, html, text, replyTo,
+      fromEmail: process.env.MAIL_FROM_EMAIL || process.env.MAILJET_FROM_EMAIL || "info@letmebowl-catering.de",
+      fromName: process.env.MAIL_FROM_NAME || process.env.MAILJET_FROM_NAME || "Let Me Bowl",
+    });
+  }
   const config = getMailjetConfig();
   const recipients = normalizeRecipients(to);
 
@@ -75,7 +85,7 @@ export async function sendMail({
     To: recipients,
     Subject: String(subject || "").trim(),
     TextPart: String(text || ""),
-    HTMLPart: String(html || ""),
+    HTMLPart: brandPortalEmail(html, subject),
   };
 
   const ccRecipients = normalizeRecipients(cc || []);
