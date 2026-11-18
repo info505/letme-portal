@@ -198,7 +198,7 @@ export default function AdminDashboardPage() {
 
         .lmbStatBox {
           background: #fff;
-          border: 1px solid #e8decd;
+          border: 1px solid #e7e5df;
           border-radius: 24px;
           padding: 22px;
           box-shadow: 0 18px 45px rgba(30,20,10,0.05);
@@ -208,7 +208,7 @@ export default function AdminDashboardPage() {
         .lmbStatBox.isImportant {
           background:
             radial-gradient(circle at top right, rgba(200,169,106,0.18), transparent 36%),
-            linear-gradient(180deg, #fffdf8 0%, #f8f1e6 100%);
+            linear-gradient(180deg, #fdfcf9 0%, #f8f1e6 100%);
           border-color: rgba(200,169,106,0.32);
         }
 
@@ -216,7 +216,7 @@ export default function AdminDashboardPage() {
           font-size: 12px;
           letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: #756b5f;
+          color: #727a73;
           font-weight: 950;
           margin-bottom: 10px;
         }
@@ -226,14 +226,14 @@ export default function AdminDashboardPage() {
           line-height: 1.05;
           font-weight: 950;
           letter-spacing: -0.045em;
-          color: #171717;
+          color: #17281d;
           overflow-wrap: anywhere;
         }
 
         .lmbStatText {
           margin-top: 8px;
           font-size: 14px;
-          color: #756b5f;
+          color: #727a73;
           line-height: 1.5;
           font-weight: 600;
         }
@@ -247,7 +247,7 @@ export default function AdminDashboardPage() {
 
         .lmbCard {
           background: #fff;
-          border: 1px solid #e8decd;
+          border: 1px solid #e7e5df;
           border-radius: 26px;
           padding: 28px;
           box-shadow: 0 18px 45px rgba(30,20,10,0.05);
@@ -272,14 +272,14 @@ export default function AdminDashboardPage() {
           font-size: 28px;
           line-height: 1.08;
           letter-spacing: -0.035em;
-          color: #171717;
+          color: #17281d;
         }
 
         .lmbText {
           margin: 0 0 22px;
           font-size: 15px;
           line-height: 1.7;
-          color: #756b5f;
+          color: #727a73;
           font-weight: 600;
         }
 
@@ -305,7 +305,7 @@ export default function AdminDashboardPage() {
         }
 
         .lmbQuickLink.isGold {
-          background: linear-gradient(135deg, #c8a96a, #a9823c);
+          background: linear-gradient(135deg, #234c30, #a9823c);
         }
 
         .lmbQuickLink span {
@@ -322,14 +322,14 @@ export default function AdminDashboardPage() {
           border: 1px solid #ece5d8;
           border-radius: 20px;
           padding: 18px;
-          background: #fbf8f2;
+          background: #fdfcf9;
           min-width: 0;
         }
 
         .lmbItem.isOrder {
           background:
             radial-gradient(circle at top right, rgba(200,169,106,0.10), transparent 34%),
-            #fffdf8;
+            #fdfcf9;
         }
 
         .lmbItemTop {
@@ -344,7 +344,7 @@ export default function AdminDashboardPage() {
           line-height: 1.2;
           font-weight: 950;
           margin-bottom: 8px;
-          color: #171717;
+          color: #17281d;
           overflow-wrap: anywhere;
         }
 
@@ -371,8 +371,8 @@ export default function AdminDashboardPage() {
           padding: 0 13px;
           border-radius: 999px;
           background: #fff;
-          border: 1px solid #e8decd;
-          color: #171717;
+          border: 1px solid #e7e5df;
+          color: #17281d;
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -430,14 +430,14 @@ export default function AdminDashboardPage() {
           font-size: 10px;
           letter-spacing: 0.1em;
           text-transform: uppercase;
-          color: #756b5f;
+          color: #727a73;
           font-weight: 950;
           margin-bottom: 6px;
         }
 
         .lmbOrderInfoValue {
           font-size: 13px;
-          color: #171717;
+          color: #17281d;
           font-weight: 850;
           line-height: 1.4;
           overflow-wrap: anywhere;
@@ -447,9 +447,9 @@ export default function AdminDashboardPage() {
           margin: 0;
           padding: 20px;
           border-radius: 18px;
-          background: #fbf8f2;
+          background: #fdfcf9;
           border: 1px dashed #dccfba;
-          color: #756b5f;
+          color: #727a73;
           font-weight: 800;
           text-align: center;
         }
