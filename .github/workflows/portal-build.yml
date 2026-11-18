@@ -5,6 +5,9 @@ on:
   push:
     branches:
       - design/central-brand-brevo-20261118
+concurrency:
+  group: portal-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   verify:
     runs-on: ubuntu-latest
