@@ -208,7 +208,8 @@ export default function DashboardPage() {
           text-transform: uppercase;
         }
 
-        .dashboardIntroTitle {\n          font-family: Georgia, Cambria, "Times New Roman", serif;
+        .dashboardIntroTitle {
+          font-family: Georgia, Cambria, "Times New Roman", serif;
           margin: 0;
           max-width: 720px;
           color: #17281d;
