@@ -1,3 +1,4 @@
+import { brandPortalEmail, mailjetToBrevo, sendBrevoPortalMessage } from "./app/lib/portal-email-brand.server.js";
 import express from "express";
 import { createRequestHandler } from "@react-router/express";
 import { PrismaClient } from "@prisma/client";
@@ -219,7 +220,8 @@ function getMailjetConfig() {
     fromName,
     ownerEmail,
     bccEmail,
-    configured: Boolean(apiKey && secretKey && fromEmail && ownerEmail),
+    provider: String(process.env.MAIL_PROVIDER || "").toLowerCase() === "brevo" ? "brevo" : "mailjet",
+    configured: Boolean((String(process.env.MAIL_PROVIDER || "").toLowerCase() === "brevo" ? process.env.BREVO_API_KEY : apiKey && secretKey) && fromEmail && ownerEmail),
   };
 }
 
@@ -236,11 +238,29 @@ async function sendMailjetMessages(messages) {
         hasApiKey: Boolean(config.apiKey),
         hasSecretKey: Boolean(config.secretKey),
         fromEmail: config.fromEmail,
-        ownerEmail: ownerEmail,
+        ownerEmail: config.ownerEmail,
       },
     };
   }
 
+  if (config.provider === "brevo") {
+    // Keep the original recipient list, order contents and billing identifiers.
+    // A partial result is reported as an error, not automatically retried.
+    const accepted = [];
+    for (const message of messages) {
+      try {
+        accepted.push(await sendBrevoPortalMessage(mailjetToBrevo(message)));
+      } catch (error) {
+        console.error("BREVO PORTAL SEND ERROR:", String(error?.message || error));
+        return { sent: false, provider: "brevo", acceptedCount: accepted.length, reason: String(error?.message || error) };
+      }
+    }
+    return { sent: true, provider: "brevo", result: accepted };
+  }
+  const brandedMessages = messages.map(message => ({
+    ...message,
+    HTMLPart: brandPortalEmail(message.HTMLPart, message.Subject),
+  }));
   const auth = Buffer.from(`${config.apiKey}:${config.secretKey}`).toString(
     "base64"
   );
@@ -252,7 +272,7 @@ async function sendMailjetMessages(messages) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      Messages: messages,
+      Messages: brandedMessages,
     }),
   });
 
@@ -1163,12 +1183,12 @@ app.get("/api/health", (req, res) => {
 
   res.json({
     ok: true,
-    mailProvider: "mailjet-api",
+    mailProvider: config.provider,
     mailConfigured: config.configured,
     fromEmail: config.fromEmail,
-    ownerEmail: ownerEmail,
-    hasApiKey: Boolean(config.apiKey),
-    hasSecretKey: Boolean(config.secretKey),
+    ownerEmail: config.ownerEmail,
+    hasApiKey: Boolean(config.provider === "brevo" ? process.env.BREVO_API_KEY : config.apiKey),
+    hasSecretKey: config.provider === "brevo" ? null : Boolean(config.secretKey),
     database: "prisma",
   });
 });
