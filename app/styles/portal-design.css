@@ -218,3 +218,28 @@ a {color:inherit}
   .lmbRegisterSide,.lmbRegisterFormWrap {padding:21px!important}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important;animation:none!important}}
+
+/* Preserve the A4 delivery note while keeping the responsive cockpit shell off printouts. */
+@media print {
+  .lmb-unified-shell {display:block!important;min-height:0!important;background:#fff!important;}
+  .lmb-unified-shell .lmb-unified-sidebar,
+  .lmb-unified-shell .lmb-unified-toolbar,
+  .lmb-unified-shell .lmb-mobile-tabbar,
+  .lmb-unified-shell .lmb-customer-mobile-tabs,
+  .lmb-unified-shell .lmb-page-intro {display:none!important}
+  .lmb-unified-shell .lmb-unified-workspace,
+  .lmb-unified-shell .lmb-unified-main,
+  .lmb-unified-shell .lmb-unified-page-content {display:block!important;width:100%!important;max-width:none!important;padding:0!important;margin:0!important;overflow:visible!important}
+}
+/* Small-screen tables stay navigable without widening the entire page. */
+@media(max-width:760px){
+  .lmb-unified-page-content table {display:block;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .lmb-unified-page-content .deliveryNotePaper {min-height:auto!important;padding:18px!important;max-width:100%!important;overflow:hidden}
+  .lmb-unified-page-content .deliveryNoteHeader {gap:12px!important;flex-wrap:wrap!important}
+  .lmb-unified-page-content .deliveryNoteDocumentInfo {min-width:0!important;text-align:left!important}
+  .lmb-unified-page-content .deliveryNoteDeliveryBox {grid-template-columns:1fr!important}
+  .lmb-unified-page-content .deliveryNoteTitle {font-size:26px!important}
+  .lmb-unified-page-content .deliveryNoteTable {display:table;max-width:100%!important;table-layout:fixed}
+  .lmb-unified-page-content .deliveryNoteTable td {overflow-wrap:anywhere}
+  .lmb-unified-page-content .deliveryNotePrintButton {background:var(--lmb-forest)!important;border-color:var(--lmb-forest)!important;box-shadow:none!important;border-radius:11px!important}
+}
