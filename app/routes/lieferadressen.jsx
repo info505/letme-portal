@@ -200,153 +200,7 @@ export default function LieferadressenPage() {
       title={t.shippingAddressesTitle}
       subtitle={t.shippingAddressesText}
     >
-      <style>{`
-        .delivery-shell {
-          display: grid;
-          gap: 18px;
-          max-width: 1080px;
-        }
 
-        .delivery-card {
-          padding: 28px;
-          border-radius: 24px;
-        }
-
-        .delivery-grid {
-          display: grid;
-          gap: 16px;
-        }
-
-        .delivery-list {
-          display: grid;
-          gap: 14px;
-        }
-
-        .address-card {
-          position: relative;
-          border: 1px solid ${colors.border};
-          border-radius: 22px;
-          padding: 20px;
-          background: #fff;
-          transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
-        }
-
-        .address-card:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 14px 36px rgba(24,24,24,0.05);
-          border-color: #d8c49a;
-        }
-
-        .address-card.active {
-          background: linear-gradient(180deg, #fffdf8 0%, #fcf8ef 100%);
-          border-color: #d8b46a;
-          box-shadow: 0 18px 42px rgba(200,169,106,0.12);
-        }
-
-        .address-card-top {
-          display: flex;
-          justify-content: space-between;
-          gap: 14px;
-          flex-wrap: wrap;
-          margin-bottom: 12px;
-        }
-
-        .address-meta {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          align-items: center;
-        }
-
-        .address-title {
-          font-size: 19px;
-          font-weight: 800;
-          color: ${colors.text};
-          letter-spacing: -0.01em;
-        }
-
-        .default-badge {
-          display: inline-flex;
-          align-items: center;
-          padding: 6px 10px;
-          border-radius: 999px;
-          background: #f3e8d4;
-          color: #8d6a2f;
-          font-size: 12px;
-          font-weight: 800;
-        }
-
-        .address-select-form {
-          margin: 0;
-        }
-
-        .address-select-button {
-          border: none;
-          background: transparent;
-          padding: 0;
-          margin: 0;
-          width: 100%;
-          text-align: left;
-          cursor: pointer;
-          font: inherit;
-        }
-
-        .address-actions {
-          display: flex;
-          gap: 10px;
-          flex-wrap: wrap;
-          margin-top: 14px;
-          padding-top: 14px;
-          border-top: 1px solid rgba(0,0,0,0.06);
-        }
-
-        .address-use-hint {
-          margin-top: 10px;
-          font-size: 13px;
-          color: ${colors.muted};
-          line-height: 1.6;
-        }
-
-        .section-head {
-          display: flex;
-          justify-content: space-between;
-          gap: 16px;
-          flex-wrap: wrap;
-          align-items: flex-start;
-          margin-bottom: 20px;
-        }
-
-        .section-title {
-          margin: 0 0 10px;
-          font-size: 28px;
-          color: ${colors.text};
-          letter-spacing: -0.02em;
-        }
-
-        .section-text {
-          margin: 0;
-          color: ${colors.muted};
-          line-height: 1.65;
-          font-size: 15px;
-          max-width: 760px;
-        }
-
-        @media (max-width: 700px) {
-          .delivery-card {
-            padding: 20px 16px;
-            border-radius: 18px;
-          }
-
-          .section-title {
-            font-size: 24px;
-          }
-
-          .address-card {
-            padding: 16px;
-            border-radius: 18px;
-          }
-        }
-      `}</style>
 
       {actionData?.message ? (
         <FeedbackBox success={actionData?.ok}>{actionData.message}</FeedbackBox>
@@ -354,10 +208,8 @@ export default function LieferadressenPage() {
 
       <div className="delivery-shell">
         <section
-          className="delivery-card"
-          style={{
-            ...card.base,
-          }}
+          className={["delivery-card", "lmb-ui-lieferadressen-1"].filter(Boolean).join(" ")}
+
         >
           <div className="section-head">
             <div>
@@ -371,7 +223,7 @@ export default function LieferadressenPage() {
             </div>
 
             {isEditMode ? (
-              <a href={`?lang=${locale}`} style={cancelLinkStyle}>
+              <a href={`?lang=${locale}`} className="lmb-ui-lieferadressen-2">
                 {t.cancel}
               </a>
             ) : null}
@@ -387,8 +239,8 @@ export default function LieferadressenPage() {
               <input type="hidden" name="addressId" value={editAddress.id} />
             ) : null}
 
-            <div style={styles.formGrid}>
-              <div style={styles.full}>
+            <div className="lmb-ui-lieferadressen-3">
+              <div className="lmb-ui-lieferadressen-4">
                 <Field
                   label={t.label}
                   name="label"
@@ -397,7 +249,7 @@ export default function LieferadressenPage() {
                 />
               </div>
 
-              <div style={styles.full}>
+              <div className="lmb-ui-lieferadressen-5">
                 <Field
                   label={t.company}
                   name="companyName"
@@ -406,7 +258,7 @@ export default function LieferadressenPage() {
                 />
               </div>
 
-              <div style={styles.full}>
+              <div className="lmb-ui-lieferadressen-6">
                 <Field
                   label={t.contactPerson}
                   name="contactName"
@@ -460,21 +312,21 @@ export default function LieferadressenPage() {
                 defaultValue={editAddress?.city || ""}
               />
 
-              <div style={styles.full}>
-                <label style={{ display: "block" }}>
-                  <span style={styles.label}>{t.notes}</span>
+              <div className="lmb-ui-lieferadressen-7">
+                <label className="lmb-ui-lieferadressen-8">
+                  <span className="lmb-ui-lieferadressen-9">{t.notes}</span>
                   <textarea
                     name="notes"
                     placeholder={t.notesPlaceholder}
                     defaultValue={editAddress?.notes || ""}
                     rows={4}
-                    style={styles.textarea}
+                    className="lmb-ui-lieferadressen-10"
                   />
                 </label>
               </div>
             </div>
 
-            <label style={styles.checkboxRow}>
+            <label className="lmb-ui-lieferadressen-11">
               <input
                 type="checkbox"
                 name="isDefault"
@@ -484,14 +336,9 @@ export default function LieferadressenPage() {
             </label>
 
             <div
-              style={{
-                marginTop: "18px",
-                display: "flex",
-                gap: "10px",
-                flexWrap: "wrap",
-              }}
+              className="lmb-ui-lieferadressen-12"
             >
-              <button type="submit" style={styles.primaryButton} disabled={isSaving}>
+              <button type="submit" className="lmb-ui-lieferadressen-13" disabled={isSaving}>
                 {isSaving
                   ? t.saving
                   : isEditMode
@@ -500,7 +347,7 @@ export default function LieferadressenPage() {
               </button>
 
               {isEditMode ? (
-                <a href={`?lang=${locale}`} style={secondaryLinkStyle}>
+                <a href={`?lang=${locale}`} className="lmb-ui-lieferadressen-14">
                   {t.cancel}
                 </a>
               ) : null}
@@ -509,12 +356,10 @@ export default function LieferadressenPage() {
         </section>
 
         <section
-          className="delivery-card"
-          style={{
-            ...card.base,
-          }}
+          className={["delivery-card", "lmb-ui-lieferadressen-15"].filter(Boolean).join(" ")}
+
         >
-          <div className="section-head" style={{ marginBottom: "18px" }}>
+          <div className={["section-head", "lmb-ui-lieferadressen-16"].filter(Boolean).join(" ")} >
             <div>
               <h3 className="section-title">{t.existingDeliveryAddresses}</h3>
               <p className="section-text">
@@ -527,12 +372,7 @@ export default function LieferadressenPage() {
 
           {addresses.length === 0 ? (
             <p
-              style={{
-                margin: 0,
-                color: colors.muted,
-                lineHeight: 1.6,
-                fontSize: "15px",
-              }}
+              className="lmb-ui-lieferadressen-17"
             >
               {t.noDeliverySaved}
             </p>
@@ -591,7 +431,7 @@ export default function LieferadressenPage() {
                   <div className="address-actions">
                     <a
                       href={`?lang=${locale}&edit=${address.id}`}
-                      style={secondaryLinkStyle}
+                      className="lmb-ui-lieferadressen-18"
                     >
                       {t.edit}
                     </a>
@@ -600,7 +440,7 @@ export default function LieferadressenPage() {
                       <Form method="post">
                         <input type="hidden" name="intent" value="setDefaultDelivery" />
                         <input type="hidden" name="addressId" value={address.id} />
-                        <button type="submit" style={button.secondary}>
+                        <button type="submit" className="lmb-ui-lieferadressen-19">
                           {locale === "en" ? "Use this address" : "Diese Adresse nutzen"}
                         </button>
                       </Form>
@@ -609,7 +449,7 @@ export default function LieferadressenPage() {
                     <Form method="post">
                       <input type="hidden" name="intent" value="deleteDelivery" />
                       <input type="hidden" name="addressId" value={address.id} />
-                      <button type="submit" style={styles.deleteButton}>
+                      <button type="submit" className="lmb-ui-lieferadressen-20">
                         {t.delete}
                       </button>
                     </Form>
@@ -632,14 +472,14 @@ function Field({
   defaultValue = "",
 }) {
   return (
-    <label style={{ display: "block" }}>
-      <span style={styles.label}>{label}</span>
+    <label className="lmb-ui-lieferadressen-21">
+      <span className="lmb-ui-lieferadressen-22">{label}</span>
       <input
         name={name}
         type={type}
         placeholder={placeholder}
         defaultValue={defaultValue}
-        style={styles.input}
+        className="lmb-ui-lieferadressen-23"
       />
     </label>
   );

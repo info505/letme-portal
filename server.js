@@ -1,10 +1,14 @@
 import express from "express";
 import { createRequestHandler } from "@react-router/express";
 import { PrismaClient } from "@prisma/client";
+import { registerCockpitBridge } from "./app/lib/cockpit-bridge.server.js";
+import { getPortalMailConfiguration as getMailjetConfig, sendPortalMailMessages as sendMailjetMessages } from "./app/lib/mail.server.js";
+import { requestPortalPasswordReset } from "./app/lib/password-reset-request.server.js";
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 const prisma = new PrismaClient();
+registerCockpitBridge(app, express, prisma);
 
 // ===== CORS für Shopify / Let Me Bowl Frontend =====
 app.use((req, res, next) => {
@@ -179,103 +183,7 @@ function shouldSkipDuplicateOrder(data) {
   return false;
 }
 
-// ===== MAILJET CONFIG =====
-
-function getMailjetConfig() {
-  const apiKey =
-    process.env.MAILJET_API_KEY ||
-    process.env.MJ_APIKEY_PUBLIC ||
-    process.env.SMTP_USER;
-
-  const secretKey =
-    process.env.MAILJET_SECRET_KEY ||
-    process.env.MJ_APIKEY_PRIVATE ||
-    process.env.SMTP_PASS;
-
-  const fromEmail = String(
-    process.env.MAIL_FROM_EMAIL ||
-      process.env.MAILJET_FROM_EMAIL ||
-      "info@letmebowl-catering.de"
-  ).trim();
-
-  const fromName = String(
-    process.env.MAIL_FROM_NAME ||
-      process.env.MAILJET_FROM_NAME ||
-      "Let Me Bowl"
-  ).trim();
-
-  const ownerEmail = String(
-    process.env.ORDER_NOTIFICATION_EMAIL ||
-      process.env.ORDER_MAIL_TO ||
-      "info@letmebowl-catering.de"
-  ).trim();
-
-  const bccEmail = String(process.env.MAIL_BCC || "").trim();
-
-  return {
-    apiKey,
-    secretKey,
-    fromEmail,
-    fromName,
-    ownerEmail,
-    bccEmail,
-    configured: Boolean(apiKey && secretKey && fromEmail && ownerEmail),
-  };
-}
-
-async function sendMailjetMessages(messages) {
-  const config = getMailjetConfig();
-
-  if (!config.configured) {
-    console.warn("Mailjet ist nicht vollständig konfiguriert.");
-
-    return {
-      sent: false,
-      reason: "Mailjet Variablen fehlen",
-      config: {
-        hasApiKey: Boolean(config.apiKey),
-        hasSecretKey: Boolean(config.secretKey),
-        fromEmail: config.fromEmail,
-        ownerEmail: ownerEmail,
-      },
-    };
-  }
-
-  const auth = Buffer.from(`${config.apiKey}:${config.secretKey}`).toString(
-    "base64"
-  );
-
-  const response = await fetch("https://api.mailjet.com/v3.1/send", {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${auth}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      Messages: messages,
-    }),
-  });
-
-  const result = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    console.error(
-      "Mailjet API Fehler vollständig:",
-      JSON.stringify(result, null, 2)
-    );
-
-    return {
-      sent: false,
-      status: response.status,
-      reason: result,
-    };
-  }
-
-  return {
-    sent: true,
-    result,
-  };
-}
+// Email delivery and brand layout are shared with the portal routes.
 
 // ===== BESTELLNUMMER =====
 
@@ -1017,13 +925,7 @@ async function sendOrderEmails(data, savedOrder = null) {
     messages.push(customerMessage);
   }
 
-  console.log("MAIL DEBUG:", {
-    ownerEmail,
-    customerEmail,
-    bccEmail,
-    messagesCount: messages.length,
-    subjects: messages.map((message) => message.Subject),
-  });
+  console.info("PORTAL_MAIL_BATCH", { messages: messages.length });
 
   return await sendMailjetMessages(messages);
 }
@@ -1039,12 +941,7 @@ app.post(
       const normalizedData = normalizeOrderData(data);
 
       if (shouldSkipDuplicateOrder(normalizedData)) {
-        console.log("Doppelte Portal-Bestellung übersprungen:", {
-          contactEmail: normalizedData.contactEmail,
-          deliveryDate: normalizedData.deliveryDate,
-          deliveryTime: normalizedData.deliveryTime,
-          totalAmountCents: normalizedData.totalAmountCents,
-        });
+        console.info("PORTAL_DUPLICATE_ORDER_SKIPPED");
 
         return res.json({
           ok: true,
@@ -1053,14 +950,7 @@ app.post(
         });
       }
 
-      console.log("Neue Portal-Bestellung empfangen:", {
-        contactName: normalizedData.contactName,
-        contactEmail: normalizedData.contactEmail,
-        deliveryType: normalizedData.deliveryType,
-        deliveryDate: normalizedData.deliveryDate,
-        deliveryTime: normalizedData.deliveryTime,
-        totalAmountCents: normalizedData.totalAmountCents,
-      });
+      console.info("PORTAL_ORDER_RECEIVED");
 
       const savedOrder = await savePortalOrderToDatabase(normalizedData);
 
@@ -1097,12 +987,7 @@ app.post(
       const normalizedData = normalizeOrderData(data);
 
       if (shouldSkipDuplicateOrder(normalizedData)) {
-        console.log("Doppelte Portal-Order-E-Mail übersprungen:", {
-          contactEmail: normalizedData.contactEmail,
-          deliveryDate: normalizedData.deliveryDate,
-          deliveryTime: normalizedData.deliveryTime,
-          totalAmountCents: normalizedData.totalAmountCents,
-        });
+        console.info("PORTAL_DUPLICATE_MAIL_SKIPPED");
 
         return res.json({
           ok: true,
@@ -1111,14 +996,7 @@ app.post(
         });
       }
 
-      console.log("Portal Order E-Mail Request empfangen:", {
-        contactName: normalizedData.contactName,
-        contactEmail: normalizedData.contactEmail,
-        deliveryType: normalizedData.deliveryType,
-        deliveryDate: normalizedData.deliveryDate,
-        deliveryTime: normalizedData.deliveryTime,
-        totalAmountCents: normalizedData.totalAmountCents,
-      });
+      console.info("PORTAL_ORDER_MAIL_RECEIVED");
 
       let savedOrder = null;
 
@@ -1163,96 +1041,35 @@ app.get("/api/health", (req, res) => {
 
   res.json({
     ok: true,
-    mailProvider: "mailjet-api",
+    mailProvider: config.provider,
     mailConfigured: config.configured,
     fromEmail: config.fromEmail,
-    ownerEmail: ownerEmail,
-    hasApiKey: Boolean(config.apiKey),
-    hasSecretKey: Boolean(config.secretKey),
+    ownerEmail: config.ownerEmail,
+    hasApiKey: config.hasApiKey,
+    hasSecretKey: config.hasSecretKey,
     database: "prisma",
   });
 });
 
-// ===== Passwort vergessen =====
-
-app.post(
-  "/api/password-forgot",
-  express.json({ limit: "10mb" }),
-  async (req, res) => {
-    try {
-      const email = safeText(req.body?.email).toLowerCase();
-
-      if (!email) {
-        return res.status(400).json({
-          ok: false,
-          message: "E-Mail fehlt",
-        });
-      }
-
-      const resetLink = `${
-        process.env.APP_URL || "https://konto.letmebowl-catering.de"
-      }/passwort-zuruecksetzen?email=${encodeURIComponent(email)}`;
-
-      const config = getMailjetConfig();
-
-      const emailResult = await sendMailjetMessages([
-        {
-          From: {
-            Email: config.fromEmail,
-            Name: config.fromName,
-          },
-          To: [
-            {
-              Email: email,
-              Name: email,
-            },
-          ],
-          Subject: "Passwort zurücksetzen",
-          TextPart: `Passwort zurücksetzen\n\nFür diese E-Mail wurde ein Passwort-Reset angefragt:\n${email}\n\n${resetLink}`,
-          HTMLPart: `
-            <h2>Passwort zurücksetzen</h2>
-            <p>Für diese E-Mail wurde ein Passwort-Reset angefragt:</p>
-            <p><strong>${escapeHtml(email)}</strong></p>
-            <p>Klicke auf den Link:</p>
-            <a href="${escapeHtml(resetLink)}">${escapeHtml(resetLink)}</a>
-          `,
-        },
-      ]);
-
-      if (!emailResult.sent) {
-        return res.status(500).json({
-          ok: false,
-          message: "E-Mail konnte nicht gesendet werden.",
-          email: emailResult,
-        });
-      }
-
-      return res.json({
-        ok: true,
-        message: "E-Mail wurde gesendet",
-        email: emailResult,
-      });
-    } catch (error) {
-      console.error("Password forgot error:", error);
-
-      return res.status(500).json({
-        ok: false,
-        message: "Fehler beim Senden der E-Mail",
-        detail: String(error?.message || error),
-      });
-    }
-  }
-);
+// ===== Password recovery: same single-use-token flow as the account form =====
+app.post("/api/password-forgot", express.json({ limit: "8kb" }), async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  const allowed = new Set(["https://letmebowl-catering.de", "https://www.letmebowl-catering.de", "https://konto.letmebowl-catering.de"]);
+  if (req.headers.origin && !allowed.has(req.headers.origin)) return res.status(403).json({ ok: false });
+  const result = await requestPortalPasswordReset({ email: req.body?.email, locale: req.body?.lang === "en" ? "en" : "de" });
+  return res.status(result.ok ? 200 : 400).json(result);
+});
 
 // ===== React Router erst NACH allen API-Routen =====
 
 const build = await import("./build/server/index.js");
 
-app.use("/uploads", express.static("uploads"));
+// Invoice downloads must pass the existing owner/admin authorization loader.
+app.all("/uploads/*", createRequestHandler({ build }));
 app.use(express.static("build/client"));
 
 app.all("*", createRequestHandler({ build }));
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server läuft auf Port ${PORT} - Mailjet API + PortalOrder aktiv`);
+  console.log(`Server läuft auf Port ${PORT} - Kundenportal mit zentralem E-Mail-Layout`);
 });

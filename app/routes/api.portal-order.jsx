@@ -533,8 +533,8 @@ export async function action({ request }) {
       console.log("INTERNE BESTELLMAIL VERSENDET:", {
         orderId: order.id,
         orderNumber: order.orderNumber,
-        recipient: ownerEmail,
-        result: internalResult,
+        provider: internalResult.provider,
+        accepted: internalResult.accepted,
       });
     } catch (error) {
       internalMailError = String(error?.message || error);
@@ -542,9 +542,7 @@ export async function action({ request }) {
       console.error("INTERNE BESTELLMAIL FEHLGESCHLAGEN:", {
         orderId: order.id,
         orderNumber: order.orderNumber,
-        recipient: ownerEmail,
         error: internalMailError,
-        stack: error?.stack || null,
       });
     }
 
@@ -561,8 +559,8 @@ export async function action({ request }) {
         console.log("KUNDEN-BESTELLMAIL VERSENDET:", {
           orderId: order.id,
           orderNumber: order.orderNumber,
-          recipient: customerEmail,
-          result: customerResult,
+            provider: customerResult.provider,
+          accepted: customerResult.accepted,
         });
       } catch (error) {
         customerMailError = String(error?.message || error);
@@ -570,10 +568,8 @@ export async function action({ request }) {
         console.error("KUNDEN-BESTELLMAIL FEHLGESCHLAGEN:", {
           orderId: order.id,
           orderNumber: order.orderNumber,
-          recipient: customerEmail,
-          error: customerMailError,
-          stack: error?.stack || null,
-        });
+            error: customerMailError,
+          });
       }
     }
 
