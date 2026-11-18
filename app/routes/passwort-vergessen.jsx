@@ -13,8 +13,8 @@ import {
   sendPasswordResetEmail,
   invalidateAllUserResetTokens,
 } from "../lib/password-reset.server.js";
-import { card, button, input, colors, layout } from "../lib/ui.js";
-import LanguageSwitch from "../components/LanguageSwitch.jsx";
+
+import AuthFrame from "../components/AuthFrame.jsx";
 
 export async function loader({ request }) {
   const locale = getLocaleFromRequest(request);
@@ -79,156 +79,21 @@ export async function action({ request }) {
 export default function ForgotPasswordPage() {
   const { locale } = useLoaderData();
   const actionData = useActionData();
-  const navigation = useNavigation();
-
-  const isSubmitting = navigation.state === "submitting";
-
+  const busy = useNavigation().state === "submitting";
+  const en = locale === "en";
   return (
-    <div style={layout.page}>
-      <style>{`
-        .auth-wrap {
-          min-height: 100vh;
-          display: grid;
-          place-items: center;
-          padding: 24px;
-          background:
-            radial-gradient(circle at top right, rgba(200,169,106,0.08), transparent 28%),
-            ${colors.bg};
-        }
-      `}</style>
-
-      <div className="auth-wrap">
-        <div
-          style={{
-            ...card.base,
-            width: "100%",
-            maxWidth: "520px",
-            padding: "34px",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: "16px",
-              alignItems: "center",
-              marginBottom: "24px",
-              flexWrap: "wrap",
-            }}
-          >
-            <a
-              href="https://letmebowl-catering.de"
-              style={{
-                textDecoration: "none",
-                color: colors.text,
-                fontWeight: 800,
-                letterSpacing: "0.08em",
-                fontSize: "15px",
-              }}
-            >
-              LET ME BOWL
-            </a>
-
-            <LanguageSwitch />
-          </div>
-
-          <h1
-            style={{
-              margin: "0 0 10px",
-              fontSize: "30px",
-              color: colors.text,
-            }}
-          >
-            {locale === "en" ? "Forgot password" : "Passwort vergessen"}
-          </h1>
-
-          <p
-            style={{
-              margin: "0 0 20px",
-              color: colors.muted,
-              lineHeight: 1.7,
-              fontSize: "15px",
-            }}
-          >
-            {locale === "en"
-              ? "Enter your email and we will send you a reset link."
-              : "Gib deine E-Mail ein und wir senden dir einen Reset-Link."}
-          </p>
-
-          {actionData?.message ? (
-            <div
-              style={{
-                marginBottom: "18px",
-                padding: "14px 16px",
-                borderRadius: "14px",
-                background: actionData.ok ? "#edf7ee" : "#fff4f4",
-                color: actionData.ok ? "#1f6b36" : "#8b2222",
-                border: actionData.ok ? "1px solid #cfe8d4" : "1px solid #efcaca",
-                fontWeight: 700,
-              }}
-            >
-              {actionData.message}
-            </div>
-          ) : null}
-
-          <Form method="post">
-            <label style={{ display: "block", marginBottom: "16px" }}>
-              <span
-                style={{
-                  display: "block",
-                  marginBottom: "8px",
-                  fontWeight: 700,
-                  color: colors.text,
-                  fontSize: "14px",
-                }}
-              >
-                {locale === "en" ? "Email" : "E-Mail"}
-              </span>
-
-              <input
-                name="email"
-                type="email"
-                placeholder="name@firma.de"
-                style={input.base}
-              />
-            </label>
-
-            <button
-              type="submit"
-              style={{
-                ...button.primary,
-                width: "100%",
-                background: "linear-gradient(135deg, #234c30, #193c26)",
-                color: "#111",
-                cursor: isSubmitting ? "not-allowed" : "pointer",
-                opacity: isSubmitting ? 0.7 : 1,
-              }}
-              disabled={isSubmitting}
-            >
-              {isSubmitting
-                ? locale === "en"
-                  ? "Sending..."
-                  : "Wird gesendet..."
-                : locale === "en"
-                  ? "Send reset link"
-                  : "Reset-Link senden"}
-            </button>
-          </Form>
-
-          <div style={{ marginTop: "16px", fontSize: "14px" }}>
-            <a
-              href={withLang("/login", locale)}
-              style={{
-                color: colors.text,
-                textDecoration: "none",
-                fontWeight: 700,
-              }}
-            >
-              {locale === "en" ? "Back to login" : "Zurück zum Login"}
-            </a>
-          </div>
+    <AuthFrame locale={locale} title={en ? "Forgot password?" : "Passwort vergessen?"} description={en ? "Enter your email address to receive a link to reset your password." : "Geben Sie Ihre E-Mail-Adresse ein. Sie erhalten einen Link, um Ihr Passwort zurückzusetzen."}>
+      {actionData?.message && <div role="status" className={actionData.ok ? "lmb-auth-success" : "lmb-auth-notice"}>{actionData.message}</div>}
+      <Form method="post" className="lmb-auth-form">
+        <div className="lmb-auth-field">
+          <label htmlFor="reset-email">{en ? "Email address" : "E-Mail-Adresse"}</label>
+          <input className="lmb-auth-input" id="reset-email" name="email" type="email" autoComplete="email" maxLength={254} placeholder="name@firma.de" required />
         </div>
-      </div>
-    </div>
+        <button className="lmb-auth-submit" type="submit" disabled={busy}>
+          {busy ? (en ? "Sending …" : "Wird gesendet …") : (en ? "Send reset link" : "Reset-Link senden")}
+        </button>
+      </Form>
+      <div className="lmb-auth-links"><a href={withLang("/login",locale)}>{en ? "Back to sign-in" : "Zurück zur Anmeldung"}</a></div>
+    </AuthFrame>
   );
 }
