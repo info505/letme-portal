@@ -197,11 +197,11 @@ export async function loader({ request, params }) {
     });
   }
 
-  return { order };
+  return { order, user: { email: user.email, firstName: user.firstName } };
 }
 
 export default function AdminOrderDeliveryNotePage() {
-  const { order } = useLoaderData();
+  const { order, user } = useLoaderData();
 
   const notes = safeText(order.notes);
 
@@ -279,7 +279,7 @@ export default function AdminOrderDeliveryNotePage() {
     : [];
 
   return (
-    <AdminLayout>
+    <AdminLayout title="Lieferschein" subtitle={"Bestellung " + (order.orderNumber || "")} user={user}>
       <style>{`
         .deliveryNotePage,
         .deliveryNotePage * {
@@ -791,7 +791,7 @@ export default function AdminOrderDeliveryNotePage() {
         <article className="deliveryNotePaper">
           <header className="deliveryNoteHeader">
             <div>
-              <div className="deliveryNoteBrand">LET ME BOWL</div>
+              <div className="deliveryNoteBrand"><img src="/brand/let-me-bowl-logo.webp" width="66" height="54" alt="Let Me Bowl" style={{ display: "block", width: 66, height: 54, objectFit: "contain", marginBottom: 7 }} />LET ME BOWL</div>
               <div className="deliveryNoteBrandSubline">
                 BUSINESS CATERING
               </div>

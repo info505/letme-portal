@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import bcrypt from "bcryptjs";
 import { getUserFromRequest } from "../lib/auth.server.js";
 import { prisma } from "../lib/prisma.server.js";
+import { brandPortalEmail } from "../lib/portal-email-brand.server.js";
 import AdminLayout from "../components/AdminLayout.jsx";
 
 function safeText(value) {
@@ -74,7 +75,7 @@ async function sendMailjetMessages(messages) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      Messages: messages,
+      Messages: messages.map(message => ({ ...message, HTMLPart: brandPortalEmail(message.HTMLPart, message.Subject) })),
     }),
   });
 

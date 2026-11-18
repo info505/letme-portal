@@ -1,450 +1,98 @@
-import {
-  Form,
-  redirect,
-  useActionData,
-  useLoaderData,
-  useNavigation,
-} from "react-router";
+import { useState } from "react";
+import { Form, redirect, useActionData, useLoaderData, useNavigation } from "react-router";
 import { prisma } from "../lib/prisma.server.js";
-import {
-  verifyPassword,
-  createPortalSession,
-  createSessionCookie,
-  getUserFromRequest,
-} from "../lib/auth.server.js";
+import { verifyPassword, createPortalSession, createSessionCookie, getUserFromRequest } from "../lib/auth.server.js";
 import { getLocaleFromRequest, dict, withLang } from "../lib/i18n.js";
+import PortalIcon from "../components/PortalIcon.jsx";
 
 export async function loader({ request }) {
   const locale = getLocaleFromRequest(request);
   const user = await getUserFromRequest(request);
-
-  console.log("LOGIN LOADER DEBUG:", {
-    hasUser: Boolean(user),
-    userId: user?.id || null,
-    email: user?.email || null,
-    username: user?.username || null,
-    isActive: user?.isActive || null,
-    isAdmin: user?.isAdmin || null,
-    mustResetPassword: user?.mustResetPassword || null,
-  });
-
   if (user) {
-    if (user.mustResetPassword && !user.isAdmin) {
-      throw redirect(`/passwort-aendern?lang=${locale}`);
-    }
-
-    if (user.isAdmin) {
-      throw redirect(`/admin?lang=${locale}`);
-    }
-
-    throw redirect(`/dashboard?lang=${locale}`);
+    if (user.mustResetPassword && !user.isAdmin) throw redirect(withLang("/passwort-aendern", locale));
+    throw redirect(withLang(user.isAdmin ? "/admin" : "/dashboard", locale));
   }
-
   return { locale };
 }
 
 export async function action({ request }) {
   const locale = getLocaleFromRequest(request);
-  const t = dict[locale] || dict.de;
-  const formData = await request.formData();
-
-  const loginRaw = String(formData.get("login") || "").trim();
-  const login = loginRaw.toLowerCase();
-  const password = String(formData.get("password") || "");
-
-  console.log("LOGIN ACTION START:", {
-    loginRaw,
-    login,
-    hasPassword: Boolean(password),
-    passwordLength: password.length,
-  });
+  const form = await request.formData();
+  const login = String(form.get("login") || "").trim().toLowerCase();
+  const password = String(form.get("password") || "");
 
   if (!login || !password) {
-    console.log("LOGIN FAILED: Felder fehlen");
-
-    return {
-      ok: false,
-      message: t.loginFieldsMissing || "Bitte E-Mail/Benutzername und Passwort eingeben.",
-    };
+    return { ok: false, message: locale === "en" ? "Please enter your username and password." : "Bitte Benutzername und Passwort eingeben." };
+  }
+  if (login.length > 254 || password.length > 512) {
+    return { ok: false, message: locale === "en" ? "Please check your sign-in details." : "Bitte Zugangsdaten prüfen." };
   }
 
-  const user = await prisma.portalUser.findFirst({
-    where: {
-      OR: [
-        { email: login },
-        { username: login },
-      ],
-    },
-  });
-
-  console.log("LOGIN USER LOOKUP:", {
-    login,
-    userFound: Boolean(user),
-    userId: user?.id || null,
-    email: user?.email || null,
-    username: user?.username || null,
-    isActive: user?.isActive || null,
-    isAdmin: user?.isAdmin || null,
-    mustResetPassword: user?.mustResetPassword || null,
-    hasPasswordHash: Boolean(user?.passwordHash),
-    role: user?.role || null,
-  });
-
-  if (!user) {
-    console.log("LOGIN FAILED: Nutzer nicht gefunden", { login });
-
-    return {
-      ok: false,
-      message: t.userNotFound || "Benutzer wurde nicht gefunden.",
-    };
+  const user = await prisma.portalUser.findFirst({ where: { OR: [{ email: login }, { username: login }] } });
+  if (!user || !user.passwordHash || !(await verifyPassword(password, user.passwordHash))) {
+    // Identical feedback: do not disclose whether an account exists.
+    return { ok: false, message: locale === "en" ? "Sign-in failed. Please check your credentials." : "Anmeldung nicht möglich. Bitte Zugangsdaten prüfen." };
   }
-
   if (!user.isActive) {
-    console.log("LOGIN FAILED: Nutzer nicht aktiv", {
-      userId: user.id,
-      email: user.email,
-      username: user.username,
-      isActive: user.isActive,
-    });
-
-    return {
-      ok: false,
-      message: t.accessDisabled || "Dieser Zugang ist noch nicht freigeschaltet.",
-    };
-  }
-
-  if (!user.passwordHash) {
-    console.log("LOGIN FAILED: Kein Passwort-Hash vorhanden", {
-      userId: user.id,
-      email: user.email,
-    });
-
-    return {
-      ok: false,
-      message: "Für diesen Nutzer ist kein Passwort gespeichert. Bitte Passwort zurücksetzen.",
-    };
-  }
-
-  const passwordOk = await verifyPassword(password, user.passwordHash);
-
-  console.log("LOGIN PASSWORD CHECK:", {
-    login,
-    userId: user.id,
-    passwordOk,
-  });
-
-  if (!passwordOk) {
-    console.log("LOGIN FAILED: Passwort falsch", {
-      userId: user.id,
-      email: user.email,
-      username: user.username,
-    });
-
-    return {
-      ok: false,
-      message: t.passwordWrong || "Das Passwort ist falsch.",
-    };
+    return { ok: false, message: locale === "en" ? "This company account has not been approved yet." : "Dieses Firmenkonto wurde noch nicht freigeschaltet." };
   }
 
   const { sessionToken, expiresAt } = await createPortalSession(user.id);
-  const cookie = createSessionCookie(sessionToken, expiresAt);
-
-  console.log("LOGIN SESSION CREATED:", {
-    userId: user.id,
-    email: user.email,
-    username: user.username,
-    expiresAt,
-    hasSessionToken: Boolean(sessionToken),
-    cookiePreview: String(cookie).slice(0, 80),
-  });
-
-  let redirectTo = user.isAdmin
-    ? `/admin?lang=${locale}`
-    : `/dashboard?lang=${locale}`;
-
-  if (user.mustResetPassword && !user.isAdmin) {
-    redirectTo = `/passwort-aendern?lang=${locale}`;
-  }
-
-  console.log("LOGIN SUCCESS REDIRECT:", {
-    userId: user.id,
-    redirectTo,
-  });
-
-  return redirect(redirectTo, {
-    headers: {
-      "Set-Cookie": cookie,
-    },
-  });
+  const destination = user.mustResetPassword && !user.isAdmin ? "/passwort-aendern" : user.isAdmin ? "/admin" : "/dashboard";
+  return redirect(withLang(destination, locale), { headers: { "Set-Cookie": createSessionCookie(sessionToken, expiresAt) } });
 }
 
 export default function LoginPage() {
   const { locale } = useLoaderData();
   const actionData = useActionData();
   const navigation = useNavigation();
-  const isSubmitting = navigation.state === "submitting";
-  const t = dict[locale] || dict.de;
+  const [showPassword, setShowPassword] = useState(false);
+  const en = locale === "en";
+  const busy = navigation.state === "submitting";
 
   return (
-    <div style={styles.page}>
-      <div style={styles.topbar}>
-        <a href="https://letmebowl-catering.de" style={styles.logo}>
-          <img src="/brand/let-me-bowl-logo.webp" width="64" height="53" alt="Let Me Bowl" style={{ width: 64, height: 53, objectFit: "contain" }} />
-          <span>LET ME BOWL</span>
-        </a>
-
-        <div style={styles.lang}>
-          <a
-            href={withLang("/login", "de")}
-            style={locale === "de" ? styles.langActive : styles.langLink}
-          >
-            DE
-          </a>
-          <span style={styles.langSep}>|</span>
-          <a
-            href={withLang("/login", "en")}
-            style={locale === "en" ? styles.langActive : styles.langLink}
-          >
-            EN
-          </a>
+    <main className="lmb-auth-screen">
+      <nav className="lmb-auth-language" aria-label={en ? "Language" : "Sprache"}>
+        <a href={withLang("/login", "de")} aria-current={!en ? "page" : undefined}>DE</a>
+        <a href={withLang("/login", "en")} aria-current={en ? "page" : undefined}>EN</a>
+      </nav>
+      <section className="lmb-auth-card" aria-labelledby="login-heading">
+        <div className="lmb-auth-brand">
+          <img src="/brand/let-me-bowl-logo.webp" width="80" height="76" alt="Let Me Bowl" />
+          <span>LET ME BOWL / {en ? "CUSTOMER ACCOUNT" : "KUNDENPORTAL"}</span>
         </div>
-      </div>
-
-      <div style={styles.center}>
-        <div style={styles.card}>
-          <div style={styles.eyebrow}>{t.brand || "Let Me Bowl"}</div>
-
-          <h1 style={styles.title}>
-            {t.loginTitle || "Login"}
-          </h1>
-
-          <p style={styles.text}>
-            {t.loginText || "Melde dich mit deinem Firmenkonto an."}
-          </p>
-
-          {actionData?.message ? (
-            <div style={styles.error}>{actionData.message}</div>
-          ) : null}
-
-          <Form method="post">
-            <label style={styles.field}>
-              <span style={styles.label}>
-                {t.loginField || "E-Mail oder Benutzername"}
-              </span>
-
-              <input
-                name="login"
-                placeholder={t.loginPlaceholder || "E-Mail oder Benutzername"}
-                style={styles.input}
-                autoComplete="username"
-              />
-            </label>
-
-            <label style={styles.field}>
-              <span style={styles.label}>
-                {t.password || "Passwort"}
-              </span>
-
-              <input
-                type="password"
-                name="password"
-                placeholder={t.passwordPlaceholder || "Passwort"}
-                style={styles.input}
-                autoComplete="current-password"
-              />
-            </label>
-
-            <button type="submit" style={styles.button} disabled={isSubmitting}>
-              {isSubmitting
-                ? t.signingIn || "Wird angemeldet..."
-                : t.signInNow || "Jetzt anmelden"}
+        <h1 className="lmb-auth-title" id="login-heading">{en ? "Welcome back." : "Willkommen zurück."}</h1>
+        <p className="lmb-auth-description">
+          {en ? "Sign in to manage company orders, billing and account details." : "Melden Sie sich an, um Bestellungen, Rechnungen und Ihr Firmenkonto zu verwalten."}
+        </p>
+        <Form method="post" className="lmb-auth-form">
+          <div className="lmb-auth-field">
+            <label htmlFor="portal-login">{en ? "Username or email" : "Benutzername oder E-Mail"}</label>
+            <input className="lmb-auth-input" id="portal-login" name="login" type="text" maxLength={254} autoComplete="username" required autoFocus />
+          </div>
+          <div className="lmb-auth-field lmb-auth-password">
+            <label htmlFor="portal-password">{en ? "Password" : "Passwort"}</label>
+            <input className="lmb-auth-input" id="portal-password" name="password" type={showPassword ? "text" : "password"} autoComplete="current-password" required />
+            <button type="button" className="lmb-auth-eye" aria-label={en ? "Hold to display password" : "Passwort gedrückt halten zum Anzeigen"} aria-pressed={showPassword}
+              onPointerDown={e => {if (e.pointerType !== "mouse" || e.button === 0) setShowPassword(true);}}
+              onPointerUp={() => setShowPassword(false)} onPointerCancel={() => setShowPassword(false)}
+              onPointerLeave={() => setShowPassword(false)} onBlur={() => setShowPassword(false)}
+              onKeyDown={e => {if (e.key === " " || e.key === "Enter") {e.preventDefault(); setShowPassword(true);}}}
+              onKeyUp={() => setShowPassword(false)}>
+              <PortalIcon name={showPassword ? "eye" : "eyeOff"} size={20}/>
             </button>
-          </Form>
-
-          <div style={styles.links}>
-            <a
-              href={withLang("/passwort-vergessen", locale)}
-              style={styles.link}
-            >
-              {t.forgotPassword || "Passwort vergessen?"}
-            </a>
           </div>
-
-          <div style={styles.links}>
-            <span style={styles.muted}>
-              {t.noAccountYet || "Noch kein Konto?"}{" "}
-            </span>
-
-            <a href={withLang("/register", locale)} style={styles.linkStrong}>
-              {t.registerNow || "Jetzt registrieren"}
-            </a>
-          </div>
+          {actionData?.message && <div role="alert" className="lmb-auth-notice">{actionData.message}</div>}
+          <button type="submit" className="lmb-auth-submit" disabled={busy}>
+            {busy ? (en ? "Signing in..." : "Wird angemeldet …") : (en ? "Sign in securely" : "Sicher anmelden")}
+          </button>
+        </Form>
+        <div className="lmb-auth-links">
+          <a href={withLang("/passwort-vergessen", locale)}>{en ? "Forgot password?" : "Passwort vergessen?"}</a>
+          <a href={withLang("/register", locale)}>{en ? "Create account" : "Firmenkonto erstellen"}</a>
         </div>
-      </div>
-    </div>
+        <div className="lmb-auth-footnote">{en ? "Protected company access" : "Geschützter Zugang für Firmenkunden"}</div>
+      </section>
+    </main>
   );
 }
-
-const styles = {
-  page: {
-    minHeight: "100vh",
-    background: "#f9f7f3",
-    fontFamily:
-      'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    display: "flex",
-    flexDirection: "column",
-  },
-
-  topbar: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "22px 24px 0",
-  },
-
-  logo: {
-    textDecoration: "none",
-    color: "#17281d",
-    fontWeight: 800,
-    letterSpacing: "0.08em",
-    fontSize: "15px",
-    display: "flex",
-    alignItems: "center",
-    gap: "9px",
-  },
-
-  lang: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    fontSize: "14px",
-  },
-
-  langLink: {
-    textDecoration: "none",
-    color: "#727a73",
-    fontWeight: 700,
-  },
-
-  langActive: {
-    textDecoration: "none",
-    color: "#111",
-    fontWeight: 800,
-  },
-
-  langSep: {
-    color: "#727a73",
-  },
-
-  center: {
-    flex: 1,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "32px 16px 48px",
-  },
-
-  card: {
-    width: "100%",
-    maxWidth: "520px",
-    background: "#ffffff",
-    border: "1px solid #e7e5df",
-    borderRadius: "24px",
-    padding: "clamp(22px, 5vw, 36px)",
-    boxShadow: "0 18px 50px rgba(0,0,0,0.06)",
-  },
-
-  eyebrow: {
-    color: "#607e36",
-    fontWeight: 800,
-    letterSpacing: "0.14em",
-    textTransform: "uppercase",
-    fontSize: "12px",
-    marginBottom: "14px",
-  },
-
-  title: {
-    margin: "0 0 10px",
-    fontSize: "clamp(36px, 6vw, 52px)",
-    fontFamily: "Georgia, Cambria, Times New Roman, serif",
-    lineHeight: 0.95,
-    letterSpacing: "-0.04em",
-    color: "#111",
-  },
-
-  text: {
-    margin: "0 0 24px",
-    color: "#3e4640",
-    fontSize: "18px",
-    lineHeight: 1.6,
-  },
-
-  error: {
-    background: "#fff1f1",
-    padding: "12px 14px",
-    borderRadius: "12px",
-    marginBottom: "14px",
-    color: "#a12626",
-    border: "1px solid #efcaca",
-    fontWeight: 700,
-  },
-
-  field: {
-    display: "block",
-    marginBottom: "16px",
-  },
-
-  label: {
-    display: "block",
-    marginBottom: "8px",
-    fontWeight: 800,
-    color: "#111",
-    fontSize: "14px",
-  },
-
-  input: {
-    width: "100%",
-    boxSizing: "border-box",
-    border: "1px solid #cfd5c9",
-    background: "#fff",
-    borderRadius: "14px",
-    padding: "15px 16px",
-    fontSize: "16px",
-    outline: "none",
-  },
-
-  button: {
-    width: "100%",
-    marginTop: "8px",
-    border: "none",
-    borderRadius: "14px",
-    background: "#234c30",
-    color: "#fff",
-    fontSize: "16px",
-    fontWeight: 800,
-    padding: "15px 18px",
-    cursor: "pointer",
-    boxShadow: "0 8px 24px rgba(35,76,48,0.14)",
-  },
-
-  links: {
-    marginTop: "14px",
-    fontSize: "15px",
-  },
-
-  muted: {
-    color: "#6f6a61",
-  },
-
-  link: {
-    color: "#5f5a52",
-    fontWeight: 700,
-    textDecoration: "none",
-  },
-
-  linkStrong: {
-    color: "#111",
-    fontWeight: 800,
-    textDecoration: "none",
-  },
-};

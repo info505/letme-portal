@@ -5,6 +5,9 @@ on:
   push:
     branches:
       - design/central-brand-brevo-20261118
+concurrency:
+  group: portal-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -16,4 +19,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      - name: Inspect generated React Router types
+        run: |
+          npx react-router typegen
+          if test -f .react-router/types/+routes.ts; then nl -ba .react-router/types/+routes.ts | sed -n "192,220p"; fi
       - run: npm run typecheck
