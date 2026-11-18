@@ -131,6 +131,8 @@ a {color:inherit}
 .lmb-auth-links a {font-size:13px;font-weight:750;text-decoration:none;color:var(--lmb-forest)}
 .lmb-auth-links a:hover {text-decoration:underline}
 .lmb-auth-notice {padding:13px 15px;color:#8e3333;background:#fbecec;border:1px solid #f4cdcd;border-radius:10px;font-size:13px;line-height:1.45}
+.lmb-auth-success {padding:13px 15px;border-radius:10px;border:1px solid #d0e8d5;background:#e6f3e8;color:#24673e;font-weight:700;font-size:13px;line-height:1.5;margin:0 0 16px}
+.lmb-auth-warning {padding:13px 15px;border-radius:10px;border:1px solid #e9d9b5;background:#fff3db;color:#866014;font-weight:700;font-size:13px;line-height:1.5;margin:0 0 16px}
 .lmb-auth-footnote {margin:26px 0 0;border-top:1px solid var(--lmb-stroke);padding-top:16px;text-align:center;color:var(--lmb-muted);font-size:12px}
 .lmb-auth-language {position:absolute;top:20px;right:max(18px,calc((100vw - 780px)/2));display:flex;gap:8px}
 .lmb-auth-language a {display:grid;place-items:center;width:38px;height:33px;border-radius:9px;border:1px solid var(--lmb-stroke);background:#fff;text-decoration:none;font-size:12px;font-weight:780}
