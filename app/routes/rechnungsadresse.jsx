@@ -12,13 +12,13 @@ import PortalLayout from "../components/PortalLayout.jsx";
 
 const colors = {
   card: "#ffffff",
-  soft: "#fbf8f2",
-  text: "#171717",
-  muted: "#756b5f",
-  line: "#e8decd",
-  fieldLine: "#dfd3bf",
-  gold: "#c8a96a",
-  goldDark: "#b8934f",
+  soft: "#fdfcf9",
+  text: "#17281d",
+  muted: "#727a73",
+  line: "#e7e5df",
+  fieldLine: "#cfd5c9",
+  gold: "#234c30",
+  goldDark: "#193c26",
 };
 
 export async function loader({ request }) {
@@ -481,7 +481,7 @@ export default function RechnungsadressePage() {
         .panel,
         form section {
           border-radius: 14px !important;
-          border: 1px solid #e5e7eb !important;
+          border: 1px solid #e7e5df !important;
           background: #ffffff !important;
           box-shadow: 0 1px 3px rgba(16,24,40,0.04) !important;
         }
@@ -490,7 +490,7 @@ export default function RechnungsadressePage() {
         select,
         textarea {
           border-radius: 9px !important;
-          border: 1px solid #d0d5dd !important;
+          border: 1px solid #cfd5c9 !important;
           background: #ffffff !important;
         }
 
@@ -498,7 +498,7 @@ export default function RechnungsadressePage() {
         select:focus,
         textarea:focus {
           outline: none !important;
-          border-color: #a97d2f !important;
+          border-color: #234c30 !important;
           box-shadow: 0 0 0 3px rgba(169,125,47,0.12) !important;
         }
         /* BILLING POLISH FINAL */
@@ -520,7 +520,7 @@ export default function RechnungsadressePage() {
         .formHero {
           padding: 22px !important;
           border-radius: 14px !important;
-          border: 1px solid #e5e7eb !important;
+          border: 1px solid #e7e5df !important;
           background: #ffffff !important;
           box-shadow: 0 1px 3px rgba(16,24,40,0.04) !important;
         }
@@ -551,7 +551,7 @@ export default function RechnungsadressePage() {
         .panel {
           padding: 18px !important;
           border-radius: 14px !important;
-          border: 1px solid #e5e7eb !important;
+          border: 1px solid #e7e5df !important;
           background: #ffffff !important;
           box-shadow: 0 1px 3px rgba(16,24,40,0.04) !important;
         }
@@ -562,7 +562,7 @@ export default function RechnungsadressePage() {
         }
 
         label {
-          color: #17191c !important;
+          color: #17281d !important;
           font-size: 12px !important;
           font-weight: 800 !important;
         }
@@ -572,9 +572,9 @@ export default function RechnungsadressePage() {
         textarea {
           min-height: 42px !important;
           border-radius: 9px !important;
-          border: 1px solid #d0d5dd !important;
+          border: 1px solid #cfd5c9 !important;
           background: #ffffff !important;
-          color: #17191c !important;
+          color: #17281d !important;
           font-size: 13px !important;
           font-weight: 500 !important;
         }
@@ -583,7 +583,7 @@ export default function RechnungsadressePage() {
         select:focus,
         textarea:focus {
           outline: none !important;
-          border-color: #a97d2f !important;
+          border-color: #234c30 !important;
           box-shadow: 0 0 0 3px rgba(169,125,47,0.12) !important;
         }
 
@@ -592,8 +592,8 @@ export default function RechnungsadressePage() {
         .primaryButton {
           min-height: 42px !important;
           border-radius: 9px !important;
-          border: 1px solid #a97d2f !important;
-          background: #a97d2f !important;
+          border: 1px solid #234c30 !important;
+          background: #234c30 !important;
           color: #ffffff !important;
           font-size: 13px !important;
           font-weight: 850 !important;
