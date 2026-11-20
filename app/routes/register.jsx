@@ -50,6 +50,13 @@ export async function action({ request }) {
   const username = String(formData.get("username") || "").trim().toLowerCase();
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const phone = String(formData.get("phone") || "").trim();
+  const street = String(formData.get("street") || "").trim();
+  const houseNumber = String(formData.get("houseNumber") || "").trim();
+  const postalCode = String(formData.get("postalCode") || "").trim();
+  const city = String(formData.get("city") || "").trim();
+  const country = String(formData.get("country") || "Deutschland").trim();
+  const vatId = String(formData.get("vatId") || "").trim();
+  const invoiceEmail = String(formData.get("invoiceEmail") || "").trim().toLowerCase();
   const password = String(formData.get("password") || "");
   const confirmPassword = String(formData.get("confirmPassword") || "");
   const privacyAccepted = String(formData.get("privacyAccepted") || "") === "on";
@@ -61,6 +68,7 @@ export async function action({ request }) {
     username,
     email,
     phone,
+    street, houseNumber, postalCode, city, country, vatId, invoiceEmail,
   };
 
   if (
@@ -69,6 +77,7 @@ export async function action({ request }) {
     !lastName ||
     !username ||
     !email ||
+    !phone || !street || !houseNumber || !postalCode || !city || !country || !invoiceEmail ||
     !password ||
     !confirmPassword
   ) {
@@ -80,7 +89,10 @@ export async function action({ request }) {
     };
   }
 
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(invoiceEmail) ||
+      !/^\d{5}$/.test(postalCode) ||
+      [companyName, firstName, lastName, phone, street, houseNumber, city, country, vatId].some(value => value.length > 160)) {
     return {
       ok: false,
       locale,
@@ -178,6 +190,7 @@ export async function action({ request }) {
             contactName: `${firstName} ${lastName}`.trim(),
             email,
             phone,
+            street, houseNumber, postalCode, city, country, vatId: vatId || null, invoiceEmail,
           },
         },
       },
@@ -857,6 +870,20 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="lmbSection">
+                  <h3 className="lmbSectionTitle">{locale === "en" ? "Billing information" : "Vollständige Rechnungsadresse"}</h3>
+                  <p className="lmbFormText">{locale === "en" ? "These details are needed to review your company's eligibility for invoice purchases." : "Wir benötigen diese Angaben für die Prüfung und spätere Freigabe des Rechnungskaufs."}</p>
+                  <div className="lmbGrid">
+                    <Field label={locale === "en" ? "Street" : "Straße"} name="street" defaultValue={values.street} required />
+                    <Field label={locale === "en" ? "House number" : "Hausnummer"} name="houseNumber" defaultValue={values.houseNumber} required />
+                    <Field label={locale === "en" ? "Postal code" : "Postleitzahl"} name="postalCode" defaultValue={values.postalCode} required />
+                    <Field label={locale === "en" ? "City" : "Ort"} name="city" defaultValue={values.city} required />
+                    <Field label={locale === "en" ? "Country" : "Land"} name="country" defaultValue={values.country || "Deutschland"} required />
+                    <Field label={locale === "en" ? "VAT ID (if available)" : "USt-IdNr. (falls vorhanden)"} name="vatId" defaultValue={values.vatId} />
+                    <div className="lmbFull"><Field label={locale === "en" ? "Invoice email" : "Rechnungs-E-Mail"} name="invoiceEmail" type="email" defaultValue={values.invoiceEmail} required /></div>
+                  </div>
+                </div>
+
+                <div className="lmbSection">
                   <h3 className="lmbSectionTitle">
                     {locale === "en" ? "Contact person" : "Ansprechpartner"}
                   </h3>
@@ -883,6 +910,7 @@ export default function RegisterPage() {
                       name="phone"
                       defaultValue={values.phone}
                       placeholder={t.phonePlaceholder || "Telefonnummer"}
+                      required
                     />
 
                     <div className="lmbFull">
