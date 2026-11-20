@@ -39,6 +39,13 @@ export async function loader({ request }) {
   if (!user) {
     throw redirect(`/login?lang=${locale}`);
   }
+  if (!user.isAdmin) {
+    const billing = await prisma.billingProfile.findUnique({ where: { userId: user.id } });
+    const complete = billing && [billing.companyName, billing.contactName, billing.email,
+      billing.phone, billing.street, billing.houseNumber, billing.postalCode,
+      billing.city, billing.country, billing.invoiceEmail].every(value => typeof value === "string" && value.trim().length > 0);
+    if (!complete) throw redirect(`/rechnungsadresse?lang=${locale}&setup=1`);
+  }
 
   const [recentOrders, totalOrdersCount, openOrdersCount, invoiceCount, openInvoices] =
     await Promise.all([
