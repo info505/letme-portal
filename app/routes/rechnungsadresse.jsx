@@ -69,7 +69,7 @@ export async function action({ request }) {
     .trim()
     .toLowerCase();
 
-  if (!companyName || !contactName || !email) {
+  if (!companyName || !contactName || !email || !phone || !street || !houseNumber || !postalCode || !city || !country || !invoiceEmail || !/^\d{5}$/.test(postalCode)) {
     return {
       ok: false,
       message:
@@ -690,6 +690,7 @@ export default function RechnungsadressePage() {
                 label={t.phone || "Telefon"}
                 name="phone"
                 defaultValue={billing?.phone || user.phone || ""}
+                required
               />
             </FormSection>
 
@@ -705,24 +706,28 @@ export default function RechnungsadressePage() {
                 label={t.street || "Straße"}
                 name="street"
                 defaultValue={billing?.street || ""}
+                required
               />
 
               <Field
                 label={t.houseNumber || "Hausnummer"}
                 name="houseNumber"
                 defaultValue={billing?.houseNumber || ""}
+                required
               />
 
               <Field
                 label={t.postalCode || "PLZ"}
                 name="postalCode"
                 defaultValue={billing?.postalCode || ""}
+                required
               />
 
               <Field
                 label={t.city || "Stadt"}
                 name="city"
                 defaultValue={billing?.city || ""}
+                required
               />
 
               <Field
@@ -732,6 +737,7 @@ export default function RechnungsadressePage() {
                   billing?.country ||
                   (locale === "en" ? "Germany" : "Deutschland")
                 }
+                required
               />
             </FormSection>
 
@@ -758,12 +764,13 @@ export default function RechnungsadressePage() {
                 label={t.invoiceEmail || "Rechnungs-E-Mail"}
                 name="invoiceEmail"
                 type="email"
-                defaultValue={billing?.invoiceEmail || ""}
+                defaultValue={billing?.invoiceEmail || billing?.email || user.email || ""}
                 help={
                   locale === "en"
-                    ? "Optional. Leave empty if invoices should go to the main e-mail address."
-                    : "Optional. Leer lassen, wenn Rechnungen an die normale E-Mail gehen sollen."
+                    ? "Required billing email for invoice review."
+                    : "Pflichtfeld für die Rechnungskauf-Prüfung."
                 }
+                required
               />
             </FormSection>
 
