@@ -273,3 +273,71 @@ a {color:inherit}
 .lmb-unified-shell .lmbSmallLink {color:var(--lmb-forest)!important}
 .lmb-unified-shell :is(.lmbOrderTotalFinal,.lmbInvoiceAmount,.lmbAmount) {font-variant-numeric:tabular-nums}
 .lmb-unified-shell .lmbEmptyState,.lmb-unified-shell .lmbEmpty {border-radius:14px!important}
+
+/* Kundenportal 2026: Calm Premium surfaces, consistent with the main Let Me Bowl shop.
+   Display-only overrides. Customer data, sessions, prices and forms are unchanged. */
+.lmb-unified-shell--customer .lmb-unified-sidebar {
+  background:linear-gradient(180deg,#ffffff 0%,#fafbf7 100%);
+  border-right-color:#dfe7da;
+}
+.lmb-unified-shell--customer .lmb-shell-brand {
+  border-bottom-color:#e0e8dc;
+}
+.lmb-unified-shell--customer .lmb-unified-main {
+  max-width:1370px;
+}
+.lmb-unified-shell--customer .lmb-page-intro {
+  padding:clamp(18px,2.5vw,30px);
+  border:1px solid #dce8d8;
+  border-radius:22px;
+  background:linear-gradient(110deg,#fbfcf8 0%,#eff5e8 100%);
+  box-shadow:0 7px 24px rgba(23,56,32,.035);
+}
+.lmb-unified-shell--customer .lmb-page-intro .lmb-overline {
+  font-weight:800;
+  color:var(--lmb-leaf);
+}
+.lmb-unified-shell--customer .lmb-page-intro h1 {
+  font-size:clamp(1.6rem,2.8vw,2.4rem);
+  color:#1a3927;
+}
+.lmb-unified-shell--customer .lmb-page-intro p:not(.lmb-overline) {
+  max-width:620px;
+  font-size:.94rem;
+  line-height:1.65;
+}
+.lmb-unified-shell--customer :is(.lmbCard,.lmbCustomerCard,.lmbOrderItem,.lmbInvoiceItem,.lmbInvoicesCard,.lmbBillingCard,.dashboardIntro,.dashboardStat,.quickCard,.ordersPanel,.statCard) {
+  border-color:#dfe6d9!important;
+  border-radius:18px!important;
+  box-shadow:0 8px 24px rgba(25,49,30,.045)!important;
+}
+.lmb-unified-shell--customer :is(.lmbCard,.lmbCustomerCard,.lmbOrderItem,.lmbInvoiceItem,.lmbInvoicesCard,.lmbBillingCard,.dashboardIntro,.dashboardStat,.quickCard,.ordersPanel,.statCard):hover {
+  border-color:#cbdac3!important;
+}
+.lmb-unified-shell--customer .lmb-primary-action,
+.lmb-unified-shell--customer :is(a,button).lmb-primary-action {
+  background:var(--lmb-forest);
+  border-radius:12px;
+  min-height:44px;
+  box-shadow:none;
+}
+.lmb-unified-shell--customer .lmb-unified-nav-link.is-active {
+  background:#e7efdf;
+  color:#173c28;
+  box-shadow:inset 3px 0 0 #658947;
+}
+.lmb-unified-shell--customer .lmb-toolbar-brand {min-width:0;}
+@media(max-width:900px) {
+  .lmb-unified-shell--customer .lmb-page-intro {
+    padding:18px 16px;
+    border-radius:17px;
+    align-items:start;
+    gap:14px;
+  }
+  .lmb-unified-shell--customer .lmb-page-intro h1 { font-size:clamp(1.45rem,5vw,2rem); }
+  .lmb-unified-shell--customer .lmb-page-intro p:not(.lmb-overline) {font-size:.88rem;}
+  .lmb-unified-shell--customer .lmb-unified-main {padding-inline:clamp(14px,4vw,22px);}
+}
+@media print {
+  .lmb-unified-shell--customer .lmb-page-intro {display:none!important;}
+}
