@@ -9,7 +9,7 @@ const usedNonces = new Map();
 const permittedOperations = new Set([
   'overview', 'dashboard', 'customers', 'orders', 'invoices', 'customer',
   'update_customer', 'save_billing', 'save_address', 'save_contact', 'save_cost_center',
-  'update_order', 'update_invoice',
+  'update_order', 'update_invoice', 'save_risk_review',
 ]);
 const fail = (code, status = 400) => Object.assign(new Error(code), { code, status });
 const time = value => value instanceof Date ? value.toISOString() : value ? String(value) : null;
@@ -110,13 +110,30 @@ async function read(input) {
     const customerId=id(input.id);
     const found=await prisma.portalUser.findUnique({where:{id:customerId},select:{...userSelect,
       billing:true, addresses:{orderBy:{createdAt:'desc'}},contacts:{orderBy:{createdAt:'desc'}},
-      costCenters:{orderBy:{createdAt:'desc'}},
+      costCenters:{orderBy:{createdAt:'desc'}},riskReview:true,
       orders:{orderBy:{orderedAt:'desc'},take:100,include:{items:{select:{id:true,title:true,quantity:true,unit:true,unitPrice:true,totalPrice:true}}}},
       invoices:{orderBy:{createdAt:'desc'},take:100}}});
     if(!found || found.isAdmin) throw fail('missing',404);
-    const {billing,addresses,contacts,costCenters,orders,invoices,...customer}=found;
+    const [orderCount,invoiceCount,overdueInvoiceCount,overdueAmount,openInvoiceCount] = await Promise.all([
+      prisma.portalOrder.count({where:{userId:customerId}}),
+      prisma.portalInvoice.count({where:{userId:customerId}}),
+      prisma.portalInvoice.count({where:{userId:customerId,status:'UEBERFAELLIG'}}),
+      prisma.portalInvoice.aggregate({where:{userId:customerId,status:'UEBERFAELLIG'},_sum:{amountGross:true}}),
+      prisma.portalInvoice.count({where:{userId:customerId,status:'OFFEN'}}),
+    ]);
+    const {billing,addresses,contacts,costCenters,orders,invoices,riskReview,...customer}=found;
+    const risk = riskReview ? {
+      registerResult:riskReview.registerResult,insolvencyResult:riskReview.insolvencyResult,
+      vatResult:riskReview.vatResult,reviewNote:riskReview.reviewNote,
+      checkedAt:time(riskReview.checkedAt),updatedAt:time(riskReview.updatedAt),
+    } : null;
     return {...user(customer), billing:record(billing),addresses:addresses.map(record),
-      contacts:contacts.map(record),costCenters:costCenters.map(record),orders:orders.map(order),invoices:invoices.map(invoice)};
+      contacts:contacts.map(record),costCenters:costCenters.map(record),
+      orders:orders.map(order),invoices:invoices.map(invoice),
+      riskReview:risk, riskStats:{
+        orderCount,invoiceCount,overdueInvoiceCount,openInvoiceCount,
+        overdueInvoiceAmount:money(overdueAmount._sum.amountGross)??'0',
+      }};
   }
   throw fail('invalid');
 }
@@ -139,6 +156,34 @@ async function edit(input) {
     const owner=await tx.portalUser.findUnique({where:{id:targetId},select:{id:true,isAdmin:true,updatedAt:true}});
     if(!owner)throw fail('missing',404);
     if(owner.isAdmin || !matches(owner,input.expectedUpdatedAt))throw fail('stale_or_admin',409);
+    if(op==='save_risk_review') {
+      // Only factual, manually verified outcomes are recorded. No automated credit scoring.
+      const allowed={
+        registerResult:['not_checked','company_found','not_found','unclear'],
+        insolvencyResult:['not_checked','no_match_observed','possible_match','unclear'],
+        vatResult:['not_checked','confirmed','not_confirmed','unclear'],
+      };
+      const values={};
+      for(const [key,choices] of Object.entries(allowed)) {
+        if(typeof fields[key]!=='string'||!choices.includes(fields[key])) throw fail('invalid');
+        values[key]=fields[key];
+      }
+      values.reviewNote=optional(fields.reviewNote,1500);
+      const previous=await tx.portalRiskReview.findUnique({where:{userId:targetId}});
+      const expected=typeof input.expectedRecordUpdatedAt==='string'?input.expectedRecordUpdatedAt:'';
+      if(previous) {
+        if(!matches(previous,expected))throw fail('stale_or_admin',409);
+        const changed=await tx.portalRiskReview.updateMany({
+          where:{userId:targetId,updatedAt:previous.updatedAt},
+          data:{...values,checkedAt:new Date()},
+        });
+        if(changed.count!==1)throw fail('stale_or_admin',409);
+      } else {
+        if(expected)throw fail('stale_or_admin',409);
+        await tx.portalRiskReview.create({data:{userId:targetId,...values}});
+      }
+      return {updated:true};
+    }
     if(op==='update_customer') {
       if(typeof input.isActive!=='boolean' || typeof input.invoicePurchaseEnabled!=='boolean') throw fail('invalid');
       const data={companyName:required(fields.companyName),firstName:text(fields.firstName ?? ""),
