@@ -1,5 +1,6 @@
 import { brandPortalEmail, mailjetToBrevo, sendBrevoPortalMessage } from "./app/lib/portal-email-brand.server.js";
 import express from "express";
+import { verifyCockpitBridge, dispatchCockpitBridge, bridgeError } from "./app/lib/cockpit-bridge.server.js";
 import { createRequestHandler } from "@react-router/express";
 import { PrismaClient } from "@prisma/client";
 
@@ -37,6 +38,21 @@ app.use((req, res, next) => {
   }
 
   next();
+});
+
+// Authenticated Cockpit bridge. Credentials never enter the browser or customer sessions.
+app.post("/api/cockpit/v1", express.raw({ type: "application/json", limit: "64kb" }), async (req, res) => {
+  res.set("Cache-Control", "no-store, private");
+  try {
+    verifyCockpitBridge(req, req.body);
+    const data = JSON.parse(req.body.toString("utf8"));
+    const result = await dispatchCockpitBridge(data);
+    return res.json({ ok: true, result });
+  } catch (error) {
+    const { status, code } = bridgeError(error);
+    if (code === "unavailable") console.error("Cockpit bridge temporarily unavailable:", error?.name || "Error");
+    return res.status(status).json({ ok: false, error: code });
+  }
 });
 
 // ===== HILFSFUNKTIONEN =====
