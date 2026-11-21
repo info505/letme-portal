@@ -7,7 +7,7 @@ const ENDPOINT = '/api/cockpit/v1';
 const MAX_CLOCK_SKEW = 5 * 60 * 1000;
 const usedNonces = new Map();
 const permittedOperations = new Set([
-  'overview', 'customers', 'orders', 'invoices', 'customer',
+  'overview', 'dashboard', 'customers', 'orders', 'invoices', 'customer',
   'update_customer', 'save_billing', 'save_address', 'save_contact', 'save_cost_center',
   'update_order', 'update_invoice',
 ]);
@@ -59,6 +59,26 @@ async function read(input) {
     return { customers,active,pending,orders,invoices,
       mailProvider:process.env.MAIL_PROVIDER === 'brevo' ? 'brevo' : 'mailjet',
       brevoConfigured:Boolean(process.env.BREVO_API_KEY), portalUrl:'https://konto.letmebowl-catering.de' };
+  }
+  if (op === 'dashboard') {
+    // The dashboard is read-only and always excludes administrators. Keep orders
+    // and invoices separate: totals here are not payment reconciliations.
+    const [summary, openOrders, orderSums, outstandingInvoices, recentOrders, recentInvoices, recentCustomers] = await Promise.all([
+      read({op:'overview'}),
+      prisma.portalOrder.count({where:{user:{isAdmin:false},status:{in:['OPEN','CONFIRMED','IN_PREPARATION']}}}),
+      prisma.portalOrder.aggregate({where:{user:{isAdmin:false}},_sum:{totalAmount:true}}),
+      prisma.portalInvoice.aggregate({where:{user:{isAdmin:false},status:{in:['OFFEN','UEBERFAELLIG']}},_sum:{amountGross:true}}),
+      prisma.portalOrder.findMany({where:{user:{isAdmin:false}},
+        include:{user:{select:orderUser},items:{select:{id:true,title:true,quantity:true,unit:true,unitPrice:true,totalPrice:true}}},
+        orderBy:{orderedAt:'desc'},take:6}),
+      prisma.portalInvoice.findMany({where:{user:{isAdmin:false}},include:{user:{select:orderUser}},
+        orderBy:{createdAt:'desc'},take:5}),
+      prisma.portalUser.findMany({where:{isAdmin:false},select:userSelect,orderBy:{createdAt:'desc'},take:5}),
+    ]);
+    return {...summary, openOrders, totalOrderValue:money(orderSums._sum.totalAmount)??'0',
+      outstandingInvoiceAmount:money(outstandingInvoices._sum.amountGross)??'0',
+      recentOrders:recentOrders.map(order),recentInvoices:recentInvoices.map(invoice),
+      recentCustomers:recentCustomers.map(user), asOf:new Date().toISOString()};
   }
   if (op === 'customers') {
     const {q,page,take}=listArgs(input);
@@ -163,7 +183,7 @@ async function edit(input) {
 
 export async function dispatchCockpitBridge(input) {
   if(!input || typeof input!=='object' || Array.isArray(input) || !permittedOperations.has(input.op))throw fail('invalid');
-  if(['overview','customers','orders','invoices','customer'].includes(input.op))return read(input);
+  if(['overview','dashboard','customers','orders','invoices','customer'].includes(input.op))return read(input);
   return edit(input);
 }
 
