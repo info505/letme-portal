@@ -129,21 +129,22 @@ async function edit(input) {
       return {updated:true};
     }
     const choices={
-      save_billing:{model:tx.billingProfile, fields:{companyName:optional(fields.companyName),contactName:optional(fields.contactName),
+      save_billing:()=>({model:tx.billingProfile, fields:{companyName:optional(fields.companyName),contactName:optional(fields.contactName),
         email:optional(fields.email),invoiceEmail:optional(fields.invoiceEmail),phone:optional(fields.phone),
         street:optional(fields.street),houseNumber:optional(fields.houseNumber),postalCode:optional(fields.postalCode),
-        city:optional(fields.city),country:optional(fields.country),vatId:optional(fields.vatId)}},
-      save_address:{model:tx.deliveryAddress,fields:{label:optional(fields.label),companyName:optional(fields.companyName),
+        city:optional(fields.city),country:optional(fields.country),vatId:optional(fields.vatId)}}),
+      save_address:()=>({model:tx.deliveryAddress,fields:{label:optional(fields.label),companyName:optional(fields.companyName),
         contactName:optional(fields.contactName),phone:optional(fields.phone),street:required(fields.street),
         houseNumber:optional(fields.houseNumber),postalCode:required(fields.postalCode),city:required(fields.city),
-        country:required(fields.country),notes:optional(fields.notes,4000)}},
-      save_contact:{model:tx.portalContact,fields:{firstName:required(fields.firstName),lastName:optional(fields.lastName),
+        country:required(fields.country),notes:optional(fields.notes,4000)}}),
+      save_contact:()=>({model:tx.portalContact,fields:{firstName:required(fields.firstName),lastName:optional(fields.lastName),
         email:required(fields.email),phone:optional(fields.phone),roleLabel:optional(fields.roleLabel),
-        department:optional(fields.department)}},
-      save_cost_center:{model:tx.costCenter,fields:{name:required(fields.name),code:optional(fields.code),
-        description:optional(fields.description,4000)}},
+        department:optional(fields.department)}}),
+      save_cost_center:()=>({model:tx.costCenter,fields:{name:required(fields.name),code:optional(fields.code),
+        description:optional(fields.description,4000)}}),
     };
-    const config=choices[op];if(!config)throw fail('invalid');
+    const createConfig=choices[op];if(!createConfig)throw fail('invalid');
+    const config=createConfig();
     const recordId=optional(input.recordId,100);
     const existing=recordId ? await config.model.findUnique({where:{id:recordId},select:{id:true,userId:true,updatedAt:true}})
       : op==='save_billing' ? await tx.billingProfile.findUnique({where:{userId:targetId},select:{id:true,userId:true,updatedAt:true}}) : null;
