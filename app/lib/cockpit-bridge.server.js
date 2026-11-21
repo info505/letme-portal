@@ -1,5 +1,6 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { prisma } from './prisma.server.js';
+import { checkViesVat, normalizeVatId } from './vies-check.server.js';
 
 // This is a server-to-server API for the authenticated Let Me Bowl Cockpit, not a public customer API.
 // No passwords, sessions, payment tokens or unrestricted database records are ever returned.
@@ -9,7 +10,7 @@ const usedNonces = new Map();
 const permittedOperations = new Set([
   'overview', 'dashboard', 'customers', 'orders', 'invoices', 'customer',
   'update_customer', 'save_billing', 'save_address', 'save_contact', 'save_cost_center',
-  'update_order', 'update_invoice', 'save_risk_review',
+  'update_order', 'update_invoice', 'save_risk_review', 'check_vat',
 ]);
 const fail = (code, status = 400) => Object.assign(new Error(code), { code, status });
 const time = value => value instanceof Date ? value.toISOString() : value ? String(value) : null;
@@ -122,10 +123,15 @@ async function read(input) {
       prisma.portalInvoice.count({where:{userId:customerId,status:'OFFEN'}}),
     ]);
     const {billing,addresses,contacts,costCenters,orders,invoices,riskReview,...customer}=found;
+    const currentVat = normalizeVatId(billing?.vatId);
+    const vatHash = currentVat ? createHash('sha256').update(currentVat.complete).digest('hex') : '';
     const risk = riskReview ? {
       registerResult:riskReview.registerResult,insolvencyResult:riskReview.insolvencyResult,
       vatResult:riskReview.vatResult,reviewNote:riskReview.reviewNote,
       checkedAt:time(riskReview.checkedAt),updatedAt:time(riskReview.updatedAt),
+      autoVatStatus:riskReview.autoVatNumberHash && riskReview.autoVatNumberHash!==vatHash ? 'stale' : riskReview.autoVatStatus,
+      autoVatCheckedAt:time(riskReview.autoVatCheckedAt),
+      autoVatReference:riskReview.autoVatReference,
     } : null;
     return {...user(customer), billing:record(billing),addresses:addresses.map(record),
       contacts:contacts.map(record),costCenters:costCenters.map(record),
@@ -140,6 +146,37 @@ async function read(input) {
 
 async function edit(input) {
   const {op}=input, targetId=id(input.id), fields=safeFields(input.fields ?? {});
+  if (op === 'check_vat') {
+    // Explicit Superadmin action, never a background bulk scan or an approval decision.
+    const owner=await prisma.portalUser.findUnique({where:{id:targetId},
+      select:{id:true,isAdmin:true,billing:{select:{vatId:true}}}});
+    if (!owner) throw fail('missing',404);
+    if (owner.isAdmin) throw fail('stale_or_admin',403);
+    const vat=normalizeVatId(owner.billing?.vatId);
+    if (!owner.billing?.vatId) throw fail('vat_missing',400);
+    if (!vat) throw fail('vat_format',400);
+    const numberHash=createHash('sha256').update(vat.complete).digest('hex');
+    const previous=await prisma.portalRiskReview.findUnique({where:{userId:targetId},
+      select:{autoVatNumberHash:true,autoVatStatus:true,autoVatCheckedAt:true,autoVatReference:true}});
+    // One live check per company and VAT number per hour; archived status remains visible.
+    if (previous?.autoVatNumberHash===numberHash && previous.autoVatCheckedAt &&
+        Date.now()-previous.autoVatCheckedAt.getTime()<60*60*1000 &&
+        ['valid','invalid'].includes(previous.autoVatStatus))
+      return {status:previous.autoVatStatus,cached:true};
+    const result=await checkViesVat(vat.complete);
+    if(result.status==='unavailable') throw fail('vies_unavailable',503);
+    if(result.status==='invalid_format') throw fail('vat_format',400);
+    // A user may edit the billing address while VIES is responding.
+    const latest=await prisma.portalUser.findUnique({where:{id:targetId},
+      select:{isAdmin:true,billing:{select:{vatId:true}}}});
+    if(!latest || latest.isAdmin || normalizeVatId(latest.billing?.vatId)?.complete!==vat.complete)
+      throw fail('stale_or_admin',409);
+    const data={autoVatStatus:result.status,autoVatCheckedAt:new Date(),
+      autoVatNumberHash:numberHash,autoVatReference:result.reference};
+    await prisma.portalRiskReview.upsert({where:{userId:targetId},
+      create:{userId:targetId,...data},update:data});
+    return {status:result.status,cached:false};
+  }
   if (op==='update_order' || op==='update_invoice') {
     const invoiceUpdate=op==='update_invoice';
     const allowed=invoiceUpdate?['OFFEN','BEZAHLT','UEBERFAELLIG']:['OPEN','CONFIRMED','IN_PREPARATION','DELIVERED','CANCELLED'];
@@ -251,7 +288,7 @@ export function verifyCockpitBridge(request, raw) {
 }
 
 export function bridgeError(error) {
-  if(['unauthorized','not_configured','invalid','missing','stale_or_admin'].includes(error?.code))
+  if(['unauthorized','not_configured','invalid','missing','stale_or_admin','vat_missing','vat_format','vies_unavailable'].includes(error?.code))
     return {status:error.status || 400,code:error.code};
   if(error?.code==='P2002')return {status:409,code:'stale_or_admin'};
   return {status:503,code:'unavailable'};

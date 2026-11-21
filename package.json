@@ -6,7 +6,7 @@
     "node": ">=20.19 <22 || >=22.12"
   },
   "scripts": {
-    "build": "prisma generate && react-router build",
+    "build": "node scripts/vies-check-test.mjs && prisma generate && react-router build",
     "dev": "shopify app dev",
     "config:link": "shopify app config link",
     "generate": "shopify app generate",
