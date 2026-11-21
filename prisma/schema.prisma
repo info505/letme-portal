@@ -423,6 +423,11 @@ model PortalRiskReview {
   insolvencyResult  String   @default("not_checked")
   vatResult         String   @default("not_checked")
   reviewNote        String?  @db.VarChar(1500)
+  // Latest automatic EU-VIES result. Does not alter manual findings or credit permissions.
+  autoVatStatus     String   @default("not_checked")
+  autoVatCheckedAt  DateTime?
+  autoVatNumberHash String?  @db.VarChar(64)
+  autoVatReference  String?  @db.VarChar(150)
   checkedAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
