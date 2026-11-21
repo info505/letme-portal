@@ -83,6 +83,7 @@ model PortalUser {
   orderTemplates OrderTemplate[]
   recurringPlans RecurringOrderPlan[]
   invoices       PortalInvoice[]
+  riskReview     PortalRiskReview?
 }
 
 model BillingProfile {
@@ -411,4 +412,19 @@ model PortalInvoice {
 
   @@index([userId])
   @@index([invoiceNumber])
+}
+
+// Manual B2B due-diligence notes. Additive: existing PortalUser, orders and invoices stay untouched.
+// Each external result is explicitly marked as human-checked, never a credit score.
+model PortalRiskReview {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  registerResult    String   @default("not_checked")
+  insolvencyResult  String   @default("not_checked")
+  vatResult         String   @default("not_checked")
+  reviewNote        String?  @db.VarChar(1500)
+  checkedAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user PortalUser @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
